@@ -242,8 +242,8 @@ Môi trường QA local: Windows x64 `10.0.26200`, Node.js `24.13.0`, Electron `
 
 ### D5. Chuyển đổi v1.1.0
 
-- [ ] Release notes ghi rõ portable v1.1.0 phải cài v1.2.0 thủ công.
-- [ ] Không tuyên bố portable v1.1.0 có thể tự update.
+- [x] Release notes ghi rõ portable v1.1.0 phải cài v1.2.0 thủ công.
+- [x] Không tuyên bố portable v1.1.0 có thể tự update.
 - [ ] Sau khi cài v1.2.0 NSIS, kiểm thử update lên một patch cao hơn.
 
 ## E. Kiểm tra release
@@ -252,14 +252,16 @@ Môi trường QA local: Windows x64 `10.0.26200`, Node.js `24.13.0`, Electron `
 - [x] `package.json` và `package-lock.json` cùng version `1.2.0`.
 - [x] Tag `v1.2.0` đúng định dạng và khớp package version.
 - [x] Windows CI trên commit phát hành `971d92d` đạt.
-- [x] Release Windows workflow đạt; lượt sửa asset `31106763725` cũng đạt.
+- [x] Release Windows workflow tạo asset đạt; lượt sửa asset `31106763725` cũng đạt.
+- [ ] Dọn Release record trùng tag ID `366240066`; lượt `31107747686` build/test và upload đạt nhưng sync notes thất bại vì tag có hai Release record.
 - [x] GitHub Release stable/public có đúng ba artifact bắt buộc.
 - [x] Tên installer local là `PNG-Bundle-Mockup-Setup-1.2.0.exe`.
 - [x] `latest.yml` local tham chiếu đúng installer và checksum/size.
 - [x] SHA-256 installer local: `271BDF3030AA2E38E89D3B64550E2954D9A4BB314B09D2A94663189E32087117`.
-- [x] SHA-256 installer GitHub CI: `ED8B853D73A3E212FABC254D3CA7999F14582A5470CBEA83BE5F799F824EA989`.
+- [x] SHA-256 installer GitHub CI hiện tại: `505BB85DA584F4003D74D1C687DC13AC2C05145AD20CAC70AA5B6FDD347E52F1`.
 - [ ] Tải lại installer từ GitHub Release và cài thành công trên máy sạch.
-- [x] Release notes mô tả tính năng, hướng dẫn portable v1.1.0 và giới hạn unsigned.
+- [x] File release notes mô tả tính năng, hướng dẫn portable v1.1.0 và giới hạn unsigned.
+- [ ] Đồng bộ file release notes vào body Release chính sau khi dọn record trùng tag.
 - [x] README và tài liệu trong `docs/` phản ánh đúng version phát hành.
 - [x] Mã nguồn không chứa token/chứng thư/dữ liệu người dùng; `.gitignore` loại release, env và chứng thư local.
 - [x] Link `/releases/latest` trỏ đúng stable release `v1.2.0`.

@@ -24,7 +24,7 @@ Người đang dùng bản portable `1.1.0` cần cài file Setup này thủ cô
 SHA-256 của installer do GitHub Actions tạo:
 
 ```text
-ED8B853D73A3E212FABC254D3CA7999F14582A5470CBEA83BE5F799F824EA989
+505BB85DA584F4003D74D1C687DC13AC2C05145AD20CAC70AA5B6FDD347E52F1
 ```
 
 Release cũng bao gồm `latest.yml` và `.exe.blockmap`; cả ba file phải được giữ cùng nhau để updater hoạt động.

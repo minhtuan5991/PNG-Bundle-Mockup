@@ -22,7 +22,7 @@ Sau lần phát hành đầu tiên ngày 2026-08-06:
 - GitHub Release `v1.2.0` là stable/public và có đủ installer, blockmap, `latest.yml`.
 - Thư mục `D:\File2Mockup` đã được khởi tạo Git và theo dõi `origin/main`.
 
-Workflow upload đầy đủ asset được gia cố từ commit `6076701`; bản hiện tại còn đồng bộ tiêu đề và file `docs/RELEASE-NOTES-X.Y.Z.md` vào GitHub Release. Có thể chạy lại theo tag bằng `workflow_dispatch` nếu cần sửa asset hoặc ghi chú.
+Workflow upload đầy đủ asset được gia cố từ commit `6076701`. Bản hiện tại chuẩn bị và kiểm tra release notes trước khi publish, không ghi đè asset của Release đã tồn tại, và hỗ trợ chế độ thủ công chỉ đồng bộ ghi chú.
 
 ## 3. Điều kiện trước khi phát hành
 
@@ -174,12 +174,15 @@ Workflow thực hiện:
 4. Xác minh tag/version.
 5. Chạy `npm test`.
 6. Chạy `npm run build:installer` để tạo ba file đồng bộ.
-7. Dùng GitHub CLI của runner để tạo hoặc ghi đè Release bằng đủ installer, blockmap và `latest.yml`.
+7. Dùng GitHub CLI của runner để tạo Release mới cùng tiêu đề, ghi chú, installer, blockmap và `latest.yml` trong một quy trình.
 8. Giữ một workflow artifact chứa các file update.
 
 `GH_TOKEN` chỉ tồn tại trong GitHub Actions. Không ghi token vào mã nguồn, `package.json`, `latest.yml`, tài liệu hoặc release assets.
 
-Workflow cũng hỗ trợ `workflow_dispatch` với input `tag`. Dùng cách này để build lại một tag hiện có và sửa Release thiếu asset; workflow checkout đúng tag, xác minh version rồi upload lại cả ba file bằng `--clobber`.
+Workflow cũng hỗ trợ `workflow_dispatch` với input `tag` và `operation`:
+
+- `sync-notes` chỉ đồng bộ tiêu đề/ghi chú, không build hoặc chạm vào asset.
+- `publish-if-missing` chỉ tạo Release khi tag đó chưa có Release. Nếu Release đã tồn tại nhưng thiếu asset, workflow dừng và yêu cầu phát hành patch version mới thay vì ghi đè file công khai.
 
 ## 9. Artifacts bắt buộc
 
