@@ -252,8 +252,9 @@ Môi trường QA local: Windows x64 `10.0.26200`, Node.js `24.13.0`, Electron `
 - [x] `package.json` và `package-lock.json` cùng version `1.2.0`.
 - [x] Tag `v1.2.0` đúng định dạng và khớp package version.
 - [x] Windows CI trên commit phát hành `971d92d` đạt.
+- [x] Windows CI trên commit workflow an toàn `06a99a1` đạt (`31108982161`).
 - [x] Release Windows workflow tạo asset đạt; lượt sửa asset `31106763725` cũng đạt.
-- [ ] Dọn Release record trùng tag ID `366240066`; lượt `31107747686` build/test và upload đạt nhưng sync notes thất bại vì tag có hai Release record.
+- [x] Dọn Release record trùng tag ID `366240066`; chỉ còn Release chính ID `366240065`. Lượt `sync-notes` `31109541690` đạt.
 - [x] GitHub Release stable/public có đúng ba artifact bắt buộc.
 - [x] Tên installer local là `PNG-Bundle-Mockup-Setup-1.2.0.exe`.
 - [x] `latest.yml` local tham chiếu đúng installer và checksum/size.
@@ -261,7 +262,7 @@ Môi trường QA local: Windows x64 `10.0.26200`, Node.js `24.13.0`, Electron `
 - [x] SHA-256 installer GitHub CI hiện tại: `505BB85DA584F4003D74D1C687DC13AC2C05145AD20CAC70AA5B6FDD347E52F1`.
 - [ ] Tải lại installer từ GitHub Release và cài thành công trên máy sạch.
 - [x] File release notes mô tả tính năng, hướng dẫn portable v1.1.0 và giới hạn unsigned.
-- [ ] Đồng bộ file release notes vào body Release chính sau khi dọn record trùng tag.
+- [x] File release notes đã đồng bộ và khớp body Release chính.
 - [x] README và tài liệu trong `docs/` phản ánh đúng version phát hành.
 - [x] Mã nguồn không chứa token/chứng thư/dữ liệu người dùng; `.gitignore` loại release, env và chứng thư local.
 - [x] Link `/releases/latest` trỏ đúng stable release `v1.2.0`.
@@ -275,6 +276,6 @@ Môi trường QA local: Windows x64 `10.0.26200`, Node.js `24.13.0`, Electron `
 | Path persistence |  |  |  |
 | Installer/shortcut/footprint | Codex local QA | 2026-08-06 | NSIS build, cài/chạy/gỡ local, shortcut target/icon, packaged smoke và footprint đạt; chưa test standard-user/VM sạch. |
 | GitHub updater | Codex local QA | 2026-08-06 | Service/mock/UI/provider và metadata remote đạt; live v1.2.0→v1.2.1 còn chờ patch release. |
-| Release artifacts | Codex + GitHub Actions | 2026-08-06 | Stable v1.2.0 có đủ Setup, blockmap, latest.yml; remote version/size/digest đã xác minh. |
+| Release artifacts | Codex + GitHub Actions | 2026-08-06 | Chỉ còn một stable v1.2.0; có đủ Setup, blockmap, latest.yml; `/releases/latest`, notes, version/size/digest đã xác minh. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.
