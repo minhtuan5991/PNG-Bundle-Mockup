@@ -173,10 +173,13 @@ Workflow thực hiện:
 3. Chạy `npm ci`.
 4. Xác minh tag/version.
 5. Chạy `npm test`.
-6. Chạy `npm run release:win` với `GH_TOKEN` của GitHub Actions.
-7. Giữ một workflow artifact chứa các file update.
+6. Chạy `npm run build:installer` để tạo ba file đồng bộ.
+7. Dùng GitHub CLI của runner để tạo hoặc ghi đè Release bằng đủ installer, blockmap và `latest.yml`.
+8. Giữ một workflow artifact chứa các file update.
 
 `GH_TOKEN` chỉ tồn tại trong GitHub Actions. Không ghi token vào mã nguồn, `package.json`, `latest.yml`, tài liệu hoặc release assets.
+
+Workflow cũng hỗ trợ `workflow_dispatch` với input `tag`. Dùng cách này để build lại một tag hiện có và sửa Release thiếu asset; workflow checkout đúng tag, xác minh version rồi upload lại cả ba file bằng `--clobber`.
 
 ## 9. Artifacts bắt buộc
 

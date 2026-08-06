@@ -2,6 +2,12 @@
 
 Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đây. Dự án dùng phiên bản Semantic Versioning.
 
+## [Unreleased]
+
+### Fixed
+
+- Quy trình GitHub Release nay kiểm tra và upload nguyên bộ installer, blockmap và `latest.yml`; hỗ trợ chạy lại thủ công theo tag để sửa release thiếu asset.
+
 ## [1.2.0] - 2026-08-06
 
 ### Added
