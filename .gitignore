@@ -1,0 +1,15 @@
+node_modules/
+release/
+dist/
+coverage/
+*.log
+.DS_Store
+Thumbs.db
+.qa-sample/
+.qa-*.png
+ui-smoke.png
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12

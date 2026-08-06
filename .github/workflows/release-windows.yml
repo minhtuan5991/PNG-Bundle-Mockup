@@ -1,0 +1,57 @@
+name: Release Windows
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify tag matches package version
+        shell: pwsh
+        run: |
+          $packageVersion = node -p "require('./package.json').version"
+          if ("v$packageVersion" -ne "${{ github.ref_name }}") {
+            throw "Tag ${{ github.ref_name }} does not match package version $packageVersion"
+          }
+
+      - name: Run regression tests
+        run: npm test
+
+      - name: Build and publish GitHub Release
+        run: npm run release:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - name: Keep a workflow copy of update artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: PNG-Bundle-Mockup-${{ github.ref_name }}
+          if-no-files-found: error
+          path: |
+            release/PNG-Bundle-Mockup-Setup-*.exe
+            release/PNG-Bundle-Mockup-Setup-*.exe.blockmap
+            release/latest.yml

@@ -1,0 +1,86 @@
+{
+  "name": "png-bundle-mockup",
+  "version": "1.2.0",
+  "description": "Ứng dụng desktop tự động sắp xếp PNG lên ảnh nền mockup.",
+  "main": "src/main.js",
+  "author": "PNG Bundle Mockup",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/minhtuan5991/PNG-Bundle-Mockup.git"
+  },
+  "homepage": "https://github.com/minhtuan5991/PNG-Bundle-Mockup",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.js",
+    "build:win": "npm run build:installer",
+    "build:installer": "electron-builder --win nsis --x64 --publish never",
+    "release:win": "electron-builder --win nsis --x64 --publish always",
+    "pack:win": "electron-builder --win dir --x64 --publish never"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9",
+    "sharp": "^0.35.3"
+  },
+  "devDependencies": {
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.pngbundle.mockup",
+    "productName": "PNG Bundle Mockup",
+    "electronLanguages": [
+      "vi",
+      "en-US"
+    ],
+    "electronUpdaterCompatibility": ">=2.16",
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/sharp/**/*",
+      "node_modules/@img/**/*"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "minhtuan5991",
+        "repo": "PNG-Bundle-Mockup",
+        "channel": "latest",
+        "releaseType": "release"
+      }
+    ],
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "assets/app-icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "PNG-Bundle-Mockup-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "PNG Bundle Mockup",
+      "installerIcon": "assets/app-icon.ico",
+      "uninstallerIcon": "assets/app-icon.ico",
+      "installerHeaderIcon": "assets/app-icon.ico",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true
+    },
+    "npmRebuild": false
+  }
+}

@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' data: file:; style-src 'self'; script-src 'self';"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PNG Bundle Mockup</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <img class="brand-icon" src="../../assets/app-icon.svg" alt="" />
+        <div>
+          <h1 id="appTitle">PNG Bundle Mockup</h1>
+          <p>Tự động dàn PNG lên ảnh nền theo vùng pixel thật</p>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button class="update-button" id="checkUpdateButton" type="button" title="Kiểm tra bản cập nhật mới">
+          <span aria-hidden="true">↻</span>
+          Cập nhật
+        </button>
+        <div class="status-pill" id="appStatus" data-state="ready">
+          <span class="status-dot"></span>
+          <span>Sẵn sàng</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="controls-panel" id="controlsPanel">
+        <section class="panel-card source-card">
+          <div class="section-heading">
+            <span class="step-number">1</span>
+            <div>
+              <h2>Chọn các file PNG</h2>
+              <p>Chọn thư mục, sau đó đánh dấu các file cần ghép.</p>
+            </div>
+          </div>
+
+          <button class="button button-secondary button-full" id="chooseFolderButton" data-lock>
+            <span class="button-icon">▣</span>
+            Chọn thư mục và xem PNG
+          </button>
+          <div class="path-box is-empty" id="sourcePath" title="">
+            Chưa chọn thư mục
+          </div>
+
+          <div class="file-tools">
+            <label class="search-box">
+              <span aria-hidden="true">⌕</span>
+              <input id="fileSearch" type="search" placeholder="Tìm theo tên file…" data-lock />
+            </label>
+            <button class="mini-button" id="selectAllButton" data-lock>Chọn tất cả</button>
+            <button class="mini-button" id="selectNoneButton" data-lock>Bỏ chọn</button>
+          </div>
+
+          <div class="file-list" id="fileList" role="listbox" aria-label="Danh sách PNG">
+            <div class="empty-list">
+              <span class="empty-icon">PNG</span>
+              <p>File PNG trong thư mục sẽ xuất hiện ở đây.</p>
+            </div>
+          </div>
+
+          <div class="selection-summary">
+            <strong id="selectionCount">Đã chọn 0/0 PNG</strong>
+            <span id="selectionHint">Chưa có dữ liệu</span>
+          </div>
+        </section>
+
+        <section class="panel-card">
+          <div class="section-heading compact">
+            <span class="step-number">2</span>
+            <div>
+              <h2>Chọn ảnh nền mẫu</h2>
+              <p>PNG, JPG, WEBP hoặc TIFF.</p>
+            </div>
+          </div>
+
+          <button class="template-picker" id="chooseTemplateButton" data-lock>
+            <span class="template-thumb empty" id="templateThumb"><span>＋</span></span>
+            <span class="template-copy">
+              <strong id="templateName">Chọn ảnh nền mẫu</strong>
+              <small id="templateMeta">Kết quả sẽ giữ nguyên kích thước nền</small>
+            </span>
+            <span class="chevron">›</span>
+          </button>
+
+          <div class="output-options">
+            <label class="check-option">
+              <input id="removeMetadata" type="checkbox" checked data-lock />
+              <span class="option-checkmark" aria-hidden="true"></span>
+              <span class="option-copy">
+                <strong>Xóa Metadata</strong>
+                <small>Thực hiện ở bước cuối sau khi ghép ảnh và watermark.</small>
+              </span>
+            </label>
+            <div class="metadata-groups" id="metadataGroups">
+              <span>Comment</span><span>EXIF</span><span>XMP</span>
+              <span>EXIF thumbnail</span><span>IPTC</span><span>ICC profile</span>
+            </div>
+
+            <label class="check-option">
+              <input id="useWatermark" type="checkbox" data-lock />
+              <span class="option-checkmark" aria-hidden="true"></span>
+              <span class="option-copy">
+                <strong>Gắn Watermark</strong>
+                <small>PNG nền trong suốt, phủ trên lớp trên cùng.</small>
+              </span>
+            </label>
+
+            <button class="watermark-file is-hidden" id="watermarkFile" data-lock>
+              <span class="watermark-thumb" id="watermarkThumb"></span>
+              <span class="watermark-copy">
+                <strong id="watermarkName">Chưa chọn watermark</strong>
+                <small id="watermarkMeta">Bấm để chọn file khác</small>
+              </span>
+              <span class="chevron">›</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="panel-card settings-card">
+          <div class="section-heading compact">
+            <span class="step-number">3</span>
+            <div>
+              <h2>Thiết lập bố cục</h2>
+              <p>App tự tìm số hàng và cột phù hợp nhất.</p>
+            </div>
+          </div>
+
+          <div class="field-grid">
+            <label class="field">
+              <span>Số ảnh mockup</span>
+              <input id="mockupCount" type="number" min="1" step="1" value="1" data-lock />
+            </label>
+            <label class="field">
+              <span>Khoảng cách PNG</span>
+              <div class="input-with-unit">
+                <input id="gap" type="number" min="0" max="500" step="1" value="20" data-lock />
+                <span>px</span>
+              </div>
+            </label>
+          </div>
+
+          <div class="distribution" id="distribution">
+            <span>Chưa có PNG để chia</span>
+          </div>
+
+          <details class="advanced-settings" id="advancedSettings">
+            <summary>Thiết lập nâng cao</summary>
+            <div class="field-grid advanced-grid">
+              <label class="field">
+                <span>Lề trên</span>
+                <div class="input-with-unit">
+                  <input id="topMargin" type="number" min="0" step="1" value="195" data-lock />
+                  <span>px</span>
+                </div>
+              </label>
+              <label class="field">
+                <span>Lề dưới</span>
+                <div class="input-with-unit">
+                  <input id="bottomMargin" type="number" min="0" step="1" value="195" data-lock />
+                  <span>px</span>
+                </div>
+              </label>
+              <label class="field">
+                <span>Lề trái / phải</span>
+                <div class="input-with-unit">
+                  <input id="sideMargin" type="number" min="0" step="1" value="24" data-lock />
+                  <span>px</span>
+                </div>
+              </label>
+              <label class="field">
+                <span>Ngưỡng alpha</span>
+                <input id="alphaThreshold" type="number" min="0" max="254" step="1" value="0" data-lock />
+              </label>
+            </div>
+            <p class="settings-note">
+              Alpha 0 giữ mọi pixel nhìn thấy. Tăng nhẹ nếu file có pixel mờ rác ở ngoài thiết kế.
+            </p>
+          </details>
+        </section>
+
+        <section class="action-card">
+          <div class="action-row">
+            <button class="button button-secondary" id="previewButton" data-lock>
+              Xem trước
+            </button>
+            <button class="button button-primary" id="generateButton" data-lock>
+              Tạo 1 mockup
+            </button>
+            <button class="button button-danger is-hidden" id="cancelButton">
+              Huỷ
+            </button>
+          </div>
+          <button class="button button-success button-full is-hidden" id="openOutputButton">
+            Mở thư mục Done
+          </button>
+        </section>
+      </aside>
+
+      <section class="preview-panel">
+        <div class="preview-toolbar">
+          <div>
+            <span class="eyebrow">PREVIEW</span>
+            <h2 id="previewTitle">Ảnh nền và vùng sắp xếp</h2>
+          </div>
+          <div class="page-navigation is-hidden" id="pageNavigation">
+            <button id="previousPageButton" aria-label="Trang trước">←</button>
+            <span id="pageLabel">1 / 1</span>
+            <button id="nextPageButton" aria-label="Trang sau">→</button>
+          </div>
+        </div>
+
+        <div class="preview-stage" id="previewStage">
+          <div class="preview-placeholder" id="previewPlaceholder">
+            <div class="placeholder-art">
+              <span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <h3>Chọn ảnh nền để bắt đầu</h3>
+            <p>Vùng bố trí hợp lệ và kết quả mockup sẽ hiển thị tại đây.</p>
+          </div>
+
+          <div class="image-frame is-hidden" id="imageFrame">
+            <img id="previewImage" alt="Xem trước mockup" />
+            <div class="safe-zone is-hidden" id="safeZone">
+              <span>Vùng sắp xếp PNG</span>
+            </div>
+          </div>
+
+          <div class="working-overlay is-hidden" id="workingOverlay">
+            <div class="spinner"></div>
+            <strong id="workingTitle">Đang xử lý…</strong>
+            <span id="workingMessage">Vui lòng đợi</span>
+          </div>
+        </div>
+
+        <div class="progress-wrap" id="progressWrap" aria-live="polite">
+          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+          <span id="progressMessage">Sẵn sàng tạo mockup</span>
+        </div>
+
+        <div class="preview-stats">
+          <div class="stat">
+            <span>PNG đã chọn</span>
+            <strong id="statSelected">0</strong>
+          </div>
+          <div class="stat">
+            <span>Kích thước nền</span>
+            <strong id="statTemplate">—</strong>
+          </div>
+          <div class="stat">
+            <span>Bố cục</span>
+            <strong id="statLayout">Tự động</strong>
+          </div>
+          <div class="stat wide">
+            <span>Đầu ra</span>
+            <strong id="statOutput">Thư mục nguồn / Done</strong>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div class="toast-region" id="toastRegion" aria-live="assertive"></div>
+
+    <dialog class="source-picker-dialog" id="sourcePickerDialog">
+      <div class="source-picker-shell">
+        <header class="source-picker-header">
+          <div>
+            <span class="eyebrow">CHỌN TRƯỚC KHI NẠP</span>
+            <h2>Chọn PNG bằng hình preview</h2>
+            <p id="sourcePickerPath"></p>
+          </div>
+          <button class="dialog-close" id="sourcePickerClose" aria-label="Đóng">×</button>
+        </header>
+
+        <div class="source-picker-tools">
+          <label class="search-box source-picker-search">
+            <span aria-hidden="true">⌕</span>
+            <input id="sourcePickerSearch" type="search" placeholder="Tìm theo tên file…" />
+          </label>
+          <button class="mini-button" id="sourcePickerSelectAll">Chọn tất cả đang hiện</button>
+          <button class="mini-button" id="sourcePickerSelectNone">Bỏ chọn đang hiện</button>
+        </div>
+
+        <div class="source-picker-grid" id="sourcePickerGrid"></div>
+
+        <footer class="source-picker-footer">
+          <div>
+            <strong id="sourcePickerCount">Đã chọn 0/0 PNG</strong>
+            <span>Chỉ những ảnh đã chọn mới được nạp vào app.</span>
+          </div>
+          <div class="source-picker-actions">
+            <button class="button button-secondary" id="sourcePickerCancel">Hủy</button>
+            <button class="button button-primary" id="sourcePickerConfirm">Nạp 0 PNG</button>
+          </div>
+        </footer>
+      </div>
+    </dialog>
+
+    <dialog class="result-dialog" id="resultDialog">
+      <form method="dialog">
+        <div class="result-icon">✓</div>
+        <h2 id="dialogTitle">Đã tạo mockup</h2>
+        <p id="dialogMessage"></p>
+        <div class="dialog-details" id="dialogDetails"></div>
+        <div class="dialog-actions">
+          <button class="button button-secondary" value="close">Đóng</button>
+          <button class="button button-success" id="dialogOpenFolder" value="open">Mở thư mục Done</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="update-dialog" id="updateDialog">
+      <div class="update-dialog-body">
+        <div class="update-icon" id="updateIcon" aria-hidden="true">↻</div>
+        <h2 id="updateTitle">Cập nhật ứng dụng</h2>
+        <p id="updateMessage">Đang kiểm tra phiên bản mới…</p>
+        <div class="update-version" id="updateVersion"></div>
+        <div class="update-download is-hidden" id="updateDownload">
+          <div class="progress-track"><div class="progress-fill" id="updateProgressFill"></div></div>
+          <span id="updateProgressText">0%</span>
+        </div>
+        <div class="dialog-actions">
+          <button class="button button-secondary" id="updateCloseButton" type="button">Để sau</button>
+          <button class="button button-primary" id="updatePrimaryButton" type="button">Kiểm tra lại</button>
+        </div>
+      </div>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>
