@@ -4,7 +4,7 @@
 
 ## Trạng thái mốc
 
-- [x] QA/release v1.2.1 ngày 2026-08-07: **66/66 test đạt**; source/package basic+region smoke, headless Input backup exit `0`, single-instance lock exit `3`, NSIS final, GitHub Release/asset và thông báo updater v1.2.0 đều đạt. Windows CI bị hủy trước khi có runner trong sự cố Actions; cài mới và download/cài nâng cấp tương tác còn chờ.
+- [x] QA/release v1.2.1 ngày 2026-08-07: **66/66 test đạt**; Windows CI thử lại, source/package basic+region smoke, headless Input backup exit `0`, single-instance lock exit `3`, NSIS final, GitHub Release/asset và thông báo updater v1.2.0 đều đạt. Cài mới và download/cài nâng cấp tương tác còn chờ.
 - [x] Mốc automated ngay trước khi tích hợp updater: **20/20 test đạt**.
 - [x] QA local v1.2.0 ngày 2026-08-06: **26/26 test đạt**, 0 fail, 0 skipped/todo.
 - [x] Smoke mã nguồn và payload đóng gói đạt; NSIS build đủ ba update artifact.
@@ -350,7 +350,7 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của v1.2.0 trừ kh
 - [x] README, changelog, project history, release guide và checklist phản ánh đúng chức năng thực tế ở mốc QA local.
 - [x] Review tài sản `Input` sẽ commit/đóng gói trước tag: chỉ README và PDF mẫu flattened dùng placeholder an toàn; marker runtime bị ignore và loại khỏi payload.
 - [x] Commit/tag phát hành chỉ chứa thay đổi chủ đích; không có token, chứng thư, output `Done`, file tạm hoặc cache.
-- [ ] Windows CI trên commit phát hành đạt. Run [`31125907971`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/actions/runs/31125907971) bị hủy khi chưa có runner/step nào chạy trong incident GitHub Actions mức `critical`; conclusion tổng là `failure`, không dùng làm kết quả test code.
+- [x] Windows CI trên đúng tag/commit phát hành đạt tại run [`31126793200`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/actions/runs/31126793200): checkout, Node 22, `npm ci`, regression tests và package unpacked đều success. Run đầu `31125907971` bị hủy trước runner trong outage, không phải lỗi code.
 - [x] Tag `v1.2.1` trỏ đúng commit `2dfc7a3219d80c5f29f6a2eb8be5247efa25e1a3` và khớp tuyệt đối package version.
 - [ ] Release Windows workflow đạt. Tag event được giao trễ thành run [`31126661713`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/actions/runs/31126661713), vẫn queued không có runner tại 02:15 ngày 2026-08-07; cancel/force-cancel trả 500/502 trong outage. Dùng fallback publish thủ công từ đúng ba artifact local đã QA và xác minh tải ngược; workflow fail-closed trước Release public.
 - [x] GitHub Release `v1.2.1` ID `366371391` stable/public, không draft/prerelease và chỉ có một Release record cho tag.
@@ -375,6 +375,6 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của v1.2.0 trừ kh
 | v1.2.1 local core/PDF/single | Codex local QA | 2026-08-07 | PDF mẫu thật render/click annotation/text extraction đạt; integration bundle + single + PDF chung `Done` đạt; source/package basic+region smoke đều PASS. |
 | v1.2.1 installer/Input footprint | Codex local QA | 2026-08-07 | NSIS 104,334,512 byte, blockmap 109,600 byte, `latest.yml` SHA-512 khớp; headless Input backup exit `0`, single-instance lock exit `3` và packaged basic+region smoke đạt; SHA-256 local `6723…C9C0`; Authenticode NotSigned. |
 | Live updater v1.2.0 → v1.2.1 | Codex local QA | 2026-08-07 | Auto-check/thông báo version mới đạt; download, restart/cài và xác minh dữ liệu sau nâng cấp chưa chạy. |
-| v1.2.1 release artifacts | Codex + manual GitHub fallback | 2026-08-07 | Release ID `366371391` stable/public, đúng ba asset, `/releases/latest` và checksum/metadata remote đạt. Windows CI `31125907971` bị hủy trước runner; Release Windows `31126661713` được giao trễ nhưng vẫn queued và không thể ghi đè Release public. |
+| v1.2.1 release artifacts | Codex + GitHub Actions + manual fallback | 2026-08-07 | Release ID `366371391` stable/public, đúng ba asset, `/releases/latest` và checksum/metadata remote đạt; Windows CI `31126793200` success. Release Windows `31126661713` được giao trễ nhưng vẫn queued và không thể ghi đè Release public. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.
