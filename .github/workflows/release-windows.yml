@@ -84,6 +84,23 @@ jobs:
             throw "GitHub Release publish failed with exit code $LASTEXITCODE"
           }
 
+          $releaseNotesPath = "docs/RELEASE-NOTES-$packageVersion.md"
+          if (-not (Test-Path -LiteralPath $releaseNotesPath)) {
+            $releaseNotesPath = Join-Path $env:RUNNER_TEMP "RELEASE-NOTES-$packageVersion.md"
+            $notesEndpoint = "repos/${{ github.repository }}/contents/docs/RELEASE-NOTES-$packageVersion.md?ref=${{ github.event.repository.default_branch }}"
+            gh api $notesEndpoint -H "Accept: application/vnd.github.raw+json" |
+              Set-Content -LiteralPath $releaseNotesPath -Encoding utf8NoBOM
+
+            if ($LASTEXITCODE -ne 0) {
+              throw "Unable to download release notes for $env:RELEASE_TAG"
+            }
+          }
+
+          gh release edit "$env:RELEASE_TAG" --repo "${{ github.repository }}" --title "PNG Bundle Mockup $env:RELEASE_TAG" --notes-file $releaseNotesPath
+          if ($LASTEXITCODE -ne 0) {
+            throw "GitHub Release notes update failed with exit code $LASTEXITCODE"
+          }
+
       - name: Keep a workflow copy of update artifacts
         uses: actions/upload-artifact@v4
         with:

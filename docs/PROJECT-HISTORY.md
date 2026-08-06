@@ -2,7 +2,7 @@
 
 > Cập nhật: 2026-08-06
 > Phiên bản sẵn sàng phát hành: `1.2.0`
-> Trạng thái: mã nguồn, test, payload đóng gói và một lượt cài/chạy/gỡ local đã đạt; còn cần push repository/tag và kiểm thử nâng cấp online trên máy/VM sạch.
+> Trạng thái: mã nguồn và tag `v1.2.0` đã lên GitHub; Release stable công khai có đủ ba update asset. Còn cần kiểm thử nâng cấp live `v1.2.0 → v1.2.1` trên máy/VM sạch.
 
 ## 1. Mục đích tài liệu
 
@@ -255,7 +255,9 @@ Nếu tiếp tục cung cấp portable như tài sản phụ trong tương lai, 
 - `npm audit --omit=dev --audit-level=high`: **0 vulnerabilities**.
 - Build NSIS thành công và sinh đủ installer, blockmap, `latest.yml`; payload có `app-update.yml` đúng GitHub provider.
 - Cài thử im lặng vào thư mục QA riêng đạt; shortcut Desktop/Start Menu trỏ đúng EXE và icon; app đã cài smoke exit `0`; uninstaller xóa sạch app cùng hai shortcut.
-- SHA-256 installer: `271BDF3030AA2E38E89D3B64550E2954D9A4BB314B09D2A94663189E32087117`.
+- SHA-256 installer build local: `271BDF3030AA2E38E89D3B64550E2954D9A4BB314B09D2A94663189E32087117`.
+- SHA-256 installer trên GitHub Release (CI build): `ED8B853D73A3E212FABC254D3CA7999F14582A5470CBEA83BE5F799F824EA989`.
+- Commit phát hành: `971d92d`; Windows CI và Release Windows đều đạt. Workflow publish được gia cố tại commit `6076701` và chạy lại thành công cho tag hiện có.
 - Installer và app hiện **NotSigned**; vẫn nên kiểm thử giao diện installer bằng tài khoản standard trên máy/VM sạch và live update hai phiên bản trước khi phân phối rộng.
 
 ## 11. Lịch sử phiên bản
@@ -294,5 +296,6 @@ Nếu tiếp tục cung cấp portable như tài sản phụ trong tương lai, 
 - [x] Cập nhật README, tài liệu và SHA-256 installer.
 - [x] Cài/chạy/gỡ NSIS local trong thư mục QA riêng; xác nhận hai shortcut và icon target.
 - [ ] Lặp lại cài đặt tương tác bằng tài khoản standard user trên máy hoặc VM sạch.
-- [ ] Push source và tag `v1.2.0` lên GitHub để tạo release đầu tiên.
-- [ ] Kiểm tra live update từ v1.2.0 lên một bản patch cao hơn; repository hiện chưa có release nên chưa thể chạy end-to-end.
+- [x] Push source, tag `v1.2.0` và tạo GitHub Release stable công khai.
+- [x] Xác minh Release có installer, blockmap và `latest.yml`; version, size và provider khớp.
+- [ ] Kiểm tra live update từ v1.2.0 lên một bản patch cao hơn; cần phát hành v1.2.1 để chạy end-to-end.

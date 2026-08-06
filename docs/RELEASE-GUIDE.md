@@ -12,17 +12,17 @@ https://github.com/minhtuan5991/PNG-Bundle-Mockup
 
 Mỗi tag `vX.Y.Z` kích hoạt workflow `.github/workflows/release-windows.yml`. Workflow kiểm tra tag khớp `package.json`, chạy test, build installer và upload các file updater.
 
-## 2. Trạng thái repository ban đầu
+## 2. Trạng thái repository
 
-Tại thời điểm audit ngày 2026-08-06:
+Sau lần phát hành đầu tiên ngày 2026-08-06:
 
 - Repository GitHub là public.
-- Repository có size `0`.
-- Chưa có branch thực tế.
-- Chưa có release.
-- Thư mục làm việc `D:\File2Mockup` chưa được khởi tạo Git.
+- Nhánh mặc định `main` đã có mã nguồn.
+- Tag `v1.2.0` trỏ tới commit phát hành `971d92d`.
+- GitHub Release `v1.2.0` là stable/public và có đủ installer, blockmap, `latest.yml`.
+- Thư mục `D:\File2Mockup` đã được khởi tạo Git và theo dõi `origin/main`.
 
-Sau lần push đầu tiên, cập nhật hoặc xóa mục trạng thái này để tránh gây nhầm lẫn cho người tiếp quản.
+Workflow upload đầy đủ asset được gia cố từ commit `6076701`; bản hiện tại còn đồng bộ tiêu đề và file `docs/RELEASE-NOTES-X.Y.Z.md` vào GitHub Release. Có thể chạy lại theo tag bằng `workflow_dispatch` nếu cần sửa asset hoặc ghi chú.
 
 ## 3. Điều kiện trước khi phát hành
 
