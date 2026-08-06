@@ -4,11 +4,11 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
-Chưa có thay đổi sau nhánh chuẩn bị v1.2.1.
+Chưa có thay đổi sau bản phát hành v1.2.1.
 
 ## [1.2.1] - 2026-08-07
 
-Trạng thái QA, installer, GitHub Release và kiểm thử nâng cấp live được theo dõi trong `docs/REGRESSION-CHECKLIST.md`; không xem mục này là xác nhận bản phát hành đã đạt.
+Phát hành stable/public ngày 2026-08-07. Trạng thái QA, ngoại lệ GitHub Actions và phần nâng cấp live còn lại được theo dõi trong `docs/REGRESSION-CHECKLIST.md`.
 
 ### Added
 

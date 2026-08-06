@@ -4,7 +4,7 @@
 
 ## Trạng thái mốc
 
-- [x] QA local v1.2.1 ngày 2026-08-07: **66/66 test đạt**; source/package basic+region smoke, headless Input backup exit `0`, single-instance lock exit `3` và NSIS final đều đạt; GitHub CI/Release, cài mới tương tác và nâng cấp live còn chờ.
+- [x] QA/release v1.2.1 ngày 2026-08-07: **66/66 test đạt**; source/package basic+region smoke, headless Input backup exit `0`, single-instance lock exit `3`, NSIS final, GitHub Release/asset và thông báo updater v1.2.0 đều đạt. Windows CI bị hủy trước khi có runner trong sự cố Actions; cài mới và download/cài nâng cấp tương tác còn chờ.
 - [x] Mốc automated ngay trước khi tích hợp updater: **20/20 test đạt**.
 - [x] QA local v1.2.0 ngày 2026-08-06: **26/26 test đạt**, 0 fail, 0 skipped/todo.
 - [x] Smoke mã nguồn và payload đóng gói đạt; NSIS build đủ ba update artifact.
@@ -278,14 +278,14 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của v1.2.0 trừ kh
 ### D1. Điều kiện release test
 
 - [ ] Có một bản installer cũ hơn đã cài trên máy/VM sạch.
-- [ ] Có một GitHub Release mới hơn, public, không draft và không prerelease đối với stable channel.
-- [ ] Release có installer, blockmap và `latest.yml` cùng version.
-- [ ] App test là bản packaged; không dùng `npm start` để kết luận updater hoạt động.
+- [x] Có một GitHub Release mới hơn, public, không draft và không prerelease đối với stable channel: `v1.2.1`, Release ID `366371391`.
+- [x] Release có installer, blockmap và `latest.yml` cùng version; cả ba asset public đã được tải ngược và xác minh.
+- [x] App test là bản packaged: installer v1.2.0 tại máy QA; không dùng `npm start` để kết luận updater hoạt động.
 
 ### D2. Auto/manual check
 
-- [ ] App khởi động và vẫn dùng được khi đang kiểm tra update.
-- [ ] Có bản mới thì hiện thông báo đúng version.
+- [x] App packaged v1.2.0 khởi động, renderer phản hồi và hoàn tất auto-check update.
+- [x] Có bản mới thì hiện đúng **Có phiên bản mới**, `v1.2.0 → v1.2.1`, nút **Tải cập nhật** và action `download`.
 - [ ] Không có bản mới: auto check không gây phiền; manual check báo đã mới nhất.
 - [ ] Chọn “Để sau” không tải hoặc cài ngay.
 - [ ] Kiểm tra thủ công có phản hồi trạng thái rõ.
@@ -349,17 +349,17 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của v1.2.0 trừ kh
 - [x] `docs/RELEASE-NOTES-1.2.1.md` không còn placeholder biên tập; URL placeholder trong PDF mẫu là dữ liệu an toàn có chủ đích.
 - [x] README, changelog, project history, release guide và checklist phản ánh đúng chức năng thực tế ở mốc QA local.
 - [x] Review tài sản `Input` sẽ commit/đóng gói trước tag: chỉ README và PDF mẫu flattened dùng placeholder an toàn; marker runtime bị ignore và loại khỏi payload.
-- [ ] Working tree chỉ chứa thay đổi chủ đích; không có token, chứng thư, output `Done`, file tạm hoặc cache.
-- [ ] Windows CI trên commit phát hành đạt; ghi URL/run ID: `CHƯA XÁC MINH`.
-- [ ] Tạo tag `v1.2.1` đúng commit và khớp tuyệt đối package version.
-- [ ] Release Windows workflow đạt; ghi URL/run ID: `CHƯA XÁC MINH`.
-- [ ] GitHub Release `v1.2.1` stable/public, không draft/prerelease và chỉ có một Release record cho tag.
-- [ ] Release có đủ Setup, `.exe.blockmap`, `latest.yml` cùng version và checksum/size khớp.
+- [x] Commit/tag phát hành chỉ chứa thay đổi chủ đích; không có token, chứng thư, output `Done`, file tạm hoặc cache.
+- [ ] Windows CI trên commit phát hành đạt. Run [`31125907971`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/actions/runs/31125907971) bị hủy khi chưa có runner/step nào chạy trong incident GitHub Actions mức `critical`; conclusion tổng là `failure`, không dùng làm kết quả test code.
+- [x] Tag `v1.2.1` trỏ đúng commit `2dfc7a3219d80c5f29f6a2eb8be5247efa25e1a3` và khớp tuyệt đối package version.
+- [ ] Release Windows workflow đạt. Tag event không tạo run trong sự cố Actions; dùng fallback publish thủ công từ đúng ba artifact local đã QA và xác minh tải ngược.
+- [x] GitHub Release `v1.2.1` ID `366371391` stable/public, không draft/prerelease và chỉ có một Release record cho tag.
+- [x] Release có đủ Setup, `.exe.blockmap`, `latest.yml` cùng version và checksum/size khớp.
 - [x] SHA-256 installer local v1.2.1 đã ghi vào release notes: `6723EF04ACE0595DEAD7C606A5F66C39F9608D2DFDE470ED73FA24ED775AC9C0`.
-- [ ] Sau khi publish, tải lại installer GitHub/CI, tính SHA-256 riêng và không dùng checksum local để xác nhận artifact remote.
+- [x] Sau khi publish, đã tải lại cả ba asset công khai và tính checksum độc lập; installer remote SHA-256 `6723EF04ACE0595DEAD7C606A5F66C39F9608D2DFDE470ED73FA24ED775AC9C0`.
 - [ ] Tải installer từ chính GitHub Release và cài/nâng cấp thành công trên máy/VM sạch.
-- [ ] `/releases/latest` trỏ đúng `v1.2.1` sau khi publish.
-- [ ] Đồng bộ body GitHub Release từ đúng `docs/RELEASE-NOTES-1.2.1.md`.
+- [x] `/releases/latest` trỏ đúng `v1.2.1` sau khi publish.
+- [x] Body GitHub Release được đồng bộ từ `docs/RELEASE-NOTES-1.2.1.md`; commit hậu phát hành sẽ ghi lại trạng thái công khai/updater/CI cuối.
 
 ## F. Sign-off
 
@@ -369,12 +369,12 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của v1.2.0 trừ kh
 | Manual core features |  |  |  |
 | Path persistence |  |  |  |
 | v1.2.0 installer/shortcut/footprint | Codex local QA | 2026-08-06 | NSIS build, cài/chạy/gỡ local, shortcut target/icon, packaged smoke và footprint đạt; chưa test standard-user/VM sạch. |
-| v1.2.0 GitHub updater | Codex local QA | 2026-08-06 | Service/mock/UI/provider và metadata remote đạt; live v1.2.0→v1.2.1 còn chờ patch release. |
+| v1.2.0 GitHub updater | Codex local QA | 2026-08-07 | Bản packaged v1.2.0 nhận đúng stable v1.2.1 và action `download`; không bấm tải/cài nên phần restart/cài đè còn chờ. |
 | v1.2.0 release artifacts | Codex + GitHub Actions | 2026-08-06 | Chỉ còn một stable v1.2.0; có đủ Setup, blockmap, latest.yml; `/releases/latest`, notes, version/size/digest đã xác minh. |
 | v1.2.1 automated tests | Codex local QA | 2026-08-07 | 66/66 đạt sau `npm ci`; 0 fail/skipped/todo; production audit 0 vulnerabilities. |
 | v1.2.1 local core/PDF/single | Codex local QA | 2026-08-07 | PDF mẫu thật render/click annotation/text extraction đạt; integration bundle + single + PDF chung `Done` đạt; source/package basic+region smoke đều PASS. |
 | v1.2.1 installer/Input footprint | Codex local QA | 2026-08-07 | NSIS 104,334,512 byte, blockmap 109,600 byte, `latest.yml` SHA-512 khớp; headless Input backup exit `0`, single-instance lock exit `3` và packaged basic+region smoke đạt; SHA-256 local `6723…C9C0`; Authenticode NotSigned. |
-| Live updater v1.2.0 → v1.2.1 | Chờ GitHub Release |  | Chưa thể chạy trước khi v1.2.1 public; bản v1.2.0 trên máy QA được giữ nguyên. |
-| v1.2.1 release artifacts | Chờ GitHub Actions |  | Build local đủ ba artifact; CI build/public Release chưa chạy. |
+| Live updater v1.2.0 → v1.2.1 | Codex local QA | 2026-08-07 | Auto-check/thông báo version mới đạt; download, restart/cài và xác minh dữ liệu sau nâng cấp chưa chạy. |
+| v1.2.1 release artifacts | Codex + manual GitHub fallback | 2026-08-07 | Release ID `366371391` stable/public, đúng ba asset, `/releases/latest` và checksum/metadata remote đạt. Windows CI `31125907971` bị hủy trước runner do GitHub Actions outage. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.

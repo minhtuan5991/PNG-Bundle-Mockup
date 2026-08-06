@@ -1,6 +1,6 @@
 # PNG Bundle Mockup v1.2.1
 
-> Trạng thái tài liệu: automated QA, source/package smoke, headless Input backup và installer local đã hoàn tất ngày 2026-08-07. Windows CI, GitHub Release, cài mới tương tác và updater live vẫn đang chờ.
+> Trạng thái phát hành: v1.2.1 đã được publish stable/public ngày 2026-08-07 tại [GitHub Release v1.2.1](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.2.1). Automated QA, source/package smoke, headless Input backup, ba asset GitHub và lượt phát hiện update `v1.2.0 → v1.2.1` đều đã xác minh. Windows CI run `31125907971` bị GitHub hủy khi chưa cấp runner trong sự cố Actions diện rộng; cài mới tương tác và lượt tải/cài nâng cấp hoàn chỉnh vẫn là kiểm tra hậu phát hành còn lại.
 
 ## Điểm mới
 
@@ -50,7 +50,7 @@ App tạo một output cho mỗi ảnh mẫu. Số PNG nguồn được chọn n
 
 ## Cài đặt và cập nhật
 
-Người dùng mới tải `PNG-Bundle-Mockup-Setup-1.2.1.exe` từ Assets của GitHub Release chính thức. Người đang dùng installer v1.2.0 có thể kiểm tra và cài v1.2.1 trong app sau khi Release v1.2.1 ở trạng thái stable/public và có đủ:
+Người dùng mới tải `PNG-Bundle-Mockup-Setup-1.2.1.exe` từ Assets của [GitHub Release chính thức](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.2.1). Người đang dùng installer v1.2.0 có thể kiểm tra, tải và cài v1.2.1 ngay trong app; Release stable/public có đủ:
 
 - `PNG-Bundle-Mockup-Setup-1.2.1.exe`
 - `PNG-Bundle-Mockup-Setup-1.2.1.exe.blockmap`
@@ -81,9 +81,12 @@ Bản portable v1.1.0 không có updater; người dùng portable vẫn phải c
 | NSIS installer và ba update artifact | Build local đạt; installer **104,334,512 byte**, blockmap **109,600 byte**; `latest.yml` cùng version/path/size và SHA-512 khớp installer. |
 | SHA-256 installer local | `6723EF04ACE0595DEAD7C606A5F66C39F9608D2DFDE470ED73FA24ED775AC9C0` |
 | Chữ ký Authenticode local | **NotSigned**. |
-| Checksum installer GitHub/CI | Chưa có cho đến khi workflow Release Windows build và publish artifact; không dùng SHA local để xác nhận file CI. |
+| GitHub Release | Release ID `366371391` là stable/public, không prerelease; `/releases/latest` trỏ đúng `v1.2.1` và chỉ có đúng ba asset bắt buộc. |
+| Checksum installer GitHub | Asset public đã được tải ngược và tính checksum độc lập: SHA-256 `6723EF04ACE0595DEAD7C606A5F66C39F9608D2DFDE470ED73FA24ED775AC9C0`; `latest.yml` public có SHA-256 `64407FAE9A0EEF3041C6BEA1BC031499F941C962DA0C94DBA5BFC84BBAD9911B` và khớp version/path/size/SHA-512 của installer remote. |
+| Updater v1.2.0 | Bản installer v1.2.0 đang cài đã tự mở hộp thoại **Có phiên bản mới**, hiển thị `v1.2.0 → v1.2.1`, nút **Tải cập nhật** và action `download`. Không bấm tải/cài; app được đóng sau kiểm tra và bản v1.2.0 được giữ nguyên. |
+| Windows CI | Run [`31125907971`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/actions/runs/31125907971) kết thúc `failure` vì job bị `cancelled` sau khoảng 15 phút mà chưa được cấp runner; không có step nào chạy. Tại thời điểm đó GitHub Status báo **Partial System Outage**, incident Actions mức `critical`. Release dùng ba artifact local đã QA và được tải ngược để xác minh từng byte. |
 | Cài mới trên Windows x64 | Chưa chạy để tránh ghi đè bản v1.2.0 đang được dùng trên máy QA; payload đóng gói đã smoke trực tiếp. |
-| Nâng cấp live `v1.2.0 → v1.2.1` | Chờ v1.2.1 được phát hành public; đây là kiểm tra hậu phát hành còn lại. |
+| Nâng cấp live `v1.2.0 → v1.2.1` | Phần phát hiện/thông báo update đã đạt. Chưa chạy download, restart và cài đè để tránh thay đổi bản v1.2.0 cùng dữ liệu thật trên máy QA. |
 | Bảo toàn dữ liệu | Unit test snapshot/restore và headless backup đạt. Lượt `v1.2.0 → v1.2.1` sẽ kiểm tra preferences/localStorage/Done; persistence của `Input` và vùng in được kiểm tra riêng từ v1.2.1 vì v1.2.0 chưa có hai dữ liệu này. |
 
 ## Lưu ý

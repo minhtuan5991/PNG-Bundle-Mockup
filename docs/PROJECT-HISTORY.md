@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
 > Cập nhật: 2026-08-07
-> Phiên bản mã nguồn đang chuẩn bị: `1.2.1`
-> Bản stable hiện có: `v1.2.0`
-> Trạng thái: automated QA, source/package smoke, headless Input backup và installer local v1.2.1 đã hoàn tất; Windows CI, tag, GitHub Release, cài mới tương tác và nâng cấp live `v1.2.0 → v1.2.1` là các mốc còn lại.
+> Phiên bản mã nguồn hiện tại: `1.2.1`
+> Bản stable hiện có: `v1.2.1`
+> Trạng thái: tag và GitHub Release v1.2.1 đã publish stable/public với đúng ba asset; updater v1.2.0 nhận đúng thông báo v1.2.1. Windows CI bị hủy trước khi có runner trong incident GitHub Actions; fresh install và lượt download/cài nâng cấp tương tác vẫn chưa chạy.
 
 ## 1. Mục đích tài liệu
 
@@ -20,7 +20,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.2.1` — đang chuẩn bị, chưa xác nhận phát hành |
+| Phiên bản mã nguồn | `1.2.1` — đã phát hành stable/public |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
@@ -367,7 +367,7 @@ Các số liệu dưới đây là mốc đã chốt của v1.2.0. Không dùng 
 - Thêm GitHub Actions cho CI và phát hành theo tag.
 - Thêm tài liệu bàn giao, release guide và regression checklist.
 
-### v1.2.1 — QA local đã đạt, đang chuẩn bị phát hành
+### v1.2.1 — phát hành stable/public
 
 - Thêm `Input` cạnh EXE cho PDF mẫu và ảnh mockup đơn.
 - Thêm kéo-thả PNG từ nhiều thư mục.
@@ -375,7 +375,7 @@ Các số liệu dưới đây là mốc đã chốt của v1.2.0. Không dùng 
 - Thêm mockup đơn, vùng in `42:48` lưu theo template và chọn PNG nguồn ngẫu nhiên.
 - Dùng watermark trên lớp trên cùng cho cả bundle và mockup đơn; lưu mọi output vào cùng `Done`.
 - Thêm dependency `pdf-lib` và mở rộng payload installer.
-- QA local đạt 66/66 test sau `npm ci`; source/package basic và region-editor smoke, headless Input backup và bộ cài NSIS cuối đều đạt sau các bản vá hardening. GitHub CI/Release, cài mới tương tác và nâng cấp live còn chờ.
+- QA local đạt 66/66 test sau `npm ci`; source/package basic và region-editor smoke, headless Input backup và bộ cài NSIS cuối đều đạt sau các bản vá hardening. Tag/Release đã public và updater v1.2.0 nhận đúng thông báo; cài mới tương tác và lượt download/cài nâng cấp hoàn chỉnh còn chờ.
 
 Mốc QA local v1.2.1 ngày 2026-08-07:
 
@@ -388,8 +388,10 @@ Mốc QA local v1.2.1 ngày 2026-08-07:
 - NSIS local tạo đủ `PNG-Bundle-Mockup-Setup-1.2.1.exe`, blockmap và `latest.yml`; size/SHA-512 trong metadata khớp.
 - SHA-256 installer local: `6723EF04ACE0595DEAD7C606A5F66C39F9608D2DFDE470ED73FA24ED775AC9C0`; trạng thái Authenticode: **NotSigned**.
 - Kích thước installer final local: 104,334,512 byte; blockmap: 109,600 byte. Version/path/size và SHA-512 trong `latest.yml` khớp file thực tế.
-- Checksum này chỉ dành cho installer local. Artifact do GitHub Actions build phải được tải lại, tính checksum riêng và ghi bổ sung sau khi Release public.
-- Không chạy cài đè vì máy QA đang dùng v1.2.0; fresh-install/upgrade live được giữ là kiểm tra hậu phát hành thay vì làm thay đổi bản hiện tại.
+- Release ID `366371391` đã public với đúng ba asset. Cả ba asset được tải ngược từ GitHub và khớp từng byte với bản local; installer remote có SHA-256 `6723EF04ACE0595DEAD7C606A5F66C39F9608D2DFDE470ED73FA24ED775AC9C0`.
+- `latest.yml` public có SHA-256 `64407FAE9A0EEF3041C6BEA1BC031499F941C962DA0C94DBA5BFC84BBAD9911B`; version/path/size/SHA-512 khớp installer public.
+- Bản cài v1.2.0 trên máy QA đã tự hiện **Có phiên bản mới**, `v1.2.0 → v1.2.1`, với action `download`. Không bấm tải/cài để không thay đổi app và dữ liệu thật.
+- Windows CI run `31125907971` kết thúc failure vì job bị GitHub hủy sau khoảng 15 phút mà chưa cấp runner hoặc chạy step nào. GitHub Status lúc đó là Partial System Outage, incident Actions mức critical; workflow Release Windows theo tag không được tạo nên bản public dùng fallback thủ công đã xác minh ở trên.
 
 ## 12. Trạng thái chốt v1.2.0
 
@@ -404,9 +406,9 @@ Mốc QA local v1.2.1 ngày 2026-08-07:
 - [x] Push source, tag `v1.2.0` và tạo GitHub Release stable công khai.
 - [x] Xác minh Release có installer, blockmap và `latest.yml`; version, size và provider khớp.
 - [x] Xóa đúng Release record trùng ID `366240066` (giữ tag và Release chính ID `366240065`) rồi chạy `sync-notes` thành công.
-- [ ] Kiểm tra live update từ v1.2.0 lên một bản patch cao hơn; cần phát hành v1.2.1 để chạy end-to-end.
+- [ ] Hoàn tất download/restart/cài live từ v1.2.0 lên v1.2.1; phần phát hiện và thông báo version mới đã đạt ngày 2026-08-07.
 
-## 13. Trạng thái chuẩn bị v1.2.1
+## 13. Trạng thái phát hành v1.2.1
 
 - [x] Root review đầy đủ code và luồng UI của Input, kéo-thả, PDF Download, mockup đơn và vùng in.
 - [x] Chạy toàn bộ automated test suite từ lockfile sạch: 66/66 đạt, 0 fail/skipped/todo.
@@ -416,8 +418,12 @@ Mốc QA local v1.2.1 ngày 2026-08-07:
 - [x] Kiểm tra lưu/nạp lại vùng in và invalidation khi kích thước template thay đổi bằng automated tests.
 - [x] Chạy renderer smoke cho màn hình chính, trạng thái Input, trình chỉnh vùng in và payload đóng gói.
 - [x] Build NSIS; xác nhận `Input` nằm cạnh EXE, `pdf-lib` có trong ASAR và payload không thiếu dependency.
+- [x] Push commit `2dfc7a3`, tạo tag `v1.2.1` đúng package version và publish một GitHub Release stable/public duy nhất.
+- [x] Xác minh Release ID `366371391`, `/releases/latest`, đúng ba asset và checksum/metadata sau khi tải ngược.
+- [x] Bản installer v1.2.0 nhận đúng thông báo `v1.2.1` và chỉ ở action `download`; không tự tải/cài.
 - [ ] Cài mới trên Windows x64 bằng tài khoản phù hợp và kiểm tra toàn bộ output vào `Done`.
 - [ ] Cài/nâng cấp live `v1.2.0 → v1.2.1`; xác nhận preferences, localStorage, `Done`, app identity và các chức năng v1.2.1 sau nâng cấp.
 - [ ] Kiểm tra persistence riêng từ v1.2.1: lưu vùng in và tài sản `Input`, sau đó gỡ/cài lại hoặc nâng lên patch kế tiếp để xác nhận snapshot/hook khôi phục đúng.
-- [ ] Windows CI và Release Windows đạt; Release stable/public có đủ Setup, blockmap và `latest.yml` cùng version.
-- [x] Thay placeholder trong `docs/RELEASE-NOTES-1.2.1.md` bằng kết quả QA local và trạng thái chờ GitHub/live rõ ràng.
+- [ ] Windows CI đạt; run `31125907971` bị hủy trước khi có runner do sự cố GitHub Actions, không phải kết quả test code.
+- [ ] Release Windows workflow đạt; tag event không tạo run trong cùng sự cố, bản phát hành đã dùng fallback thủ công fail-closed.
+- [x] Thay placeholder trong `docs/RELEASE-NOTES-1.2.1.md` bằng kết quả QA, GitHub Release, updater và ngoại lệ CI thực tế.

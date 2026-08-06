@@ -14,13 +14,15 @@ Mỗi tag `vX.Y.Z` kích hoạt workflow `.github/workflows/release-windows.yml`
 
 ## 2. Trạng thái repository
 
-Sau lần phát hành đầu tiên ngày 2026-08-06:
+Trạng thái sau khi phát hành v1.2.1 ngày 2026-08-07:
 
 - Repository GitHub là public.
 - Nhánh mặc định `main` đã có mã nguồn.
 - Tag `v1.2.0` trỏ tới commit phát hành `971d92d`.
 - GitHub Release `v1.2.0` là stable/public và có đủ installer, blockmap, `latest.yml`.
-- Mã nguồn đang chuẩn bị `v1.2.1`; chưa xem là đã phát hành cho đến khi checklist tiền phát hành, CI, tag và asset public đều được xác minh. Nâng cấp live chỉ có thể chạy sau khi Release public và là bước sign-off hậu phát hành riêng.
+- Tag `v1.2.1` trỏ tới commit phát hành `2dfc7a3`; GitHub Release ID `366371391` là stable/public, `/releases/latest` trỏ đúng tag và có đúng ba asset updater đã được tải ngược để xác minh checksum/metadata.
+- Do incident GitHub Actions mức `critical`, workflow phát hành theo tag không được tạo và Windows CI run `31125907971` bị hủy khi chưa có runner/step nào chạy. v1.2.1 được publish thủ công từ bộ artifact local đã qua 66/66 test, source/package smoke và kiểm tra installer; ngoại lệ này được ghi trong release notes/checklist.
+- Bản cài v1.2.0 đã nhận đúng thông báo `v1.2.1` từ kênh stable. Download/restart/cài đè và fresh install tương tác vẫn là sign-off hậu phát hành, không được đánh dấu đạt từ kiểm tra thông báo.
 - Thư mục `D:\File2Mockup` đã được khởi tạo Git và theo dõi `origin/main`.
 
 Workflow upload đầy đủ asset được gia cố từ commit `6076701`. Bản hiện tại tạo hoặc sửa Release draft, xác minh chính xác ba asset trước khi publish, không ghi đè asset của Release public và hỗ trợ chế độ thủ công chỉ đồng bộ ghi chú từ nhánh mặc định.
