@@ -352,7 +352,7 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của v1.2.0 trừ kh
 - [x] Commit/tag phát hành chỉ chứa thay đổi chủ đích; không có token, chứng thư, output `Done`, file tạm hoặc cache.
 - [ ] Windows CI trên commit phát hành đạt. Run [`31125907971`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/actions/runs/31125907971) bị hủy khi chưa có runner/step nào chạy trong incident GitHub Actions mức `critical`; conclusion tổng là `failure`, không dùng làm kết quả test code.
 - [x] Tag `v1.2.1` trỏ đúng commit `2dfc7a3219d80c5f29f6a2eb8be5247efa25e1a3` và khớp tuyệt đối package version.
-- [ ] Release Windows workflow đạt. Tag event không tạo run trong sự cố Actions; dùng fallback publish thủ công từ đúng ba artifact local đã QA và xác minh tải ngược.
+- [ ] Release Windows workflow đạt. Tag event được giao trễ thành run [`31126661713`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/actions/runs/31126661713), vẫn queued không có runner tại 02:15 ngày 2026-08-07; cancel/force-cancel trả 500/502 trong outage. Dùng fallback publish thủ công từ đúng ba artifact local đã QA và xác minh tải ngược; workflow fail-closed trước Release public.
 - [x] GitHub Release `v1.2.1` ID `366371391` stable/public, không draft/prerelease và chỉ có một Release record cho tag.
 - [x] Release có đủ Setup, `.exe.blockmap`, `latest.yml` cùng version và checksum/size khớp.
 - [x] SHA-256 installer local v1.2.1 đã ghi vào release notes: `6723EF04ACE0595DEAD7C606A5F66C39F9608D2DFDE470ED73FA24ED775AC9C0`.
@@ -375,6 +375,6 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của v1.2.0 trừ kh
 | v1.2.1 local core/PDF/single | Codex local QA | 2026-08-07 | PDF mẫu thật render/click annotation/text extraction đạt; integration bundle + single + PDF chung `Done` đạt; source/package basic+region smoke đều PASS. |
 | v1.2.1 installer/Input footprint | Codex local QA | 2026-08-07 | NSIS 104,334,512 byte, blockmap 109,600 byte, `latest.yml` SHA-512 khớp; headless Input backup exit `0`, single-instance lock exit `3` và packaged basic+region smoke đạt; SHA-256 local `6723…C9C0`; Authenticode NotSigned. |
 | Live updater v1.2.0 → v1.2.1 | Codex local QA | 2026-08-07 | Auto-check/thông báo version mới đạt; download, restart/cài và xác minh dữ liệu sau nâng cấp chưa chạy. |
-| v1.2.1 release artifacts | Codex + manual GitHub fallback | 2026-08-07 | Release ID `366371391` stable/public, đúng ba asset, `/releases/latest` và checksum/metadata remote đạt. Windows CI `31125907971` bị hủy trước runner do GitHub Actions outage. |
+| v1.2.1 release artifacts | Codex + manual GitHub fallback | 2026-08-07 | Release ID `366371391` stable/public, đúng ba asset, `/releases/latest` và checksum/metadata remote đạt. Windows CI `31125907971` bị hủy trước runner; Release Windows `31126661713` được giao trễ nhưng vẫn queued và không thể ghi đè Release public. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.

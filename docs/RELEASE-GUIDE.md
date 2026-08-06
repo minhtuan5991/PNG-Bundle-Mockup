@@ -21,7 +21,7 @@ Trạng thái sau khi phát hành v1.2.1 ngày 2026-08-07:
 - Tag `v1.2.0` trỏ tới commit phát hành `971d92d`.
 - GitHub Release `v1.2.0` là stable/public và có đủ installer, blockmap, `latest.yml`.
 - Tag `v1.2.1` trỏ tới commit phát hành `2dfc7a3`; GitHub Release ID `366371391` là stable/public, `/releases/latest` trỏ đúng tag và có đúng ba asset updater đã được tải ngược để xác minh checksum/metadata.
-- Do incident GitHub Actions mức `critical`, workflow phát hành theo tag không được tạo và Windows CI run `31125907971` bị hủy khi chưa có runner/step nào chạy. v1.2.1 được publish thủ công từ bộ artifact local đã qua 66/66 test, source/package smoke và kiểm tra installer; ngoại lệ này được ghi trong release notes/checklist.
+- Do incident GitHub Actions mức `critical`, Windows CI run `31125907971` bị hủy khi chưa có runner/step nào chạy. Workflow phát hành theo tag được giao trễ thành run `31126661713`, vẫn queued không có runner tại lần kiểm tra 02:15 ngày 2026-08-07; API cancel/force-cancel trả 500/502 trong cùng outage. v1.2.1 đã được publish thủ công từ bộ artifact local qua 66/66 test, source/package smoke và kiểm tra installer; workflow fail-closed nếu gặp Release public nên run trễ không thể ghi đè asset.
 - Bản cài v1.2.0 đã nhận đúng thông báo `v1.2.1` từ kênh stable. Download/restart/cài đè và fresh install tương tác vẫn là sign-off hậu phát hành, không được đánh dấu đạt từ kiểm tra thông báo.
 - Thư mục `D:\File2Mockup` đã được khởi tạo Git và theo dõi `origin/main`.
 
