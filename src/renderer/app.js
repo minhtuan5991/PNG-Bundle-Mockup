@@ -305,10 +305,9 @@ function readAdditionalGenerationOptions() {
     createSingleMockups: elements.createSingleMockups.checked,
   };
   if (options.createPdfDownload) {
-    if (state.inputAssets.pdfTemplates.length !== 1) {
-      throw new Error('Thư mục Input phải có đúng 1 file PDF mẫu.');
-    }
-    options.downloadUrl = readDownloadUrl();
+    // Main checks Done first. If a PDF already exists, it can skip without
+    // requiring a template or URL; otherwise the PDF service validates both.
+    options.downloadUrl = elements.downloadUrl.value.trim();
   } else {
     elements.downloadUrl.classList.remove('is-invalid');
   }
@@ -1022,16 +1021,13 @@ function updateControls() {
   elements.selectAllButton.disabled = scanning || state.files.length === 0;
   elements.selectNoneButton.disabled = scanning || state.selected.size === 0;
   elements.createPdfDownload.disabled =
-    state.inputAssetsLoading || editorActive ||
-    (state.inputAssets.pdfTemplates.length !== 1 && !elements.createPdfDownload.checked);
+    state.inputAssetsLoading || editorActive;
   elements.downloadUrl.disabled =
     state.inputAssetsLoading || !elements.createPdfDownload.checked || editorActive;
   elements.createSingleMockups.disabled =
-    state.inputAssetsLoading || editorActive ||
-    (state.inputAssets.singleMockupTemplates.length === 0 && !elements.createSingleMockups.checked);
+    state.inputAssetsLoading || editorActive;
   elements.editSingleMockupRegions.disabled =
-    state.inputAssetsLoading || state.inputAssetsSaving ||
-    state.inputAssets.singleMockupTemplates.length === 0;
+    state.inputAssetsLoading || state.inputAssetsSaving;
   elements.saveSingleMockupRegions.disabled = !editorActive || state.inputAssetsSaving;
   const count = Math.max(1, Number(elements.mockupCount.value) || 1);
   elements.generateButton.textContent = `Tạo ${count} mockup`;
@@ -1694,11 +1690,13 @@ async function generate() {
     const bundleCount = result.outputFiles.length;
     const singleCount = Number(result.singleMockupCount) || result.singleMockupFiles?.length || 0;
     const pdfCount = result.pdfDownload ? 1 : 0;
+    const pdfSkipped = result.pdfDownloadSkipped?.reason === 'PDF_ALREADY_EXISTS';
     const totalOutputCount = bundleCount + singleCount + pdfCount;
     const outputParts = [`${bundleCount} mockup bundle`];
     if (singleCount > 0) outputParts.push(`${singleCount} mockup đơn`);
     if (pdfCount > 0) outputParts.push('1 PDF Download');
-    elements.progressMessage.textContent = `Đã lưu ${outputParts.join(', ')} vào Done`;
+    elements.progressMessage.textContent = `Đã lưu ${outputParts.join(', ')} vào Done` +
+      (pdfSkipped ? '; đã bỏ qua PDF Download vì Done đã có PDF' : '');
     setAppStatus('Hoàn tất', 'ready');
     showToast(`Đã tạo thành công ${totalOutputCount} file.`, 'success');
 
@@ -1707,6 +1705,11 @@ async function generate() {
     if (result.watermarkApplied) completionNotes.push(`Watermark: ${result.watermarkName}.`);
     if (singleCount > 0) completionNotes.push(`Mockup đơn: ${singleCount} file.`);
     if (result.pdfDownload) completionNotes.push(`PDF Download: ${result.pdfDownload.name}.`);
+    if (pdfSkipped) {
+      completionNotes.push(
+        `PDF Download: đã bỏ qua vì Done đã có ${result.pdfDownloadSkipped.existingName}.`,
+      );
+    }
     completionNotes.push(
       result.metadataRemoved
         ? 'Đã xóa Comment, EXIF, XMP, EXIF thumbnail, IPTC và ICC profile.'
@@ -1841,7 +1844,9 @@ elements.createPdfDownload.addEventListener('change', () => {
   elements.pdfDownloadFields.classList.toggle('is-hidden', !elements.createPdfDownload.checked);
   elements.downloadUrl.classList.remove('is-invalid');
   updateControls();
-  if (elements.createPdfDownload.checked) window.setTimeout(() => elements.downloadUrl.focus(), 0);
+  if (elements.createPdfDownload.checked) {
+    window.setTimeout(() => elements.downloadUrl.focus({ preventScroll: true }), 0);
+  }
 });
 elements.downloadUrl.addEventListener('input', () => {
   elements.downloadUrl.classList.remove('is-invalid');
@@ -1854,8 +1859,23 @@ elements.downloadUrl.addEventListener('blur', () => {
     // The invalid style is enough until Generate is pressed.
   }
 });
-elements.createSingleMockups.addEventListener('change', () => {
+elements.createSingleMockups.addEventListener('change', async () => {
   if (elements.createSingleMockups.checked) {
+    const refreshed = await refreshInputAssets();
+    if (!refreshed) {
+      elements.createSingleMockups.checked = false;
+      updateControls();
+      return;
+    }
+    if (!elements.createSingleMockups.checked) return;
+    if (state.inputAssets.singleMockupTemplates.length === 0) {
+      elements.createSingleMockups.checked = false;
+      elements.singleMockupSummary.textContent =
+        'Chưa có ảnh mockup đơn trong Input. Hãy thêm ảnh rồi quay lại App.';
+      showError(new Error('Hãy thêm ảnh mockup đơn vào thư mục Input.'));
+      updateControls();
+      return;
+    }
     const missing = templatesMissingRegions();
     if (missing.length > 0) elements.advancedSettings.open = true;
     elements.singleRegionStatus.textContent = missing.length > 0

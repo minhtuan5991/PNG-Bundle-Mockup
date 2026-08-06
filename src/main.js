@@ -26,9 +26,7 @@ const {
 const { createInputBackupService } = require('./services/input-backup-service');
 const {
   findPdfTemplates,
-  resolvePdfTemplate,
   createDownloadPdf,
-  normalizeDownloadUrl,
 } = require('./services/pdf-download-service');
 const {
   listSingleMockupTemplates,
@@ -249,6 +247,10 @@ function createWindow() {
       sandbox: true,
     },
   });
+  // BrowserWindow.webContents throws after the native window has emitted
+  // `closed`. Capture the stable id while the window is alive so cleanup can
+  // still remove per-window state without touching a destroyed wrapper.
+  const windowWebContentsId = window.webContents.id;
 
   if (smokeTest) {
     window.webContents.once('did-finish-load', () => {
@@ -370,13 +372,13 @@ function createWindow() {
     }
   });
   window.webContents.on('render-process-gone', () => {
-    const key = window.webContents.id;
+    const key = windowWebContentsId;
     const job = activeJobs.get(key);
     if (job) job.cancelled = true;
     editorWindowStates.delete(key);
   });
   window.on('close', (event) => {
-    const key = window.webContents.id;
+    const key = windowWebContentsId;
     if (windowsAllowedToClose.has(window)) {
       windowsAllowedToClose.delete(window);
       deferredCloseWindows.delete(key);
@@ -392,7 +394,7 @@ function createWindow() {
   });
   mainWindow = window;
   window.once('closed', () => {
-    const key = window.webContents.id;
+    const key = windowWebContentsId;
     deferredCloseWindows.delete(key);
     closeConfirmations.delete(key);
     editorWindowStates.delete(key);
@@ -720,18 +722,12 @@ function registerIpc() {
       try {
         const createPdfDownload = payload?.createPdfDownload === true;
         const createSingleMockups = payload?.createSingleMockups === true;
-        let pdfTemplatePath = null;
-        let normalizedDownloadUrl = null;
         let singleMockupTemplates = null;
 
         if ((createPdfDownload || createSingleMockups) && inputBackupService) {
           await inputBackupService.synchronize();
         }
 
-        if (createPdfDownload) {
-          normalizedDownloadUrl = normalizeDownloadUrl(payload?.downloadUrl);
-          pdfTemplatePath = await resolvePdfTemplate(inputDirectory);
-        }
         if (createSingleMockups) {
           singleMockupTemplates = await listSingleMockupTemplates(inputDirectory, {
             ignoreInvalid: true,
@@ -788,16 +784,18 @@ function registerIpc() {
             stage: 'pdf-download',
           });
           pdfResult = await createDownloadPdf({
-            templatePath: pdfTemplatePath,
+            inputDirectory,
             outputDirectory: result.outputDir,
-            downloadUrl: normalizedDownloadUrl,
+            downloadUrl: payload?.downloadUrl,
             isCancelled: () => jobControl.job.cancelled,
           });
-          createdPaths.push(pdfResult.outputPath);
+          if (!pdfResult.skipped) createdPaths.push(pdfResult.outputPath);
           if (jobControl.job.cancelled) throw new GenerationCancelledError();
           jobControl.sendProgress({
             fraction: 1,
-            message: 'Đã tạo xong mockup và các file bổ sung.',
+            message: pdfResult.skipped
+              ? 'Đã bỏ qua PDF Download vì thư mục Done đã có file PDF.'
+              : 'Đã tạo xong mockup và các file bổ sung.',
             stage: 'complete',
           });
         }
@@ -815,13 +813,19 @@ function registerIpc() {
             name: path.basename(filePath),
           })),
           singleMockupCount: singleResult?.outputPaths.length || 0,
-          pdfDownload: pdfResult
+          pdfDownload: pdfResult && !pdfResult.skipped
             ? {
                 ...pdfResult,
                 path: pdfResult.outputPath,
                 url: toFileUrl(pdfResult.outputPath),
                 name: path.basename(pdfResult.outputPath),
                 outputPath: undefined,
+              }
+            : null,
+          pdfDownloadSkipped: pdfResult?.skipped
+            ? {
+                reason: pdfResult.skipReason,
+                existingName: path.basename(pdfResult.existingPath || pdfResult.outputPath),
               }
             : null,
           outputPaths: undefined,

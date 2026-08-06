@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
 > Cập nhật: 2026-08-07
-> Phiên bản mã nguồn hiện tại: `1.2.1`
+> Phiên bản mã nguồn hiện tại: `1.2.2` — ứng viên bản vá
 > Bản stable hiện có: `v1.2.1`
-> Trạng thái: tag và GitHub Release v1.2.1 đã publish stable/public với đúng ba asset; Windows CI thử lại đạt và updater v1.2.0 nhận đúng thông báo v1.2.1. Fresh install cùng lượt download/cài nâng cấp tương tác vẫn chưa chạy.
+> Trạng thái: v1.2.2 đã hoàn tất QA local và đóng gói; chờ commit/tag để phát hành qua GitHub. Bản stable công khai gần nhất vẫn là v1.2.1.
 
 ## 1. Mục đích tài liệu
 
@@ -20,7 +20,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.2.1` — đã phát hành stable/public |
+| Phiên bản mã nguồn | `1.2.2` — ứng viên bản vá |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
@@ -393,6 +393,25 @@ Mốc QA local v1.2.1 ngày 2026-08-07:
 - Bản cài v1.2.0 trên máy QA đã tự hiện **Có phiên bản mới**, `v1.2.0 → v1.2.1`, với action `download`. Không bấm tải/cài để không thay đổi app và dữ liệu thật.
 - Windows CI run đầu `31125907971` kết thúc failure vì GitHub hủy trước khi cấp runner hoặc chạy step nào trong incident Actions. Lượt thử lại trên đúng tag/commit `31126793200` đạt toàn bộ checkout, Node 22, `npm ci`, regression tests và package unpacked. Webhook tag được giao trễ thành Release Windows run `31126661713`; sau các yêu cầu cancel trả lỗi trong outage, run kết thúc failure với job cancelled trước runner/step. Ba asset public giữ nguyên timestamp, size và SHA-256; workflow không chạm vào Release.
 
+### v1.2.2 — bản vá mockup đơn, PDF và vòng đời cửa sổ
+
+- Gỡ điều kiện khóa checkbox theo kết quả quét `Input` cũ. **Tạo mockup đơn**, **Chỉnh vùng in mockup đơn** và PDF có thể được bật để app tự quét lại tài sản hoặc báo hướng dẫn phù hợp.
+- Neo input checkbox tuyệt đối vào chính label và focus URL bằng `preventScroll`, loại bỏ hiện tượng viewport gốc bị cuộn xuống vùng nền tối.
+- Trình chỉnh vùng in tiếp tục dùng tỷ lệ pixel `42:48` (`7:8`), hỗ trợ nhiều trang và lưu theo tên/kích thước template.
+- Luồng PDF kiểm tra `Done` trước mọi validation: nếu đã có bất kỳ `.pdf` nào thì giữ nguyên và bỏ qua, không tạo hậu tố. File PDF cũ không được tính là output mới và không nằm trong rollback của lượt hiện tại.
+- `BrowserWindow` chụp `webContents.id` khi còn sống và dùng ID ổn định trong các handler `close`, `closed`, `render-process-gone`; handler `closed` không còn chạm vào object đã bị hủy.
+- Renderer phân biệt PDF vừa tạo với PDF đã bỏ qua để báo đúng tổng số output và tên PDF đang được giữ.
+
+Mốc QA local v1.2.2 ngày 2026-08-07:
+
+- `npm test`: **73/73 đạt**, 0 fail, 0 skipped/todo; `node --check` và `git diff --check` đạt.
+- `npm audit --omit=dev --audit-level=high`: **0 vulnerabilities**.
+- Electron/CDP thực tế đọc đúng 4 JPG trong `Input`; checkbox mockup đơn bật thành công, Thiết lập nâng cao tự mở, trình chỉnh hiển thị `1/4`, vùng `42:48` kéo thật dịch chuyển đúng `24×16px` và nút lưu được bật.
+- Toggle PDF giữ `scrollY=0`, chiều cao workspace/body đúng viewport, không còn vùng tối.
+- `window.close()` thoát mã `0`, không bị ép dừng và stderr không có `Object has been destroyed` hay lỗi ứng dụng.
+- Bản `win-unpacked` v1.2.2 đạt basic smoke và region-editor smoke; title/header đúng phiên bản. NSIS local tạo đủ Setup, blockmap và `latest.yml`; Authenticode vẫn **NotSigned**.
+- Bốn ảnh `chambray.jpg`, `ivory.jpg`, `orchild.jpg`, `sand.jpg` trong `Input` là tài sản người dùng/QA chưa track. Không commit hoặc đưa chúng vào tag. Vì local builder sao chép toàn bộ `Input`, checksum local có các ảnh này không được dùng làm checksum Release; GitHub Actions phải build từ commit sạch chỉ chứa tài sản được track.
+
 ## 12. Trạng thái chốt v1.2.0
 
 - [x] Tích hợp update service với main/preload/renderer.
@@ -427,3 +446,15 @@ Mốc QA local v1.2.1 ngày 2026-08-07:
 - [x] Windows CI đạt trên đúng tag/commit tại run `31126793200`; run đầu `31125907971` bị hủy trước runner do outage, không phải lỗi code.
 - [ ] Release Windows workflow đạt; run giao trễ `31126661713` kết thúc failure với job cancelled trước runner/step trong outage. Bản phát hành đã dùng fallback thủ công và ba asset public không thay đổi.
 - [x] Thay placeholder trong `docs/RELEASE-NOTES-1.2.1.md` bằng kết quả QA, GitHub Release, updater và ngoại lệ CI thực tế.
+
+## 14. Trạng thái phát hành v1.2.2
+
+- [x] Sửa checkbox mockup đơn/vùng in, viewport tối, quy tắc một PDF và lỗi đóng app.
+- [x] Chạy 73/73 automated tests, source CDP và packaged basic/region smoke.
+- [x] Bổ sung kiểm thử hồi quy cho PDF skip trước URL/template, UI checkbox và handler `closed`.
+- [x] Đồng bộ version `1.2.2` trong `package.json` và `package-lock.json`.
+- [x] Tạo `docs/RELEASE-NOTES-1.2.2.md`, cập nhật changelog, README, project history và checklist.
+- [x] Xác nhận bốn JPG người dùng trong `Input` không được stage/commit.
+- [ ] Commit và push mã nguồn v1.2.2 lên `main`.
+- [ ] Tạo tag `v1.2.2`, publish GitHub Release và xác minh đúng ba asset sạch.
+- [ ] Tải ngược asset công khai, kiểm tra version/path/size/SHA-512 và ghi SHA-256 remote.

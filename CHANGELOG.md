@@ -4,7 +4,24 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
-Chưa có thay đổi sau bản phát hành v1.2.1.
+Chưa có thay đổi sau bản phát hành v1.2.2.
+
+## [1.2.2] - 2026-08-07
+
+### Fixed
+
+- **Tạo mockup đơn** và **Chỉnh vùng in mockup đơn** luôn có thể được chọn; app đọc lại `Input` ngay khi bật tùy chọn thay vì khóa điều khiển theo kết quả quét cũ.
+- Trình chỉnh vùng in nhận đúng toàn bộ ảnh mẫu, hiển thị từng trang Preview và cho phép kéo/đổi kích thước vùng `42:48` như thiết kế.
+- Checkbox PDF/mockup đơn không còn làm cửa sổ cuộn lệch xuống vùng nền tối; ô URL PDF được focus mà không cuộn toàn bộ trang.
+- Khi đóng app, handler dọn trạng thái không còn đọc `webContents` của `BrowserWindow` đã bị hủy, nên không còn popup `Object has been destroyed`.
+- PDF đã có trong `Done` không bị tính là output mới hoặc bị đưa vào danh sách rollback của lượt hiện tại.
+
+### Changed
+
+- Luồng **Tạo PDF Download** chỉ tạo PDF khi `Done` chưa có file `.pdf` nào. Nếu đã có PDF, app bỏ qua bước này, giữ nguyên các file hiện có và không tạo hậu tố `_2`, `_3`, ...
+- Kiểm tra PDF hiện có được thực hiện trước URL và PDF mẫu; vì vậy một lượt chạy lại có thể bỏ qua PDF an toàn ngay cả khi URL trống hoặc PDF mẫu không còn trong `Input`.
+- Giao diện báo rõ PDF đã được bỏ qua và không cộng file đó vào tổng số file vừa tạo.
+- Bổ sung kiểm thử hồi quy cho checkbox, vòng đời cửa sổ và quy tắc một PDF; tổng kiểm thử tự động tăng lên 73.
 
 ## [1.2.1] - 2026-08-07
 

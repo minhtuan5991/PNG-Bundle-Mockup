@@ -7,8 +7,8 @@ const path = require('node:path');
 
 const packageJson = require('../package.json');
 
-test('installer v1.2.1 giữ chế độ assisted của v1.2.0 và không đóng gói marker Input runtime', () => {
-  assert.equal(packageJson.version, '1.2.1');
+test('installer v1.2.2 giữ chế độ assisted và không đóng gói marker Input runtime', () => {
+  assert.equal(packageJson.version, '1.2.2');
   assert.equal(packageJson.build.nsis.oneClick, false);
   assert.equal(packageJson.build.nsis.perMachine, false);
   assert.equal(packageJson.build.nsis.allowElevation, true);

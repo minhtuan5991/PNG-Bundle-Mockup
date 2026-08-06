@@ -35,7 +35,7 @@ async function createSourcePng(filePath, color) {
     .toFile(filePath);
 }
 
-test('v1.2.1 tao bundle, mockup don va PDF Download trong cung thu muc Done', async (t) => {
+test('v1.2.2 tao bundle, mockup don va chi giu mot PDF Download trong Done', async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'png-bundle-v121-integration-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const sourceDirectory = path.join(root, 'source');
@@ -115,15 +115,28 @@ test('v1.2.1 tao bundle, mockup don va PDF Download trong cung thu muc Done', as
     outputDirectory: bundle.outputDir,
     downloadUrl: 'https://downloads.example.test/orders/integration/files',
   });
+  const skippedPdf = await createDownloadPdf({
+    inputDirectory,
+    outputDirectory: bundle.outputDir,
+    downloadUrl: 'https://downloads.example.test/orders/integration/retry',
+  });
 
   assert.equal(bundle.outputPaths.length, 1);
   assert.equal(singles.outputPaths.length, 1);
   assert.equal(pdf.linkAnnotationsUpdated, 3);
   assert.equal(pdf.downloadUrl, 'https://downloads.example.test/orders/integration/files');
+  assert.equal(skippedPdf.skipped, true);
+  assert.equal(skippedPdf.outputPath, pdf.outputPath);
   const expectedPaths = [...bundle.outputPaths, ...singles.outputPaths, pdf.outputPath];
   assert.ok(expectedPaths.every((filePath) => path.dirname(filePath) === bundle.outputDir));
   assert.equal(new Set(expectedPaths.map((filePath) => path.basename(filePath))).size, 3);
   for (const filePath of expectedPaths) {
     assert.equal((await fs.stat(filePath)).isFile(), true);
   }
+  assert.equal(
+    (await fs.readdir(bundle.outputDir))
+      .filter((fileName) => path.extname(fileName).toLowerCase() === '.pdf')
+      .length,
+    1,
+  );
 });

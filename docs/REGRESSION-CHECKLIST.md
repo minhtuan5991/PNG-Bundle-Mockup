@@ -4,6 +4,7 @@
 
 ## Trạng thái mốc
 
+- [x] QA local v1.2.2 ngày 2026-08-07: **73/73 test đạt**; source CDP kiểm tra chọn mockup đơn, kéo vùng `42:48`, ổn định viewport và đóng cửa sổ đều đạt; packaged basic/region smoke trên `win-unpacked` đạt, title/header đúng v1.2.2.
 - [x] QA/release v1.2.1 ngày 2026-08-07: **66/66 test đạt**; Windows CI thử lại, source/package basic+region smoke, headless Input backup exit `0`, single-instance lock exit `3`, NSIS final, GitHub Release/asset và thông báo updater v1.2.0 đều đạt. Cài mới và download/cài nâng cấp tương tác còn chờ.
 - [x] Mốc automated ngay trước khi tích hợp updater: **20/20 test đạt**.
 - [x] QA local v1.2.0 ngày 2026-08-06: **26/26 test đạt**, 0 fail, 0 skipped/todo.
@@ -12,7 +13,7 @@
 
 Môi trường QA local: Windows x64 `10.0.26200`, Node.js `24.13.0`, Electron `43.2.0`. Workflow GitHub dùng Node.js `22.x` theo yêu cầu tối thiểu của Electron 43.
 
-Các mục `[x]` hiện có là bằng chứng lịch sử của v1.2.0 trừ khi ghi rõ v1.2.1. Không kế thừa dấu đạt cũ cho tính năng mới.
+Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản được ghi rõ. Không kế thừa dấu đạt cũ cho tính năng mới hoặc bản phát hành mới.
 
 ## A. Automated tests
 
@@ -361,6 +362,22 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của v1.2.0 trừ kh
 - [x] `/releases/latest` trỏ đúng `v1.2.1` sau khi publish.
 - [x] Body GitHub Release được đồng bộ từ `docs/RELEASE-NOTES-1.2.1.md`; commit hậu phát hành sẽ ghi lại trạng thái công khai/updater/CI cuối.
 
+## E3. Kiểm tra release v1.2.2
+
+- [x] `package.json`, `package-lock.json` và package root trong lockfile cùng version `1.2.2`.
+- [x] 73/73 automated tests đạt; 0 fail, 0 skipped/todo; `node --check` và `git diff --check` đạt.
+- [x] `npm audit --omit=dev --audit-level=high` đạt: 0 vulnerabilities.
+- [x] Có test riêng xác nhận `Done` đã có PDF thì bỏ qua trước URL/PDF mẫu và không sửa file hiện có.
+- [x] Có test vòng đời cửa sổ xác nhận handler `closed` chỉ dùng `windowWebContentsId` đã chụp, không đọc `window.webContents` sau destruction.
+- [x] Source CDP: bật mockup đơn nhận đủ 4 template; Advanced mở; Preview `1/4`; kéo vùng `42:48` và trạng thái dirty/save đạt.
+- [x] Source CDP: toggle PDF không cuộn root, không có vùng tối; đóng cửa sổ exit `0`, stderr không có `Object has been destroyed`.
+- [x] Build NSIS local đạt; packaged basic/region smoke đạt và title/header đúng v1.2.2.
+- [x] Bốn JPG người dùng trong `Input` được giữ nguyên ở trạng thái untracked, không stage/commit/tag.
+- [ ] Tag `v1.2.2` trỏ đúng commit có package version khớp.
+- [ ] Windows CI và Release Windows workflow trên tag/commit v1.2.2 đạt.
+- [ ] GitHub Release v1.2.2 stable/public có đúng Setup, blockmap và `latest.yml`.
+- [ ] Tải lại ba asset public và xác minh checksum/metadata độc lập.
+
 ## F. Sign-off
 
 | Hạng mục | Người kiểm tra | Ngày | Kết quả/Ghi chú |
@@ -376,5 +393,6 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của v1.2.0 trừ kh
 | v1.2.1 installer/Input footprint | Codex local QA | 2026-08-07 | NSIS 104,334,512 byte, blockmap 109,600 byte, `latest.yml` SHA-512 khớp; headless Input backup exit `0`, single-instance lock exit `3` và packaged basic+region smoke đạt; SHA-256 local `6723…C9C0`; Authenticode NotSigned. |
 | Live updater v1.2.0 → v1.2.1 | Codex local QA | 2026-08-07 | Auto-check/thông báo version mới đạt; download, restart/cài và xác minh dữ liệu sau nâng cấp chưa chạy. |
 | v1.2.1 release artifacts | Codex + GitHub Actions + manual fallback | 2026-08-07 | Release ID `366371391` stable/public, đúng ba asset, `/releases/latest` và checksum/metadata remote đạt; Windows CI `31126793200` success. Release Windows `31126661713` bị cancelled trước runner/step; asset public giữ nguyên. |
+| v1.2.2 hotfix QA | Codex local QA | 2026-08-07 | 73/73 test; source CDP chọn mockup đơn/kéo vùng/PDF viewport/đóng app đạt; packaged basic+region smoke và NSIS build đạt. Chờ tag/Release sạch từ GitHub Actions. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.

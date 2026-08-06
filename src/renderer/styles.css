@@ -624,6 +624,7 @@ input:disabled {
 }
 
 .check-option {
+  position: relative;
   display: grid;
   grid-template-columns: 19px minmax(0, 1fr);
   align-items: start;
@@ -642,10 +643,12 @@ input:disabled {
 
 .check-option input {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
   opacity: 0;
-  pointer-events: none;
+  cursor: inherit;
 }
 
 .option-checkmark {

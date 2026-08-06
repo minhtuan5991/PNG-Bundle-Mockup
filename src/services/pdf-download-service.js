@@ -110,6 +110,31 @@ async function findPdfTemplates(inputDirectory, options = {}) {
     .map((entry) => path.join(directoryPath, entry.name));
 }
 
+async function findExistingOutputPdf(outputDirectory, options = {}) {
+  const fsImpl = options.fsImpl || fs;
+  const directoryPath = normalizeAbsolutePath(outputDirectory, 'Thư mục kết quả');
+  let entries;
+  try {
+    entries = await fsImpl.readdir(directoryPath, { withFileTypes: true });
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null;
+    if (error?.code === 'ENOTDIR') {
+      fail('Thư mục kết quả không phải là thư mục.', 'INVALID_PDF_DIRECTORY', {
+        filePath: directoryPath,
+        cause: error,
+      });
+    }
+    throw error;
+  }
+
+  const existingEntry = entries
+    .filter((entry) => entry.isFile() && path.extname(entry.name).toLowerCase() === PDF_EXTENSION)
+    .sort((left, right) =>
+      left.name.localeCompare(right.name, 'vi', { numeric: true, sensitivity: 'base' }),
+    )[0];
+  return existingEntry ? path.join(directoryPath, existingEntry.name) : null;
+}
+
 async function resolvePdfTemplate(inputDirectory, options = {}) {
   const templates = await findPdfTemplates(inputDirectory, options);
   if (templates.length === 0) {
@@ -514,12 +539,6 @@ function validateOutputFileName(candidate, templatePath) {
   return fileName;
 }
 
-function numberedFileName(fileName, sequence) {
-  if (sequence === 1) return fileName;
-  const parsed = path.parse(fileName);
-  return `${parsed.name}_${sequence}${parsed.ext}`;
-}
-
 async function writeUniquePdf(outputDirectory, fileName, bytes, options = {}) {
   const fsImpl = options.fsImpl || fs;
   const isCancelled = options.isCancelled;
@@ -549,31 +568,27 @@ async function writeUniquePdf(outputDirectory, fileName, bytes, options = {}) {
       );
     }
 
-    for (let sequence = 1; sequence <= 9999; sequence += 1) {
-      throwIfCancelled(isCancelled);
-      const outputPath = path.join(outputDirectory, numberedFileName(fileName, sequence));
-      try {
-        await fsImpl.link(temporaryPath, outputPath);
-        committedPath = outputPath;
-        break;
-      } catch (error) {
-        if (error?.code === 'EEXIST') continue;
-        if (['EPERM', 'EXDEV', 'ENOTSUP', 'EOPNOTSUPP', 'ENOSYS'].includes(error?.code)) {
-          fail(
-            'Ổ đĩa kết quả không hỗ trợ commit PDF nguyên tử.',
-            'PDF_ATOMIC_COMMIT_UNSUPPORTED',
-            { filePath: outputDirectory, cause: error },
-          );
-        }
-        throw error;
+    const outputPath = path.join(outputDirectory, fileName);
+    try {
+      await fsImpl.link(temporaryPath, outputPath);
+      committedPath = outputPath;
+    } catch (error) {
+      if (error?.code === 'EEXIST') {
+        throwIfCancelled(isCancelled);
+        const existingOutputPath = await findExistingOutputPdf(outputDirectory, { fsImpl });
+        if (existingOutputPath) return { outputPath: existingOutputPath, created: false };
       }
-    }
-
-    if (!committedPath) {
-      fail('Không thể tạo tên file PDF kết quả duy nhất.', 'PDF_OUTPUT_NAME_EXHAUSTED');
+      if (['EPERM', 'EXDEV', 'ENOTSUP', 'EOPNOTSUPP', 'ENOSYS'].includes(error?.code)) {
+        fail(
+          'Ổ đĩa kết quả không hỗ trợ commit PDF nguyên tử.',
+          'PDF_ATOMIC_COMMIT_UNSUPPORTED',
+          { filePath: outputDirectory, cause: error },
+        );
+      }
+      throw error;
     }
     throwIfCancelled(isCancelled);
-    return committedPath;
+    return { outputPath: committedPath, created: true };
   } catch (error) {
     if (temporaryHandle) await temporaryHandle.close().catch(() => {});
     if (committedPath) await fsImpl.unlink(committedPath).catch(() => {});
@@ -587,11 +602,24 @@ async function createDownloadPdf(options = {}) {
   const fsImpl = options.fsImpl || fs;
   const isCancelled = options.isCancelled;
   throwIfCancelled(isCancelled);
+  const outputDirectory = normalizeAbsolutePath(options.outputDirectory, 'Thư mục kết quả');
+  const existingOutputPath = await findExistingOutputPdf(outputDirectory, { fsImpl });
+  throwIfCancelled(isCancelled);
+  if (existingOutputPath) {
+    return {
+      created: false,
+      skipped: true,
+      skipReason: 'PDF_ALREADY_EXISTS',
+      existingPath: existingOutputPath,
+      outputPath: existingOutputPath,
+      outputName: path.basename(existingOutputPath),
+    };
+  }
+
   const downloadUrl = normalizeDownloadUrl(options.downloadUrl);
   const templatePath = options.templatePath
     ? await validateTemplatePath(options.templatePath, { fsImpl })
     : await resolvePdfTemplate(options.inputDirectory, { fsImpl });
-  const outputDirectory = normalizeAbsolutePath(options.outputDirectory, 'Thư mục kết quả');
   const outputFileName = validateOutputFileName(options.outputFileName, templatePath);
   throwIfCancelled(isCancelled);
 
@@ -632,10 +660,21 @@ async function createDownloadPdf(options = {}) {
     useObjectStreams: false,
   });
   throwIfCancelled(isCancelled);
-  const outputPath = await writeUniquePdf(outputDirectory, outputFileName, outputBytes, {
+  const commitResult = await writeUniquePdf(outputDirectory, outputFileName, outputBytes, {
     fsImpl,
     isCancelled,
   });
+  const { outputPath } = commitResult;
+  if (!commitResult.created) {
+    return {
+      created: false,
+      skipped: true,
+      skipReason: 'PDF_ALREADY_EXISTS',
+      existingPath: outputPath,
+      outputPath,
+      outputName: path.basename(outputPath),
+    };
+  }
   try {
     throwIfCancelled(isCancelled);
   } catch (error) {
@@ -644,6 +683,8 @@ async function createDownloadPdf(options = {}) {
   }
 
   return {
+    created: true,
+    skipped: false,
     templatePath,
     outputPath,
     outputName: path.basename(outputPath),
@@ -666,6 +707,7 @@ module.exports = {
   PdfDownloadCancelledError,
   normalizeDownloadUrl,
   findPdfTemplates,
+  findExistingOutputPdf,
   resolvePdfTemplate,
   createDownloadPdf,
 };

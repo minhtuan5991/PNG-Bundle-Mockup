@@ -179,7 +179,7 @@ test('tim PDF mau khong phan biet hoa thuong va tu choi nhieu file de tranh chon
   );
 });
 
-test('tao PDF moi, thay URI cua nut va hai dong link, khong ghi de ket qua cu', async (t) => {
+test('chi tao mot PDF va bo qua cac luot sau neu Done da co PDF', async (t) => {
   const root = await makeWorkspace(t);
   const inputDirectory = path.join(root, 'Input');
   const outputDirectory = path.join(root, 'Done');
@@ -189,6 +189,8 @@ test('tao PDF moi, thay URI cua nut va hai dong link, khong ghi de ket qua cu', 
 
   const downloadUrl = 'https://downloads.example.com/customer/order-123456789/design-files.zip?source=etsy';
   const first = await createDownloadPdf({ inputDirectory, outputDirectory, downloadUrl });
+  assert.equal(first.created, true);
+  assert.equal(first.skipped, false);
   assert.equal(first.outputName, 'PDF Download.pdf');
   assert.equal(first.previousUrl, OLD_URL);
   assert.equal(first.downloadUrl, downloadUrl);
@@ -211,8 +213,60 @@ test('tao PDF moi, thay URI cua nut va hai dong link, khong ghi de ket qua cu', 
     outputDirectory,
     downloadUrl,
   });
-  assert.equal(second.outputName, 'PDF Download_2.pdf');
-  assert.notEqual(first.outputPath, second.outputPath);
+  assert.equal(second.created, false);
+  assert.equal(second.skipped, true);
+  assert.equal(second.skipReason, 'PDF_ALREADY_EXISTS');
+  assert.equal(second.outputName, 'PDF Download.pdf');
+  assert.equal(second.outputPath, first.outputPath);
+  assert.deepEqual(await fs.readdir(outputDirectory), ['PDF Download.pdf']);
+});
+
+test('bo qua khi Done da co bat ky file PDF nao, khong phan biet hoa thuong', async (t) => {
+  const root = await makeWorkspace(t);
+  const inputDirectory = path.join(root, 'Input');
+  const outputDirectory = path.join(root, 'Done');
+  await Promise.all([
+    fs.mkdir(inputDirectory),
+    fs.mkdir(outputDirectory),
+  ]);
+  const templatePath = path.join(inputDirectory, 'PDF Download.pdf');
+  await createTemplatePdf(templatePath);
+  const existingPath = path.join(outputDirectory, 'HUONG-DAN.PdF');
+  const existingBytes = Buffer.from('existing-pdf-must-not-change');
+  await fs.writeFile(existingPath, existingBytes);
+
+  const result = await createDownloadPdf({
+    inputDirectory,
+    outputDirectory,
+    downloadUrl: 'https://downloads.example.com/customer/new-link',
+  });
+
+  assert.equal(result.created, false);
+  assert.equal(result.skipped, true);
+  assert.equal(result.skipReason, 'PDF_ALREADY_EXISTS');
+  assert.equal(result.outputPath, existingPath);
+  assert.deepEqual(await fs.readFile(existingPath), existingBytes);
+  assert.deepEqual(await fs.readdir(outputDirectory), ['HUONG-DAN.PdF']);
+});
+
+test('Done da co PDF thi bo qua truoc khi yeu cau URL hoac PDF mau', async (t) => {
+  const root = await makeWorkspace(t);
+  const outputDirectory = path.join(root, 'Done');
+  await fs.mkdir(outputDirectory);
+  const existingPath = path.join(outputDirectory, 'existing.pdf');
+  await fs.writeFile(existingPath, '%PDF-1.4\nexisting');
+
+  const result = await createDownloadPdf({
+    inputDirectory: path.join(root, 'Input-khong-ton-tai'),
+    outputDirectory,
+    downloadUrl: '',
+  });
+
+  assert.equal(result.created, false);
+  assert.equal(result.skipped, true);
+  assert.equal(result.skipReason, 'PDF_ALREADY_EXISTS');
+  assert.equal(result.outputPath, existingPath);
+  assert.deepEqual(await fs.readdir(outputDirectory), ['existing.pdf']);
 });
 
 test('thay link hien thi tren moi trang khi cung URL lap lai trong PDF nhieu trang', async (t) => {

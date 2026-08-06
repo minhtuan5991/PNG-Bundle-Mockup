@@ -55,7 +55,7 @@ App chỉ nhớ vị trí để mở đúng thư mục/file ở lần chọn sau
 
 ## PDF Download
 
-Khi bật **Tạo PDF Download**, app chuẩn hóa URL người dùng nhập, lấy PDF mẫu duy nhất trong `Input`, thay URL đích của nút Download và các vùng link hiển thị, đồng thời vẽ lại dòng URL nhìn thấy trên PDF. File PDF mới được lưu trong cùng thư mục `Done` với mockup; nếu trùng tên, app thêm hậu tố `_2`, `_3`, ... thay vì ghi đè.
+Khi bật **Tạo PDF Download**, app kiểm tra `Done` trước. Nếu đã có bất kỳ file PDF nào, app giữ nguyên file đó và bỏ qua bước PDF; không tạo thêm `_2`, `_3`, ... Nếu chưa có PDF, app chuẩn hóa URL người dùng nhập, lấy PDF mẫu duy nhất trong `Input`, thay URL đích của nút Download và các vùng link hiển thị, đồng thời vẽ lại dòng URL nhìn thấy trên PDF.
 
 PDF mẫu phải có ít nhất hai annotation link cùng trỏ tới URL cũ trên mỗi trang cần sửa: một vùng nút Download và một hoặc nhiều vùng cho link hiển thị. Backend PDF dùng dependency `pdf-lib`, ghi qua file tạm rồi commit nguyên tử để không công bố PDF dở dang; thao tác Hủy cũng được kiểm tra trong toàn bộ luồng.
 
