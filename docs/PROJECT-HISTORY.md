@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
 > Cập nhật: 2026-08-07
-> Phiên bản mã nguồn hiện tại: `1.2.2` — đã phát hành stable/public
+> Phiên bản mã nguồn hiện tại: `1.2.3` — đang chuẩn bị phát hành
 > Bản stable hiện có: `v1.2.2`
-> Trạng thái: tag và GitHub Release v1.2.2 đã public với đúng ba asset sạch; `/releases/latest` trỏ đúng bản vá. Release được publish thủ công sau khi tải ngược/xác minh checksum vì GitHub Actions đang ở trạng thái major outage.
+> Trạng thái: đang QA v1.2.3 với thay đổi cho phép chọn thư mục khi cài mới; v1.2.2 vẫn là bản stable/public gần nhất.
 
 ## 1. Mục đích tài liệu
 
@@ -20,7 +20,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.2.2` — đã phát hành stable/public |
+| Phiên bản mã nguồn | `1.2.3` — đang chuẩn bị phát hành |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
@@ -249,8 +249,8 @@ Schema version 1 lưu `templateName`, `templateWidth`, `templateHeight` và vùn
 
 - Target: NSIS x64.
 - Tên artifact: `PNG-Bundle-Mockup-Setup-${version}.exe`.
-- Giữ installer assisted/install identity tương thích v1.2.0: `oneClick: false`, `perMachine: false`, `allowElevation: true`; không cho fresh install đổi thư mục (`allowToChangeInstallationDirectory: false`).
-- Macro `customInstallMode` ép fresh install theo current-user/fixed writable path để `Input` mutable cạnh EXE có quyền ghi.
+- Giữ installer assisted/install identity tương thích v1.2.0: `oneClick: false`, `perMachine: false`, `allowElevation: true`; fresh install được chọn thư mục (`allowToChangeInstallationDirectory: true`).
+- Macro `customInstallMode` vẫn ép fresh install theo current-user. Trang thư mục tự thêm thư mục con `${APP_FILENAME}` nếu người dùng chỉ chọn thư mục cha; cần chọn vị trí mà tài khoản hiện tại có quyền ghi để `Input` mutable cạnh EXE hoạt động.
 - Khi registry đã có v1.2.0, macro giữ nguyên install mode: bản All Users/custom path tiếp tục được nhận diện/nâng cấp tại chỗ thay vì tạo thêm bản HKCU; elevation chỉ còn phục vụ nhánh nâng cấp HKLM đó.
 - `customInit` bỏ qua registry per-user stale nếu EXE không còn, từ chối khi cả bản per-user và All Users đều còn sống, và không cho tạo fresh All Users install mới.
 - Với bản All Users cũ, installer chạy ACL preflight trước khi gỡ bản hiện tại rồi chỉ cấp nhóm Users quyền Modify cho thư mục `Input`; nếu tạo probe hoặc `icacls` thất bại, cài đặt dừng trước khi thay đổi bản cũ.
@@ -414,6 +414,13 @@ Mốc QA local v1.2.2 ngày 2026-08-07:
 - Bản phát hành sạch được dựng lại từ `git archive v1.2.2`, chạy `npm ci`, 73/73 test và NSIS build. `Input` trong artifact chỉ có `README.txt` cùng `Toystory HLW1.pdf`; không có bốn JPG người dùng.
 - GitHub Actions báo `major_outage` và chưa tạo run cho commit/tag v1.2.2. Dùng fallback API với credential Git hiện có: tạo Release nháp, tải ba asset sạch, tải ngược từng asset, so SHA-256 cùng metadata SHA-512 rồi mới publish stable/public.
 - Release ID `366391357`; installer 104,334,963 byte, SHA-256 `BF99CAD9F7BBB405C5ECFD8A5FF5DAD970562619E71FB9E70523CB32C9FB1F13`; blockmap 109,706 byte; `latest.yml` 363 byte. `/releases/latest` trỏ đúng `v1.2.2`.
+
+### v1.2.3 — chọn thư mục cài đặt
+
+- Bật `allowToChangeInstallationDirectory` cho NSIS assisted installer để lần cài mới có trang chọn vị trí.
+- Giữ nguyên `appId`, product name, install mode và các macro bảo toàn `Input`; khi nâng cấp, electron-builder nhận diện cài đặt hiện có, bỏ qua trang thư mục và dùng đúng `InstallLocation` đã lưu.
+- NSIS tự nối thư mục con `PNG Bundle Mockup` nếu đường dẫn người dùng chọn chưa chứa tên app, tránh rải file ứng dụng trực tiếp vào thư mục cha.
+- Bổ sung kiểm thử cấu hình đóng gói và tài liệu phát hành v1.2.3. Bốn JPG trong `Input` vẫn là tài sản người dùng untracked, không được đưa vào commit/tag/artifact phát hành.
 
 ## 12. Trạng thái chốt v1.2.0
 

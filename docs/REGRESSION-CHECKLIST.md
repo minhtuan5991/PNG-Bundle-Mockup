@@ -4,6 +4,7 @@
 
 ## Trạng thái mốc
 
+- [ ] QA local v1.2.3: kiểm thử tự động, NSIS build và xác minh trang chọn thư mục cài mới đang thực hiện; nâng cấp phải giữ nguyên vị trí cũ.
 - [x] QA local v1.2.2 ngày 2026-08-07: **73/73 test đạt**; source CDP kiểm tra chọn mockup đơn, kéo vùng `42:48`, ổn định viewport và đóng cửa sổ đều đạt; packaged basic/region smoke trên `win-unpacked` đạt, title/header đúng v1.2.2.
 - [x] QA/release v1.2.1 ngày 2026-08-07: **66/66 test đạt**; Windows CI thử lại, source/package basic+region smoke, headless Input backup exit `0`, single-instance lock exit `3`, NSIS final, GitHub Release/asset và thông báo updater v1.2.0 đều đạt. Cài mới và download/cài nâng cấp tương tác còn chờ.
 - [x] Mốc automated ngay trước khi tích hợp updater: **20/20 test đạt**.
@@ -226,7 +227,8 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [ ] Kiểm thử trên Windows 10 x64.
 - [x] Lịch sử v1.2.0: cài/chạy/gỡ local thành công trên Windows x64 `10.0.26200` (Windows 11); chưa dùng kết quả này để đánh dấu fresh install v1.2.1.
 - [ ] Cài bằng tài khoản standard user không cần quyền admin ngoài dự kiến.
-- [ ] `customInstallMode` ép fresh install theo current-user/fixed writable path; installer không cho fresh install chọn nhầm `Program Files`.
+- [ ] `customInstallMode` ép fresh install theo current-user; trang chọn thư mục xuất hiện, tự thêm thư mục con `PNG Bundle Mockup`, và thư mục đích/`Input` ghi được bằng tài khoản hiện tại.
+- [ ] Khi nâng cấp bản đã cài, trang chọn thư mục bị bỏ qua và installer giữ nguyên `InstallLocation`, không tạo thêm bản cài hoặc shortcut trùng.
 - [ ] Nâng cấp bản v1.2.0 All Users/custom path hiện có đúng tại chỗ, không tạo thêm bản HKCU hoặc shortcut trùng.
 - [ ] Installer hiển thị icon đúng.
 - [ ] Tùy chọn chạy app sau cài hoạt động.
@@ -377,6 +379,18 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [ ] Windows CI và Release Windows workflow trên tag/commit v1.2.2 đạt. GitHub Actions đang `major_outage` và chưa tạo run; dùng fallback thủ công từ `git archive v1.2.2` sạch.
 - [x] GitHub Release ID `366391357` của v1.2.2 là stable/public, không prerelease, có đúng Setup, blockmap và `latest.yml`; `/releases/latest` trỏ đúng Release này.
 - [x] Tải lại ba asset và xác minh độc lập: installer 104,334,963 byte, SHA-256 `BF99CAD9F7BBB405C5ECFD8A5FF5DAD970562619E71FB9E70523CB32C9FB1F13`; `latest.yml` khớp version/path/size/SHA-512.
+
+## E4. Kiểm tra release v1.2.3
+
+- [x] `package.json`, `package-lock.json` và package root trong lockfile cùng version `1.2.3`.
+- [x] Cấu hình NSIS giữ assisted installer và bật `allowToChangeInstallationDirectory: true`.
+- [x] Kiểm thử cấu hình xác nhận template NSIS có trang `MUI_PAGE_DIRECTORY`, bỏ qua trang này khi update và tự thêm thư mục con `${APP_FILENAME}`.
+- [ ] Chạy toàn bộ automated tests; 0 fail, 0 skipped/todo.
+- [ ] Build sạch từ source đã track, không đưa bốn JPG người dùng trong `Input` vào payload.
+- [ ] Installer, blockmap và `latest.yml` cùng version/size/SHA-512; ghi SHA-256 installer.
+- [ ] Kiểm thử tương tác trên máy/VM sạch: trang chọn thư mục xuất hiện và cài đúng vị trí tùy chọn.
+- [ ] Kiểm thử nâng cấp tại chỗ từ v1.2.2: giữ nguyên `InstallLocation`, `Input` và shortcut.
+- [ ] Push source/tag `v1.2.3`; GitHub Release stable/public có đúng ba asset và `/releases/latest` trỏ đúng bản mới.
 
 ## F. Sign-off
 

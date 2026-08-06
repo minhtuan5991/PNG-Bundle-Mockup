@@ -111,9 +111,9 @@ npm run build:installer
 
 Lệnh trên tương đương build NSIS x64 với `--publish never`. Build cục bộ dùng để QA; quy trình phát hành chính vẫn nên chạy qua GitHub Actions.
 
-Sau build v1.2.1, kiểm tra trong payload đã đóng gói:
+Sau mỗi lần build, kiểm tra trong payload đã đóng gói:
 
-1. `Input` nằm cạnh EXE và có thể mở/ghi bằng tài khoản cài đặt dự kiến. Installer giữ assisted identity tương thích v1.2.0 (`oneClick: false`, `perMachine: false`, `allowElevation: true`) nhưng khóa fresh path; `customInstallMode` ép fresh current-user, còn bản All Users/custom path cũ giữ mode. Nhánh All Users phải ACL-preflight trước khi thay đổi bản cũ, chỉ cấp Modify cho `Input`, dừng nếu `icacls` lỗi và phải được thử nâng cấp tại chỗ.
+1. `Input` nằm cạnh EXE và có thể mở/ghi bằng tài khoản cài đặt dự kiến. Installer giữ assisted identity tương thích v1.2.0 (`oneClick: false`, `perMachine: false`, `allowElevation: true`) và cho fresh install chọn thư mục (`allowToChangeInstallationDirectory: true`); `customInstallMode` vẫn ép fresh current-user, còn bản All Users/custom path cũ giữ mode/vị trí. Phải thử trang chọn thư mục trên máy sạch, xác nhận NSIS tự thêm thư mục con tên app và thử nâng cấp tại chỗ để chắc chắn trang này bị bỏ qua. Nhánh All Users phải ACL-preflight trước khi thay đổi bản cũ, chỉ cấp Modify cho `Input` và dừng nếu `icacls` lỗi.
 2. `pdf-lib` có trong ASAR/runtime và chức năng PDF không báo `MODULE_NOT_FOUND`.
 3. PDF mẫu thật render đúng và cả nút lẫn link hiển thị mở URL mới.
 4. Mockup bundle, mockup đơn và PDF cùng được ghi vào một `Done`.

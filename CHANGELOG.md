@@ -4,7 +4,14 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
-Chưa có thay đổi sau bản phát hành v1.2.2.
+Chưa có thay đổi sau bản phát hành v1.2.3.
+
+## [1.2.3] - 2026-08-07
+
+### Changed
+
+- Bộ cài assisted hiển thị trang chọn thư mục cho lần cài mới. NSIS vẫn tự thêm thư mục con `PNG Bundle Mockup` nếu người dùng chỉ chọn thư mục cha.
+- Khi cập nhật bản đã cài, trang chọn vị trí được tự động bỏ qua và app tiếp tục nâng cấp tại đúng thư mục hiện có, tránh tạo bản cài trùng.
 
 ## [1.2.2] - 2026-08-07
 

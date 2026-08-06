@@ -7,13 +7,35 @@ const path = require('node:path');
 
 const packageJson = require('../package.json');
 
-test('installer v1.2.2 giữ chế độ assisted và không đóng gói marker Input runtime', () => {
-  assert.equal(packageJson.version, '1.2.2');
+test('installer v1.2.3 cho chọn thư mục khi cài mới và không đóng gói marker Input runtime', () => {
+  assert.equal(packageJson.version, '1.2.3');
   assert.equal(packageJson.build.nsis.oneClick, false);
   assert.equal(packageJson.build.nsis.perMachine, false);
   assert.equal(packageJson.build.nsis.allowElevation, true);
-  assert.equal(packageJson.build.nsis.allowToChangeInstallationDirectory, false);
+  assert.equal(packageJson.build.nsis.allowToChangeInstallationDirectory, true);
   assert.equal(packageJson.build.nsis.include, 'build/installer.nsh');
+
+  const assistedInstallerTemplate = fs.readFileSync(
+    path.resolve(
+      __dirname,
+      '..',
+      'node_modules',
+      'app-builder-lib',
+      'templates',
+      'nsis',
+      'assistedInstaller.nsh',
+    ),
+    'utf8',
+  );
+  assert.match(
+    assistedInstallerTemplate,
+    /!ifdef allowToChangeInstallationDirectory[\s\S]*?!insertmacro skipPageIfUpdated[\s\S]*?!insertmacro MUI_PAGE_DIRECTORY/,
+  );
+  assert.match(
+    assistedInstallerTemplate,
+    /StrCpy \$INSTDIR "\$INSTDIR\\\$\{APP_FILENAME\}"/,
+  );
+
   const installerInclude = fs.readFileSync(
     path.resolve(__dirname, '..', packageJson.build.nsis.include),
     'utf8',
