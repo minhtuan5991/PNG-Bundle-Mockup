@@ -38,7 +38,7 @@
             <span class="step-number">1</span>
             <div>
               <h2>Chọn các file PNG</h2>
-              <p>Chọn thư mục, sau đó đánh dấu các file cần ghép.</p>
+              <p>Chọn thư mục hoặc kéo trực tiếp các file PNG vào gallery.</p>
             </div>
           </div>
 
@@ -62,7 +62,7 @@
           <div class="file-list" id="fileList" role="listbox" aria-label="Danh sách PNG">
             <div class="empty-list">
               <span class="empty-icon">PNG</span>
-              <p>File PNG trong thư mục sẽ xuất hiện ở đây.</p>
+              <p>Kéo file PNG vào đây hoặc chọn một thư mục.</p>
             </div>
           </div>
 
@@ -121,6 +121,42 @@
               </span>
               <span class="chevron">›</span>
             </button>
+
+            <div class="input-assets-bar">
+              <span class="input-assets-copy">
+                <strong>Thư mục Input</strong>
+                <small id="inputAssetSummary">Đang kiểm tra PDF và ảnh mockup đơn…</small>
+              </span>
+              <button class="mini-button" id="openInputFolderButton" type="button">Mở Input</button>
+            </div>
+
+            <label class="check-option">
+              <input id="createPdfDownload" type="checkbox" data-lock />
+              <span class="option-checkmark" aria-hidden="true"></span>
+              <span class="option-copy">
+                <strong>Tạo PDF Download</strong>
+                <small>Thay link trong PDF mẫu và lưu cùng thư mục Done.</small>
+              </span>
+            </label>
+            <div class="pdf-download-fields is-hidden" id="pdfDownloadFields">
+              <label class="field">
+                <span>Link tải sẽ gắn vào button và link hiển thị</span>
+                <input id="downloadUrl" type="url" inputmode="url" maxlength="2048" placeholder="https://drive.google.com/…" data-lock />
+              </label>
+              <small id="pdfTemplateSummary">Chưa tìm thấy PDF mẫu trong Input.</small>
+            </div>
+
+            <label class="check-option">
+              <input id="createSingleMockups" type="checkbox" data-lock />
+              <span class="option-checkmark" aria-hidden="true"></span>
+              <span class="option-copy">
+                <strong>Tạo mockup đơn</strong>
+                <small>Ghép PNG ngẫu nhiên lên từng ảnh áo, cốc, túi… trong Input.</small>
+              </span>
+            </label>
+            <div class="single-mockup-summary" id="singleMockupSummary">
+              Chưa có ảnh mockup đơn trong Input.
+            </div>
           </div>
         </section>
 
@@ -183,6 +219,22 @@
             <p class="settings-note">
               Alpha 0 giữ mọi pixel nhìn thấy. Tăng nhẹ nếu file có pixel mờ rác ở ngoài thiết kế.
             </p>
+            <div class="region-editor-control">
+              <label class="check-option compact-option">
+                <input id="editSingleMockupRegions" type="checkbox" data-lock />
+                <span class="option-checkmark" aria-hidden="true"></span>
+                <span class="option-copy">
+                  <strong>Chỉnh vùng in mockup đơn</strong>
+                  <small>Kéo vùng 42×48 trên từng ảnh trong Preview.</small>
+                </span>
+              </label>
+              <button class="button button-success" id="saveSingleMockupRegions" type="button" disabled data-lock>
+                Lưu vùng in
+              </button>
+            </div>
+            <p class="settings-note" id="singleRegionStatus">
+              Thiết lập được lưu theo tên và kích thước từng ảnh mockup.
+            </p>
           </details>
         </section>
 
@@ -230,6 +282,13 @@
             <img id="previewImage" alt="Xem trước mockup" />
             <div class="safe-zone is-hidden" id="safeZone">
               <span>Vùng sắp xếp PNG</span>
+            </div>
+            <div class="print-region is-hidden" id="printRegion" role="group" aria-label="Vùng in mockup đơn tỷ lệ 42 trên 48">
+              <span>Vùng in 42×48</span>
+              <i class="region-handle handle-nw" data-handle="nw"></i>
+              <i class="region-handle handle-ne" data-handle="ne"></i>
+              <i class="region-handle handle-sw" data-handle="sw"></i>
+              <i class="region-handle handle-se" data-handle="se"></i>
             </div>
           </div>
 

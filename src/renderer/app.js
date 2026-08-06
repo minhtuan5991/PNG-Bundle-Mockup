@@ -26,12 +26,24 @@ const elements = {
   watermarkThumb: document.querySelector('#watermarkThumb'),
   watermarkName: document.querySelector('#watermarkName'),
   watermarkMeta: document.querySelector('#watermarkMeta'),
+  inputAssetSummary: document.querySelector('#inputAssetSummary'),
+  openInputFolderButton: document.querySelector('#openInputFolderButton'),
+  createPdfDownload: document.querySelector('#createPdfDownload'),
+  pdfDownloadFields: document.querySelector('#pdfDownloadFields'),
+  downloadUrl: document.querySelector('#downloadUrl'),
+  pdfTemplateSummary: document.querySelector('#pdfTemplateSummary'),
+  createSingleMockups: document.querySelector('#createSingleMockups'),
+  singleMockupSummary: document.querySelector('#singleMockupSummary'),
+  editSingleMockupRegions: document.querySelector('#editSingleMockupRegions'),
+  saveSingleMockupRegions: document.querySelector('#saveSingleMockupRegions'),
+  singleRegionStatus: document.querySelector('#singleRegionStatus'),
   mockupCount: document.querySelector('#mockupCount'),
   gap: document.querySelector('#gap'),
   topMargin: document.querySelector('#topMargin'),
   bottomMargin: document.querySelector('#bottomMargin'),
   sideMargin: document.querySelector('#sideMargin'),
   alphaThreshold: document.querySelector('#alphaThreshold'),
+  advancedSettings: document.querySelector('#advancedSettings'),
   distribution: document.querySelector('#distribution'),
   previewButton: document.querySelector('#previewButton'),
   generateButton: document.querySelector('#generateButton'),
@@ -47,6 +59,7 @@ const elements = {
   imageFrame: document.querySelector('#imageFrame'),
   previewImage: document.querySelector('#previewImage'),
   safeZone: document.querySelector('#safeZone'),
+  printRegion: document.querySelector('#printRegion'),
   workingOverlay: document.querySelector('#workingOverlay'),
   workingTitle: document.querySelector('#workingTitle'),
   workingMessage: document.querySelector('#workingMessage'),
@@ -97,12 +110,14 @@ const state = {
   appInfo: null,
   update: null,
   sourceDirectory: null,
+  sourceDirectories: new Set(),
   files: [],
   selected: new Set(),
   template: null,
   watermark: null,
   sourcePicker: null,
   folderScanning: false,
+  dropScanning: false,
   busy: false,
   busyType: null,
   display: null,
@@ -111,6 +126,16 @@ const state = {
   pageCount: 1,
   previewLayout: null,
   output: null,
+  inputAssets: {
+    inputDirectory: null,
+    pdfTemplates: [],
+    singleMockupTemplates: [],
+    warnings: [],
+  },
+  inputAssetsLoaded: false,
+  inputAssetsLoading: false,
+  inputAssetsSaving: false,
+  regionEditor: null,
 };
 
 async function initializeAppInfo() {
@@ -159,6 +184,148 @@ function formatBytes(bytes) {
   return `${(value / 1024 ** 2).toFixed(1)} MB`;
 }
 
+function readDownloadUrl(markInvalid = true) {
+  const rawValue = elements.downloadUrl.value.trim();
+  let normalized = null;
+  try {
+    if (!rawValue) throw new Error('Hãy nhập link tải cho file PDF Download.');
+    const parsed = new URL(rawValue);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      throw new Error('Link tải PDF chỉ hỗ trợ HTTP hoặc HTTPS.');
+    }
+    normalized = parsed.href;
+    if (normalized.length > 2048) {
+      throw new Error('Link tải PDF không được vượt quá 2048 ký tự.');
+    }
+  } catch (error) {
+    if (markInvalid) elements.downloadUrl.classList.add('is-invalid');
+    if (error instanceof TypeError) throw new Error('Link tải PDF không hợp lệ.');
+    throw error;
+  }
+  if (markInvalid) elements.downloadUrl.classList.remove('is-invalid');
+  return normalized;
+}
+
+function templatesMissingRegions() {
+  return state.inputAssets.singleMockupTemplates.filter((template) => !template.region);
+}
+
+function renderInputAssets() {
+  const {
+    inputDirectory,
+    pdfTemplates,
+    singleMockupTemplates,
+    warnings = [],
+  } = state.inputAssets;
+  const pdfCount = pdfTemplates.length;
+  const singleCount = singleMockupTemplates.length;
+  const configuredCount = singleMockupTemplates.filter((template) => template.region).length;
+  elements.inputAssetSummary.title = inputDirectory || '';
+
+  if (!state.inputAssetsLoaded && state.inputAssetsLoading) {
+    elements.inputAssetSummary.textContent = 'Đang kiểm tra PDF và ảnh mockup đơn…';
+  } else if (!state.inputAssetsLoaded) {
+    elements.inputAssetSummary.textContent = 'Chưa đọc được thư mục Input.';
+  } else {
+    const warningSuffix = warnings.length > 0 ? ` · ${warnings.length} ảnh lỗi` : '';
+    elements.inputAssetSummary.textContent =
+      `${pdfCount} PDF · ${singleCount} ảnh mockup đơn${warningSuffix}`;
+  }
+
+  if (pdfCount === 0) {
+    elements.pdfTemplateSummary.textContent = 'Chưa tìm thấy PDF mẫu trong Input.';
+  } else if (pdfCount === 1) {
+    const template = pdfTemplates[0];
+    elements.pdfTemplateSummary.textContent = `${template.name} · ${formatBytes(template.size)}`;
+  } else {
+    elements.pdfTemplateSummary.textContent = `Có ${pdfCount} PDF. Hãy chỉ giữ lại 1 file PDF mẫu trong Input.`;
+  }
+
+  if (singleCount === 0) {
+    elements.singleMockupSummary.textContent = warnings.length > 0
+      ? `Không có ảnh mockup hợp lệ. Ảnh lỗi: ${warnings.map((item) => item.name).join(', ')}.`
+      : 'Chưa có ảnh mockup đơn trong Input.';
+  } else {
+    const names = singleMockupTemplates.slice(0, 3).map((template) => template.name).join(', ');
+    const remainder = singleCount > 3 ? ` và ${singleCount - 3} ảnh khác` : '';
+    elements.singleMockupSummary.textContent =
+      `${singleCount} ảnh · đã thiết lập ${configuredCount}/${singleCount}: ${names}${remainder}.`;
+    if (warnings.length > 0) {
+      elements.singleMockupSummary.textContent +=
+        ` Đã bỏ qua ${warnings.length} ảnh lỗi: ${warnings.map((item) => item.name).join(', ')}.`;
+    }
+  }
+
+  if (!state.regionEditor) {
+    elements.singleRegionStatus.textContent = singleCount === 0
+      ? 'Thêm ảnh mockup đơn vào Input để thiết lập vùng in.'
+      : configuredCount === singleCount
+        ? `Đã lưu vùng in cho ${singleCount}/${singleCount} ảnh mockup.`
+        : `Còn ${singleCount - configuredCount} ảnh chưa có vùng in.`;
+  }
+
+  elements.pdfDownloadFields.classList.toggle('is-hidden', !elements.createPdfDownload.checked);
+  updateControls();
+}
+
+async function refreshInputAssets({ silent = false } = {}) {
+  if (state.inputAssetsLoading || state.inputAssetsSaving || state.regionEditor) return null;
+  state.inputAssetsLoading = true;
+  renderInputAssets();
+  try {
+    state.inputAssets = unwrap(await api.getInputAssets());
+    state.inputAssetsLoaded = true;
+    renderInputAssets();
+    return state.inputAssets;
+  } catch (error) {
+    if (!state.inputAssetsLoaded) renderInputAssets();
+    if (!silent) showError(error);
+    return null;
+  } finally {
+    state.inputAssetsLoading = false;
+    renderInputAssets();
+  }
+}
+
+async function openInputFolder() {
+  if (state.busy || state.inputAssetsLoading || state.inputAssetsSaving || state.regionEditor) return;
+  if (!state.inputAssets.inputDirectory) await refreshInputAssets();
+  if (!state.inputAssets.inputDirectory) return;
+  try {
+    unwrap(await api.openPath(state.inputAssets.inputDirectory));
+  } catch (error) {
+    showError(error);
+  }
+}
+
+function readAdditionalGenerationOptions() {
+  const options = {
+    createPdfDownload: elements.createPdfDownload.checked,
+    downloadUrl: null,
+    createSingleMockups: elements.createSingleMockups.checked,
+  };
+  if (options.createPdfDownload) {
+    if (state.inputAssets.pdfTemplates.length !== 1) {
+      throw new Error('Thư mục Input phải có đúng 1 file PDF mẫu.');
+    }
+    options.downloadUrl = readDownloadUrl();
+  } else {
+    elements.downloadUrl.classList.remove('is-invalid');
+  }
+  if (options.createSingleMockups) {
+    if (state.inputAssets.singleMockupTemplates.length === 0) {
+      throw new Error('Hãy thêm ảnh mockup đơn vào thư mục Input.');
+    }
+    const missing = templatesMissingRegions();
+    if (missing.length > 0) {
+      throw new Error(
+        `Hãy chỉnh và lưu vùng in cho: ${missing.map((template) => template.name).join(', ')}.`,
+      );
+    }
+  }
+  return options;
+}
+
 function showUpdateDialog() {
   if (!elements.updateDialog.open && typeof elements.updateDialog.showModal === 'function') {
     elements.updateDialog.showModal();
@@ -170,10 +337,16 @@ function setUpdateIcon(symbol, className = '') {
   elements.updateIcon.className = `update-icon${className ? ` ${className}` : ''}`;
 }
 
+function updateInstallBlocked() {
+  return Boolean(
+    state.busy || state.inputAssetsLoading || state.inputAssetsSaving || state.regionEditor,
+  );
+}
+
 function setUpdatePrimary(label, action, { disabled = false, hidden = false } = {}) {
   elements.updatePrimaryButton.textContent = label;
   elements.updatePrimaryButton.dataset.action = action;
-  elements.updatePrimaryButton.disabled = disabled;
+  elements.updatePrimaryButton.disabled = disabled || (action === 'install' && updateInstallBlocked());
   elements.updatePrimaryButton.classList.toggle('is-hidden', hidden);
 }
 
@@ -323,6 +496,9 @@ async function runUpdateAction(action) {
     return;
   }
   if (action === 'install') {
+    if (updateInstallBlocked()) {
+      throw new Error('Hãy hoàn tất tác vụ đang chạy và lưu hoặc đóng phần chỉnh vùng in trước khi cài cập nhật.');
+    }
     setUpdatePrimary('Đang khởi động lại…', 'none', { disabled: true });
     const result = unwrap(await api.installUpdate());
     if (!result.installing) {
@@ -382,7 +558,7 @@ function renderEmptyList(message) {
 function renderFileList() {
   const visibleFiles = state.files.filter(currentFilterMatches);
   if (state.files.length === 0) {
-    renderEmptyList(state.sourceDirectory ? 'Thư mục này không có file PNG.' : 'File PNG trong thư mục sẽ xuất hiện ở đây.');
+    renderEmptyList(state.sourceDirectory ? 'Thư mục này không có file PNG.' : 'Kéo file PNG vào đây hoặc chọn một thư mục.');
     return;
   }
   if (visibleFiles.length === 0) {
@@ -563,6 +739,7 @@ function commitSourcePicker() {
   if (chosenFiles.length === 0) return;
 
   state.sourceDirectory = pending.folderPath;
+  state.sourceDirectories = new Set([pending.folderPath]);
   state.files = chosenFiles;
   state.selected = new Set(chosenFiles.map((file) => file.path));
   state.output = null;
@@ -576,6 +753,138 @@ function commitSourcePicker() {
   updateSelectionState();
   if (state.template) showTemplatePreview();
   showToast(`Đã nạp ${chosenFiles.length} PNG đã chọn.`, 'success', 3400);
+}
+
+function renderSourcePathSummary() {
+  if (!state.sourceDirectory) {
+    elements.sourcePath.textContent = 'Chưa chọn thư mục';
+    elements.sourcePath.title = '';
+    elements.sourcePath.classList.add('is-empty');
+    elements.statOutput.textContent = '—';
+    return;
+  }
+
+  const outputDirectory = `${state.sourceDirectory}\\Done`;
+  const directoryCount = Math.max(1, state.sourceDirectories.size);
+  elements.sourcePath.textContent = directoryCount > 1
+    ? `${state.files.length} PNG từ ${directoryCount} thư mục · lưu tại ${outputDirectory}`
+    : state.sourceDirectory;
+  elements.sourcePath.title = directoryCount > 1
+    ? `Nguồn từ ${directoryCount} thư mục. Kết quả lưu tại ${outputDirectory}`
+    : state.sourceDirectory;
+  elements.sourcePath.classList.remove('is-empty');
+  elements.statOutput.textContent = outputDirectory;
+}
+
+function rememberSourceDirectory(directoryPath) {
+  if (!directoryPath) return;
+  const key = normalizePath(directoryPath);
+  if ([...state.sourceDirectories].some((item) => normalizePath(item) === key)) return;
+  state.sourceDirectories.add(directoryPath);
+}
+
+function setFileDropState(mode = 'idle') {
+  const dragging = mode === 'dragging';
+  const loading = mode === 'loading';
+  elements.fileList.classList.toggle('is-drag-over', dragging);
+  elements.fileList.classList.toggle('is-drop-loading', loading);
+  elements.fileList.dataset.dropMessage = loading ? 'Đang đọc file PNG…' : 'Thả file PNG vào đây';
+  elements.fileList.setAttribute('aria-busy', String(loading));
+}
+
+function mergeDroppedFiles(result) {
+  const knownPaths = new Set(state.files.map((file) => normalizePath(file.path)));
+  const additions = [];
+  let duplicateCount = Number(result.duplicateCount) || 0;
+
+  for (const file of result.files || []) {
+    const key = normalizePath(file.path);
+    if (!key || knownPaths.has(key)) {
+      duplicateCount += 1;
+      continue;
+    }
+    knownPaths.add(key);
+    additions.push(file);
+  }
+
+  if (additions.length === 0) return { additions, duplicateCount, selectedCount: 0 };
+
+  if (!state.sourceDirectory) state.sourceDirectory = result.folderPath;
+  if (state.sourceDirectory && state.sourceDirectories.size === 0) {
+    rememberSourceDirectory(state.sourceDirectory);
+  }
+  for (const file of additions) {
+    rememberSourceDirectory(file.directory);
+    if (!file.error && !isTemplateFile(file) && !isWatermarkFile(file)) {
+      state.selected.add(file.path);
+    }
+  }
+
+  state.files.push(...additions);
+  state.output = null;
+  elements.openOutputButton.classList.add('is-hidden');
+  elements.fileSearch.value = '';
+  renderSourcePathSummary();
+  renderFileList();
+  updateSelectionState();
+  if (state.template) showTemplatePreview();
+
+  return {
+    additions,
+    duplicateCount,
+    selectedCount: additions.filter(
+      (file) => !file.error && !isTemplateFile(file) && !isWatermarkFile(file),
+    ).length,
+  };
+}
+
+async function addDroppedPngFiles(dataTransfer) {
+  if (state.busy || state.folderScanning || state.dropScanning || state.regionEditor) return;
+  const droppedFiles = Array.from(dataTransfer?.files || []);
+  const pngFiles = droppedFiles.filter((file) => /\.png$/i.test(file.name || ''));
+  const droppedPaths = [];
+
+  for (const file of pngFiles) {
+    try {
+      const filePath = api.getDroppedFilePath(file);
+      if (filePath) droppedPaths.push(filePath);
+    } catch {
+      // Browser-originated files do not expose a local Explorer path.
+    }
+  }
+
+  const nonPngCount = droppedFiles.length - pngFiles.length;
+  const unavailablePngCount = pngFiles.length - droppedPaths.length;
+  if (droppedPaths.length === 0) {
+    showToast('Chỉ nhận file .png được kéo trực tiếp từ File Explorer.', 'info');
+    return;
+  }
+
+  state.dropScanning = true;
+  elements.chooseFolderButton.disabled = true;
+  setFileDropState('loading');
+  updateControls();
+  setAppStatus('Đang đọc PNG', 'busy');
+  try {
+    const result = unwrap(await api.inspectDroppedPngFiles(droppedPaths));
+    const merged = mergeDroppedFiles(result);
+    const invalidCount = merged.additions.filter((file) => file.error).length;
+    const notes = [];
+    if (merged.selectedCount > 0) notes.push(`Đã thêm và chọn ${merged.selectedCount} PNG.`);
+    if (invalidCount > 0) notes.push(`${invalidCount} file lỗi không được chọn.`);
+    if (merged.duplicateCount > 0) notes.push(`${merged.duplicateCount} file trùng đã bỏ qua.`);
+    if (nonPngCount > 0) notes.push(`${nonPngCount} file không phải PNG đã bỏ qua.`);
+    if (unavailablePngCount > 0) notes.push(`${unavailablePngCount} PNG không có đường dẫn Explorer đã bỏ qua.`);
+    showToast(notes.join(' ') || 'Các file PNG này đã có trong danh sách.', merged.selectedCount > 0 ? 'success' : 'info', 4200);
+  } catch (error) {
+    showError(error);
+  } finally {
+    state.dropScanning = false;
+    elements.chooseFolderButton.disabled = state.busy;
+    setFileDropState();
+    updateControls();
+    if (!state.busy) setAppStatus('Sẵn sàng', 'ready');
+  }
 }
 
 function readInteger(input, label, min, max = Number.MAX_SAFE_INTEGER, markInvalid = true) {
@@ -617,7 +926,7 @@ function settingsForOverlay() {
   }
 }
 
-function validateReady() {
+function validateReady({ includeAdditionalOutputs = false } = {}) {
   const files = selectedFiles();
   if (!state.sourceDirectory) throw new Error('Hãy chọn thư mục chứa PNG.');
   if (files.length === 0) throw new Error('Hãy chọn ít nhất một file PNG hợp lệ.');
@@ -637,7 +946,7 @@ function validateReady() {
   if (elements.useWatermark.checked && !state.watermark) {
     throw new Error('Hãy chọn file watermark PNG nền trong suốt.');
   }
-  return {
+  const payload = {
     sourcePaths: files.map((file) => file.path),
     templatePath: state.template.path,
     sourceDirectory: state.sourceDirectory,
@@ -646,6 +955,8 @@ function validateReady() {
     removeMetadata: elements.removeMetadata.checked,
     watermarkPath: elements.useWatermark.checked ? state.watermark.path : null,
   };
+  if (includeAdditionalOutputs) Object.assign(payload, readAdditionalGenerationOptions());
+  return payload;
 }
 
 function updateDistribution() {
@@ -691,13 +1002,37 @@ function updateSelectionState() {
 }
 
 function updateControls() {
+  const editorActive = Boolean(state.regionEditor);
+  if (state.update?.status === 'downloaded') {
+    elements.updatePrimaryButton.disabled = updateInstallBlocked();
+  }
+  elements.openInputFolderButton.disabled =
+    state.busy || state.inputAssetsLoading || state.inputAssetsSaving || editorActive;
   if (state.busy) return;
+  const scanning = state.folderScanning || state.dropScanning;
   const hasFiles = selectedFiles().length > 0;
   const ready = Boolean(state.sourceDirectory && state.template && hasFiles);
-  elements.previewButton.disabled = !ready;
-  elements.generateButton.disabled = !ready;
-  elements.selectAllButton.disabled = state.files.length === 0;
-  elements.selectNoneButton.disabled = state.selected.size === 0;
+  elements.chooseFolderButton.disabled = scanning || editorActive;
+  elements.chooseTemplateButton.disabled = editorActive;
+  elements.watermarkFile.disabled = editorActive;
+  elements.useWatermark.disabled = editorActive;
+  elements.previewButton.disabled = scanning || !ready || editorActive;
+  elements.generateButton.disabled =
+    scanning || state.inputAssetsLoading || state.inputAssetsSaving || !ready || editorActive;
+  elements.selectAllButton.disabled = scanning || state.files.length === 0;
+  elements.selectNoneButton.disabled = scanning || state.selected.size === 0;
+  elements.createPdfDownload.disabled =
+    state.inputAssetsLoading || editorActive ||
+    (state.inputAssets.pdfTemplates.length !== 1 && !elements.createPdfDownload.checked);
+  elements.downloadUrl.disabled =
+    state.inputAssetsLoading || !elements.createPdfDownload.checked || editorActive;
+  elements.createSingleMockups.disabled =
+    state.inputAssetsLoading || editorActive ||
+    (state.inputAssets.singleMockupTemplates.length === 0 && !elements.createSingleMockups.checked);
+  elements.editSingleMockupRegions.disabled =
+    state.inputAssetsLoading || state.inputAssetsSaving ||
+    state.inputAssets.singleMockupTemplates.length === 0;
+  elements.saveSingleMockupRegions.disabled = !editorActive || state.inputAssetsSaving;
   const count = Math.max(1, Number(elements.mockupCount.value) || 1);
   elements.generateButton.textContent = `Tạo ${count} mockup`;
 }
@@ -744,12 +1079,328 @@ function renderWatermarkSummary() {
   elements.watermarkMeta.textContent = `${state.watermark.width} × ${state.watermark.height}px · ${formatBytes(state.watermark.size)}`;
 }
 
+function clonePrintRegion(region) {
+  return {
+    x: Number(region.x),
+    y: Number(region.y),
+    width: Number(region.width),
+    height: Number(region.height),
+  };
+}
+
+function syncEditorWindowState() {
+  api.setEditorState({
+    open: Boolean(state.regionEditor),
+    dirty: Boolean(state.regionEditor?.dirty),
+  });
+}
+
+function validPrintRegion(region, template) {
+  if (!region || !template) return false;
+  const values = [region.x, region.y, region.width, region.height].map(Number);
+  if (values.some((value) => !Number.isFinite(value))) return false;
+  const [x, y, width, height] = values;
+  if (
+    x < 0 || y < 0 || width <= 0 || height <= 0 ||
+    x + width > 1.000001 || y + height > 1.000001
+  ) return false;
+  const pixelRatio = (width * template.width) / (height * template.height);
+  return Math.abs(pixelRatio - 7 / 8) < 0.0002;
+}
+
+function defaultPrintRegion(template) {
+  const pixelHeight = Math.max(
+    8,
+    Math.min(template.height * 0.62, template.width * 0.62 * 8 / 7),
+  );
+  const pixelWidth = pixelHeight * 7 / 8;
+  return {
+    x: (template.width - pixelWidth) / (2 * template.width),
+    y: (template.height - pixelHeight) / (2 * template.height),
+    width: pixelWidth / template.width,
+    height: pixelHeight / template.height,
+  };
+}
+
+function currentRegionEntry() {
+  return state.regionEditor?.entries[state.pageIndex] || null;
+}
+
+function updatePrintRegion() {
+  const entry = currentRegionEntry();
+  if (state.viewMode !== 'region' || !entry) {
+    elements.printRegion.classList.add('is-hidden');
+    return;
+  }
+  const { region } = entry;
+  elements.printRegion.style.left = `${region.x * 100}%`;
+  elements.printRegion.style.top = `${region.y * 100}%`;
+  elements.printRegion.style.width = `${region.width * 100}%`;
+  elements.printRegion.style.height = `${region.height * 100}%`;
+  elements.printRegion.classList.remove('is-hidden');
+}
+
+function setRegionEditorStatus(message = null) {
+  if (!state.regionEditor) return;
+  const entry = currentRegionEntry();
+  elements.singleRegionStatus.textContent = message ||
+    `Ảnh ${state.pageIndex + 1}/${state.regionEditor.entries.length}: ${entry.template.name}. ` +
+    'Kéo vùng vàng để di chuyển, kéo các góc để đổi kích thước.';
+}
+
+function showRegionEditorPage(pageIndex) {
+  if (!state.regionEditor) return;
+  const boundedIndex = Math.max(0, Math.min(state.regionEditor.entries.length - 1, pageIndex));
+  state.pageIndex = boundedIndex;
+  state.pageCount = state.regionEditor.entries.length;
+  const entry = currentRegionEntry();
+  showImage({
+    url: entry.template.url,
+    width: entry.template.width,
+    height: entry.template.height,
+    mode: 'region',
+    title: `Chỉnh vùng in ${boundedIndex + 1}/${state.pageCount} · ${entry.template.name}`,
+  });
+  elements.statTemplate.textContent = `${entry.template.width} × ${entry.template.height}px`;
+  elements.statLayout.textContent = 'Vùng in 42×48';
+  updatePrintRegion();
+  setRegionEditorStatus();
+  updateControls();
+}
+
+function restorePreviewAfterRegionEditor(previousView) {
+  if (previousView?.display) {
+    state.pageIndex = previousView.pageIndex;
+    state.pageCount = previousView.pageCount;
+    showImage({
+      ...previousView.display,
+      mode: previousView.viewMode,
+      title: previousView.title,
+      layout: previousView.layout,
+    });
+    elements.statLayout.textContent = previousView.statLayout;
+    elements.statTemplate.textContent = previousView.statTemplate;
+    return;
+  }
+  if (state.template) {
+    showTemplatePreview();
+    return;
+  }
+  state.display = null;
+  state.viewMode = 'empty';
+  state.pageIndex = 0;
+  state.pageCount = 1;
+  elements.imageFrame.classList.add('is-hidden');
+  elements.previewPlaceholder.classList.remove('is-hidden');
+  elements.previewTitle.textContent = 'Ảnh nền và vùng sắp xếp';
+  elements.statTemplate.textContent = '—';
+  elements.safeZone.classList.add('is-hidden');
+  elements.printRegion.classList.add('is-hidden');
+  updatePageNavigation();
+}
+
+function exitRegionEditor({ notifyUnsaved = false } = {}) {
+  if (!state.regionEditor || state.inputAssetsSaving) return;
+  const previousView = state.regionEditor.previousView;
+  const dirty = state.regionEditor.dirty;
+  if (
+    notifyUnsaved && dirty &&
+    !window.confirm('Vùng in có thay đổi chưa được lưu. Bạn có chắc muốn bỏ các thay đổi này?')
+  ) {
+    elements.editSingleMockupRegions.checked = true;
+    return;
+  }
+  state.regionEditor = null;
+  syncEditorWindowState();
+  elements.editSingleMockupRegions.checked = false;
+  elements.printRegion.classList.add('is-hidden');
+  elements.printRegion.classList.remove('is-dragging');
+  restorePreviewAfterRegionEditor(previousView);
+  renderInputAssets();
+  updateControls();
+  if (notifyUnsaved && dirty) {
+    showToast('Các thay đổi vùng in chưa lưu đã được bỏ qua.', 'info');
+  }
+}
+
+async function enterRegionEditor() {
+  if (state.busy || state.inputAssetsSaving) return;
+  const refreshed = await refreshInputAssets();
+  if (!refreshed) {
+    elements.editSingleMockupRegions.checked = false;
+    return;
+  }
+  const templates = state.inputAssets.singleMockupTemplates;
+  if (templates.length === 0) {
+    elements.editSingleMockupRegions.checked = false;
+    showError(new Error('Hãy thêm ảnh mockup đơn vào thư mục Input.'));
+    return;
+  }
+  const tooSmall = templates.find((template) => template.width < 7 || template.height < 8);
+  if (tooSmall) {
+    elements.editSingleMockupRegions.checked = false;
+    showError(new Error(`Ảnh ${tooSmall.name} quá nhỏ để tạo vùng in 7×8 pixel.`));
+    return;
+  }
+  state.regionEditor = {
+    entries: templates.map((template) => ({
+      template,
+      region: validPrintRegion(template.region, template)
+        ? clonePrintRegion(template.region)
+        : defaultPrintRegion(template),
+    })),
+    dirty: templates.some((template) => !validPrintRegion(template.region, template)),
+    drag: null,
+    previousView: {
+      display: state.display ? { ...state.display } : null,
+      viewMode: state.viewMode,
+      pageIndex: state.pageIndex,
+      pageCount: state.pageCount,
+      layout: state.previewLayout,
+      title: elements.previewTitle.textContent,
+      statLayout: elements.statLayout.textContent,
+      statTemplate: elements.statTemplate.textContent,
+    },
+  };
+  syncEditorWindowState();
+  showRegionEditorPage(0);
+}
+
+async function saveRegionEditor() {
+  if (!state.regionEditor || state.inputAssetsSaving) return;
+  const editor = state.regionEditor;
+  const previousView = editor.previousView;
+  state.inputAssetsSaving = true;
+  updateControls();
+  updatePageNavigation();
+  setRegionEditorStatus('Đang lưu thiết lập vùng in…');
+  const entries = editor.entries.map((entry) => ({
+    templateName: entry.template.name,
+    region: clonePrintRegion(entry.region),
+  }));
+  try {
+    const assets = unwrap(await api.saveSingleMockupRegions(entries));
+    state.inputAssets = assets;
+    state.inputAssetsLoaded = true;
+    if (state.regionEditor === editor) state.regionEditor = null;
+    syncEditorWindowState();
+    elements.editSingleMockupRegions.checked = false;
+    elements.printRegion.classList.add('is-hidden');
+    elements.printRegion.classList.remove('is-dragging');
+    restorePreviewAfterRegionEditor(previousView);
+    renderInputAssets();
+    showToast(`Đã lưu vùng in cho ${entries.length} ảnh mockup đơn.`, 'success');
+  } catch (error) {
+    showError(error);
+    setRegionEditorStatus('Chưa lưu được. Hãy kiểm tra lại các ảnh trong Input.');
+  } finally {
+    state.inputAssetsSaving = false;
+    updateControls();
+    updatePageNavigation();
+  }
+}
+
+function beginPrintRegionDrag(event) {
+  if (
+    !state.regionEditor || state.inputAssetsSaving ||
+    state.viewMode !== 'region' || event.button !== 0
+  ) return;
+  const entry = currentRegionEntry();
+  const frame = elements.imageFrame.getBoundingClientRect();
+  if (frame.width <= 0 || frame.height <= 0) return;
+  const handle = event.target.closest('[data-handle]')?.dataset.handle || null;
+  const region = entry.region;
+  state.regionEditor.drag = {
+    pointerId: event.pointerId,
+    mode: handle ? 'resize' : 'move',
+    handle,
+    frame,
+    startX: event.clientX,
+    startY: event.clientY,
+    start: {
+      left: region.x * frame.width,
+      top: region.y * frame.height,
+      width: region.width * frame.width,
+      height: region.height * frame.height,
+    },
+  };
+  elements.printRegion.setPointerCapture(event.pointerId);
+  elements.printRegion.classList.add('is-dragging');
+  event.preventDefault();
+}
+
+function movePrintRegionDrag(event) {
+  const drag = state.regionEditor?.drag;
+  const entry = currentRegionEntry();
+  if (!drag || !entry || drag.pointerId !== event.pointerId) return;
+  const { frame, start } = drag;
+  let left;
+  let top;
+  let width = start.width;
+  let height = start.height;
+
+  if (drag.mode === 'move') {
+    left = Math.max(0, Math.min(frame.width - width, start.left + event.clientX - drag.startX));
+    top = Math.max(0, Math.min(frame.height - height, start.top + event.clientY - drag.startY));
+  } else {
+    const east = drag.handle.includes('e');
+    const south = drag.handle.includes('s');
+    const anchorX = east ? start.left : start.left + start.width;
+    const anchorY = south ? start.top : start.top + start.height;
+    const pointerX = Math.max(0, Math.min(frame.width, event.clientX - frame.left));
+    const pointerY = Math.max(0, Math.min(frame.height, event.clientY - frame.top));
+    const candidateWidth = Math.max(0, (pointerX - anchorX) * (east ? 1 : -1));
+    const candidateHeight = Math.max(0, (pointerY - anchorY) * (south ? 1 : -1));
+    const maxWidth = east ? frame.width - anchorX : anchorX;
+    const maxHeight = south ? frame.height - anchorY : anchorY;
+    const displayRatio = (7 / 8) *
+      (frame.width * entry.template.height) / (frame.height * entry.template.width);
+    const maximumHeight = Math.max(1, Math.min(maxHeight, maxWidth / displayRatio));
+    const minimumHeight = Math.min(32, maximumHeight);
+    const preferredHeight =
+      (displayRatio * candidateWidth + candidateHeight) / (displayRatio ** 2 + 1);
+    height = Math.max(minimumHeight, Math.min(maximumHeight, preferredHeight));
+    width = height * displayRatio;
+    left = east ? anchorX : anchorX - width;
+    top = south ? anchorY : anchorY - height;
+  }
+
+  left = Math.max(0, Math.min(frame.width - width, left));
+  top = Math.max(0, Math.min(frame.height - height, top));
+
+  entry.region = {
+    x: left / frame.width,
+    y: top / frame.height,
+    width: width / frame.width,
+    height: height / frame.height,
+  };
+  const wasDirty = state.regionEditor.dirty;
+  state.regionEditor.dirty = true;
+  if (!wasDirty) syncEditorWindowState();
+  updatePrintRegion();
+  setRegionEditorStatus(`Chưa lưu · ${entry.template.name}`);
+  event.preventDefault();
+}
+
+function endPrintRegionDrag(event) {
+  const drag = state.regionEditor?.drag;
+  if (!drag || drag.pointerId !== event.pointerId) return;
+  state.regionEditor.drag = null;
+  elements.printRegion.classList.remove('is-dragging');
+  if (elements.printRegion.hasPointerCapture(event.pointerId)) {
+    elements.printRegion.releasePointerCapture(event.pointerId);
+  }
+}
+
 function updatePageNavigation() {
-  const visible = state.pageCount > 1 && (state.viewMode === 'preview' || state.viewMode === 'output');
+  const visible = state.pageCount > 1 &&
+    (state.viewMode === 'preview' || state.viewMode === 'output' || state.viewMode === 'region');
   elements.pageNavigation.classList.toggle('is-hidden', !visible);
   elements.pageLabel.textContent = `${state.pageIndex + 1} / ${state.pageCount}`;
-  elements.previousPageButton.disabled = state.busy || state.pageIndex <= 0;
-  elements.nextPageButton.disabled = state.busy || state.pageIndex >= state.pageCount - 1;
+  elements.previousPageButton.disabled =
+    state.busy || state.inputAssetsSaving || state.pageIndex <= 0;
+  elements.nextPageButton.disabled =
+    state.busy || state.inputAssetsSaving || state.pageIndex >= state.pageCount - 1;
 }
 
 function fitImageFrame() {
@@ -799,6 +1450,7 @@ function showImage({ url, width, height, mode, title, layout = null }) {
   elements.previewImage.addEventListener('load', fitImageFrame, { once: true });
   fitImageFrame();
   updateSafeZone();
+  updatePrintRegion();
   updatePageNavigation();
 }
 
@@ -821,12 +1473,18 @@ function setBusy(type, busy) {
   for (const element of document.querySelectorAll('[data-lock]')) {
     element.disabled = busy;
   }
+  elements.openInputFolderButton.disabled = busy || state.inputAssetsLoading || state.inputAssetsSaving;
   elements.cancelButton.classList.toggle('is-hidden', !busy);
   elements.cancelButton.disabled = false;
   elements.previewButton.classList.toggle('is-hidden', busy);
   elements.generateButton.classList.toggle('is-hidden', busy);
   elements.cancelButton.parentElement.style.gridTemplateColumns = busy ? '1fr' : '';
   elements.workingOverlay.classList.toggle('is-hidden', !busy);
+  if (busy) {
+    elements.updatePrimaryButton.disabled = true;
+  } else if (state.update) {
+    renderUpdateStatus(state.update);
+  }
   elements.workingTitle.textContent = type === 'preview' ? 'Đang tạo preview…' : 'Đang tạo mockup…';
   if (busy) {
     renderFileList();
@@ -866,7 +1524,7 @@ function loadPreferences() {
 }
 
 async function selectSourceFolder() {
-  if (state.folderScanning || state.busy) return;
+  if (state.folderScanning || state.dropScanning || state.busy || state.regionEditor) return;
   state.folderScanning = true;
   elements.chooseFolderButton.disabled = true;
   elements.chooseFolderButton.textContent = 'Đang quét PNG trong thư mục…';
@@ -886,6 +1544,7 @@ async function selectSourceFolder() {
 }
 
 async function selectTemplate() {
+  if (state.regionEditor) return;
   try {
     const result = unwrap(await api.selectTemplate());
     if (result.cancelled) return;
@@ -912,6 +1571,7 @@ async function selectTemplate() {
 }
 
 async function selectWatermark({ fromToggle = false } = {}) {
+  if (state.regionEditor) return;
   try {
     const result = unwrap(await api.selectWatermark());
     if (result.cancelled) {
@@ -1011,7 +1671,11 @@ function showOutputPage(pageIndex) {
 async function generate() {
   let payload;
   try {
-    payload = validateReady();
+    if (elements.createPdfDownload.checked || elements.createSingleMockups.checked) {
+      const refreshed = await refreshInputAssets();
+      if (!refreshed) return;
+    }
+    payload = validateReady({ includeAdditionalOutputs: true });
   } catch (error) {
     showError(error);
     return;
@@ -1027,13 +1691,22 @@ async function generate() {
     elements.openOutputButton.classList.remove('is-hidden');
     elements.statOutput.textContent = result.outputDir;
     elements.progressFill.style.width = '100%';
-    elements.progressMessage.textContent = `Đã lưu ${result.outputFiles.length} mockup vào Done`;
+    const bundleCount = result.outputFiles.length;
+    const singleCount = Number(result.singleMockupCount) || result.singleMockupFiles?.length || 0;
+    const pdfCount = result.pdfDownload ? 1 : 0;
+    const totalOutputCount = bundleCount + singleCount + pdfCount;
+    const outputParts = [`${bundleCount} mockup bundle`];
+    if (singleCount > 0) outputParts.push(`${singleCount} mockup đơn`);
+    if (pdfCount > 0) outputParts.push('1 PDF Download');
+    elements.progressMessage.textContent = `Đã lưu ${outputParts.join(', ')} vào Done`;
     setAppStatus('Hoàn tất', 'ready');
-    showToast(`Đã tạo thành công ${result.outputFiles.length} mockup.`, 'success');
+    showToast(`Đã tạo thành công ${totalOutputCount} file.`, 'success');
 
-    elements.dialogTitle.textContent = `Đã tạo ${result.outputFiles.length} mockup`;
+    elements.dialogTitle.textContent = `Đã tạo ${totalOutputCount} file`;
     const completionNotes = [`Phân chia: ${result.groupSizes.join(' + ')} PNG.`];
     if (result.watermarkApplied) completionNotes.push(`Watermark: ${result.watermarkName}.`);
+    if (singleCount > 0) completionNotes.push(`Mockup đơn: ${singleCount} file.`);
+    if (result.pdfDownload) completionNotes.push(`PDF Download: ${result.pdfDownload.name}.`);
     completionNotes.push(
       result.metadataRemoved
         ? 'Đã xóa Comment, EXIF, XMP, EXIF thumbnail, IPTC và ICC profile.'
@@ -1072,8 +1745,9 @@ async function openOutputFolder() {
 
 function navigatePage(delta) {
   const next = state.pageIndex + delta;
-  if (next < 0 || next >= state.pageCount || state.busy) return;
-  if (state.viewMode === 'output') showOutputPage(next);
+  if (next < 0 || next >= state.pageCount || state.busy || state.inputAssetsSaving) return;
+  if (state.viewMode === 'region') showRegionEditorPage(next);
+  else if (state.viewMode === 'output') showOutputPage(next);
   else if (state.viewMode === 'preview') runPreview(next);
 }
 
@@ -1105,6 +1779,47 @@ elements.updatePrimaryButton.addEventListener('click', async () => {
   }
 });
 elements.chooseFolderButton.addEventListener('click', selectSourceFolder);
+let fileListDragDepth = 0;
+elements.fileList.addEventListener('dragenter', (event) => {
+  if (!Array.from(event.dataTransfer?.types || []).includes('Files')) return;
+  event.preventDefault();
+  if (state.busy || state.folderScanning || state.dropScanning || state.regionEditor) return;
+  fileListDragDepth += 1;
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+  setFileDropState('dragging');
+});
+elements.fileList.addEventListener('dragover', (event) => {
+  if (!Array.from(event.dataTransfer?.types || []).includes('Files')) return;
+  event.preventDefault();
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect =
+      state.busy || state.folderScanning || state.dropScanning || state.regionEditor
+      ? 'none'
+      : 'copy';
+  }
+});
+elements.fileList.addEventListener('dragleave', (event) => {
+  if (!Array.from(event.dataTransfer?.types || []).includes('Files')) return;
+  fileListDragDepth = Math.max(0, fileListDragDepth - 1);
+  if (fileListDragDepth === 0 && !state.dropScanning) setFileDropState();
+});
+elements.fileList.addEventListener('drop', (event) => {
+  if (!Array.from(event.dataTransfer?.types || []).includes('Files')) return;
+  event.preventDefault();
+  event.stopPropagation();
+  fileListDragDepth = 0;
+  setFileDropState();
+  addDroppedPngFiles(event.dataTransfer);
+});
+window.addEventListener('dragover', (event) => {
+  if (Array.from(event.dataTransfer?.types || []).includes('Files')) event.preventDefault();
+});
+window.addEventListener('drop', (event) => {
+  if (!Array.from(event.dataTransfer?.types || []).includes('Files')) return;
+  event.preventDefault();
+  fileListDragDepth = 0;
+  if (!state.dropScanning) setFileDropState();
+});
 elements.chooseTemplateButton.addEventListener('click', selectTemplate);
 elements.watermarkFile.addEventListener('click', () => selectWatermark());
 elements.removeMetadata.addEventListener('change', () => {
@@ -1120,6 +1835,49 @@ elements.useWatermark.addEventListener('change', () => {
     updateSelectionState();
     if (state.viewMode === 'preview') elements.statLayout.textContent = 'Cần xem trước lại';
   }
+});
+elements.openInputFolderButton.addEventListener('click', openInputFolder);
+elements.createPdfDownload.addEventListener('change', () => {
+  elements.pdfDownloadFields.classList.toggle('is-hidden', !elements.createPdfDownload.checked);
+  elements.downloadUrl.classList.remove('is-invalid');
+  updateControls();
+  if (elements.createPdfDownload.checked) window.setTimeout(() => elements.downloadUrl.focus(), 0);
+});
+elements.downloadUrl.addEventListener('input', () => {
+  elements.downloadUrl.classList.remove('is-invalid');
+});
+elements.downloadUrl.addEventListener('blur', () => {
+  if (!elements.createPdfDownload.checked || !elements.downloadUrl.value.trim()) return;
+  try {
+    readDownloadUrl();
+  } catch {
+    // The invalid style is enough until Generate is pressed.
+  }
+});
+elements.createSingleMockups.addEventListener('change', () => {
+  if (elements.createSingleMockups.checked) {
+    const missing = templatesMissingRegions();
+    if (missing.length > 0) elements.advancedSettings.open = true;
+    elements.singleRegionStatus.textContent = missing.length > 0
+      ? `Cần chỉnh và lưu vùng in cho ${missing.length} ảnh trước khi tạo.`
+      : `Sẽ tạo ${state.inputAssets.singleMockupTemplates.length} mockup đơn.`;
+  } else {
+    renderInputAssets();
+  }
+  updateControls();
+});
+elements.editSingleMockupRegions.addEventListener('change', async () => {
+  if (elements.editSingleMockupRegions.checked) await enterRegionEditor();
+  else exitRegionEditor({ notifyUnsaved: true });
+});
+elements.saveSingleMockupRegions.addEventListener('click', saveRegionEditor);
+elements.printRegion.addEventListener('pointerdown', beginPrintRegionDrag);
+elements.printRegion.addEventListener('pointermove', movePrintRegionDrag);
+elements.printRegion.addEventListener('pointerup', endPrintRegionDrag);
+elements.printRegion.addEventListener('pointercancel', endPrintRegionDrag);
+elements.printRegion.addEventListener('lostpointercapture', (event) => {
+  if (state.regionEditor?.drag?.pointerId === event.pointerId) state.regionEditor.drag = null;
+  elements.printRegion.classList.remove('is-dragging');
 });
 elements.fileSearch.addEventListener('input', renderFileList);
 elements.selectAllButton.addEventListener('click', () => {
@@ -1179,16 +1937,20 @@ for (const input of settingInputs) {
   });
 }
 
-window.addEventListener('resize', fitImageFrame);
-window.addEventListener('beforeunload', () => {
-  if (state.busy) api.cancelJob();
+let inputAssetsFocusTimer = null;
+window.addEventListener('focus', () => {
+  if (state.busy || state.regionEditor || state.inputAssetsLoading || state.inputAssetsSaving) return;
+  window.clearTimeout(inputAssetsFocusTimer);
+  inputAssetsFocusTimer = window.setTimeout(() => refreshInputAssets({ silent: true }), 250);
 });
-
+window.addEventListener('resize', fitImageFrame);
 initializeAppInfo();
 loadPreferences();
 renderTemplateSummary();
 renderWatermarkSummary();
+renderInputAssets();
 elements.metadataGroups.classList.toggle('is-disabled', !elements.removeMetadata.checked);
 renderFileList();
 updateSelectionState();
 updateControls();
+refreshInputAssets({ silent: true });

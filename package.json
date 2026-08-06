@@ -1,6 +1,6 @@
 {
   "name": "png-bundle-mockup",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Ứng dụng desktop tự động sắp xếp PNG lên ảnh nền mockup.",
   "main": "src/main.js",
   "author": "PNG Bundle Mockup",
@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "electron-updater": "^6.8.9",
+    "pdf-lib": "^1.17.1",
     "sharp": "^0.35.3"
   },
   "devDependencies": {
@@ -56,6 +57,17 @@
       "assets/**/*",
       "package.json"
     ],
+    "extraFiles": [
+      {
+        "from": "Input",
+        "to": "Input",
+        "filter": [
+          "**/*",
+          "!**/.png-bundle-input-marker",
+          "!**/.png-bundle-input-marker.tmp-*"
+        ]
+      }
+    ],
     "win": {
       "icon": "assets/app-icon.ico",
       "target": [
@@ -69,9 +81,11 @@
       "artifactName": "PNG-Bundle-Mockup-Setup-${version}.${ext}"
     },
     "nsis": {
+      "include": "build/installer.nsh",
       "oneClick": false,
       "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": false,
       "createDesktopShortcut": "always",
       "createStartMenuShortcut": true,
       "shortcutName": "PNG Bundle Mockup",

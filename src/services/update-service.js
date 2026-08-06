@@ -167,7 +167,9 @@ function createUpdateService(options = {}) {
 
   try {
     autoUpdater.autoDownload = false;
-    autoUpdater.autoInstallOnAppQuit = true;
+    // Installation is started only by the explicit IPC action. This gives the
+    // main process a chance to snapshot mutable Input assets before NSIS exits.
+    autoUpdater.autoInstallOnAppQuit = false;
     autoUpdater.allowPrerelease = false;
   } catch (error) {
     if (isPackaged) transitionError(error, false);
@@ -219,10 +221,12 @@ function createUpdateService(options = {}) {
   }
 
   function install() {
-    if (!isPackaged) return false;
+    if (!isPackaged || currentStatus.status !== UPDATE_STATUS.DOWNLOADED) return false;
     try {
       autoUpdater.quitAndInstall(false, true);
-      return true;
+      // electron-updater may emit `error` synchronously and return without
+      // throwing when the cached installer is unavailable.
+      return currentStatus.status !== UPDATE_STATUS.ERROR;
     } catch (error) {
       transitionError(error, activeManual);
       return false;

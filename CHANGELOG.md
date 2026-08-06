@@ -4,9 +4,43 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
+Chưa có thay đổi sau nhánh chuẩn bị v1.2.1.
+
+## [1.2.1] - 2026-08-07
+
+Trạng thái QA, installer, GitHub Release và kiểm thử nâng cấp live được theo dõi trong `docs/REGRESSION-CHECKLIST.md`; không xem mục này là xác nhận bản phát hành đã đạt.
+
+### Added
+
+- Tạo thư mục `Input` cạnh file EXE của bản đóng gói; khi phát triển dùng `Input` tại thư mục dự án.
+- Kéo-thả trực tiếp nhiều file PNG từ File Explorer vào danh sách, kể cả khi các file nằm ở nhiều thư mục.
+- Tùy chọn **Tạo PDF Download**: dùng một PDF mẫu duy nhất trong `Input`, thay URL đích của nút Download, các vùng link hiển thị và vẽ lại URL nhìn thấy; lưu PDF mới vào `Done`.
+- Tùy chọn **Tạo mockup đơn**: đọc ảnh mẫu PNG/JPG/WEBP/TIFF trong `Input`, chọn PNG nguồn ngẫu nhiên và tạo một output cho mỗi ảnh mẫu.
+- Trình chỉnh vùng in mockup đơn tỷ lệ `42:48` (`7:8`) trong Preview; thiết lập được lưu theo tên và kích thước từng ảnh mẫu để dùng lại.
+- Các service và kiểm thử riêng cho Input, kéo-thả PNG, PDF Download, vùng in và mockup đơn.
+- Snapshot bền vững của tài sản `Input` trong `userData`, tự khôi phục sau khi installer tạo lại thư mục cài đặt.
+
+### Changed
+
+- Watermark tiếp tục là lớp composite trên cùng đối với mockup bundle và cũng được áp dụng sau cùng cho mockup đơn.
+- Mockup bundle, mockup đơn và PDF Download của cùng một lượt được lưu chung vào thư mục `Done`; cơ chế hậu tố tránh ghi đè vẫn được giữ.
+- Payload installer bao gồm thư mục `Input` và dependency PDF runtime `pdf-lib`.
+- PDF mẫu đi kèm được làm phẳng với URL placeholder để không công khai link Drive cũ; nút và link hiển thị vẫn giữ đúng ba vùng annotation cho app thay thế.
+- Luồng GitHub updater tiếp tục dùng installer, blockmap và `latest.yml`; v1.2.1 là bản dùng để kiểm thử nâng cấp live từ installer v1.2.0.
+- Cập nhật chỉ được cài khi người dùng bấm **Khởi động lại và cài đặt**, sau khi app đồng bộ snapshot `Input`; đóng app thông thường không tự cài ngầm.
+- Installer assisted ép fresh install theo current-user/fixed writable path để `Input` ghi được, nhưng tự giữ install-mode/vị trí của bản v1.2.0 hiện có để nâng cấp đúng cả All Users/custom path mà không tạo app thứ hai.
+- Với bản All Users cũ, installer kiểm tra trước và chỉ cấp nhóm Users quyền Modify cho `Input`; registry cũ không còn EXE được bỏ qua, hai bản cài còn sống song song bị từ chối và lỗi ACL dừng cài trước khi thay đổi bản hiện tại.
+
 ### Fixed
 
-- Quy trình GitHub Release nay kiểm tra và upload nguyên bộ installer, blockmap và `latest.yml`; hỗ trợ chạy lại thủ công theo tag để sửa release thiếu asset.
+- Quy trình GitHub Release tạo/sửa draft với đúng bộ installer, blockmap và `latest.yml`, xác minh checksum/metadata trước khi publish; Release public thiếu hoặc sai asset vẫn dừng để phát hành patch mới.
+- Không làm mất PDF/ảnh mẫu người dùng đặt trong `Input` khi NSIS cập nhật, gỡ rồi cài lại app; snapshot dùng staging và có thể phục hồi nếu lần ghi trước bị gián đoạn.
+- Nếu app không thể ghi `Input` hoặc tạo snapshot ở startup, app hiện lỗi rõ và thoát thay vì mở trong trạng thái chức năng/update bị hỏng.
+- Chỉ cho phép một tiến trình app tương tác; lần mở thứ hai khôi phục/đưa cửa sổ hiện có lên trước. Tiến trình `--sync-input-backup` bị single-instance lock chặn sẽ thoát mã `3`, khiến update/uninstall fail-closed thay vì tiếp tục khi chưa bảo toàn `Input`.
+- Khóa trình chỉnh vùng in trong lúc lưu để tránh race làm mất thay đổi hoặc báo lỗi sau khi backend đã lưu.
+- Tự xoay JPEG/TIFF theo EXIF Orientation trước khi tính vùng in; giữ cấu hình của template tạm vắng và bỏ qua ảnh mockup hỏng khi quét `Input`.
+- PDF Download cập nhật đúng từng trang, hỗ trợ Hủy và chỉ công bố file kết quả sau commit nguyên tử; không để lại file tạm/final khi hủy.
+- Đóng app giữa tác vụ sẽ đợi hủy/rollback hoàn tất; vùng in chưa lưu được cảnh báo trước khi thoát và cài cập nhật bị khóa trong lúc có tác vụ/thiết lập đang mở.
 
 ## [1.2.0] - 2026-08-06
 

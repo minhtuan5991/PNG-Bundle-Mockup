@@ -59,6 +59,10 @@ async function inspectImage(filePath) {
       channels: metadata.channels,
       hasAlpha: Boolean(metadata.hasAlpha),
       density: metadata.density || null,
+      orientation: metadata.orientation || null,
+      autoOrient: metadata.autoOrient
+        ? { width: metadata.autoOrient.width, height: metadata.autoOrient.height }
+        : null,
     };
   } catch (error) {
     throw new ImageInputError(

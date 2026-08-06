@@ -65,7 +65,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           $releaseNotesPath = "docs/RELEASE-NOTES-$env:PACKAGE_VERSION.md"
-          if (-not (Test-Path -LiteralPath $releaseNotesPath)) {
+          if ($env:RELEASE_OPERATION -eq "sync-notes" -or -not (Test-Path -LiteralPath $releaseNotesPath)) {
             $releaseNotesPath = Join-Path $env:RUNNER_TEMP "RELEASE-NOTES-$env:PACKAGE_VERSION.md"
             $notesEndpoint = "repos/${{ github.repository }}/contents/docs/RELEASE-NOTES-$env:PACKAGE_VERSION.md?ref=${{ github.event.repository.default_branch }}"
             gh api $notesEndpoint -H "Accept: application/vnd.github.raw+json" |
@@ -98,11 +98,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          $ErrorActionPreference = "Stop"
+          $repository = "${{ github.repository }}"
           $assets = @(
             "release/PNG-Bundle-Mockup-Setup-$env:PACKAGE_VERSION.exe",
             "release/PNG-Bundle-Mockup-Setup-$env:PACKAGE_VERSION.exe.blockmap",
             "release/latest.yml"
           )
+          $expectedAssetNames = @($assets | ForEach-Object { Split-Path -Leaf $_ })
 
           foreach ($asset in $assets) {
             if (-not (Test-Path -LiteralPath $asset)) {
@@ -110,24 +113,142 @@ jobs:
             }
           }
 
-          gh release view "$env:RELEASE_TAG" --repo "${{ github.repository }}" *> $null
-          if ($LASTEXITCODE -eq 0) {
-            $remoteAssetNames = @(gh release view "$env:RELEASE_TAG" --repo "${{ github.repository }}" --json assets --jq '.assets[].name')
+          $releaseListJson = gh release list --repo "$repository" --limit 1000 --json tagName,isDraft,isPrerelease,publishedAt
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to list Releases for $repository"
+          }
+          $matchingReleases = @(
+            $releaseListJson |
+              ConvertFrom-Json |
+              Where-Object { $_.tagName -eq "$env:RELEASE_TAG" }
+          )
+          if ($matchingReleases.Count -gt 1) {
+            throw "More than one Release record exists for $env:RELEASE_TAG. Refusing to choose one automatically."
+          }
+
+          if ($matchingReleases.Count -eq 0) {
+            gh release create "$env:RELEASE_TAG" --draft --verify-tag --repo "$repository" --title "PNG Bundle Mockup $env:RELEASE_TAG" --notes-file "$env:RELEASE_NOTES_PATH"
             if ($LASTEXITCODE -ne 0) {
-              throw "Unable to inspect existing Release $env:RELEASE_TAG"
+              throw "Unable to create draft Release $env:RELEASE_TAG"
             }
-
-            $missingAssetNames = @($assets | ForEach-Object { Split-Path -Leaf $_ } | Where-Object { $_ -notin $remoteAssetNames })
-            if ($missingAssetNames.Count -gt 0) {
-              throw "Release $env:RELEASE_TAG already exists but is incomplete ($($missingAssetNames -join ', ')). Refusing to replace public assets; publish a new patch version instead."
-            }
-
-            Write-Output "Release $env:RELEASE_TAG already has all required assets; leaving them unchanged."
+            $releaseIsDraft = $true
           } else {
-            gh release create "$env:RELEASE_TAG" $assets --verify-tag --repo "${{ github.repository }}" --title "PNG Bundle Mockup $env:RELEASE_TAG" --notes-file "$env:RELEASE_NOTES_PATH"
-            if ($LASTEXITCODE -ne 0) {
-              throw "GitHub Release publish failed with exit code $LASTEXITCODE"
+            $releaseIsDraft = [bool]$matchingReleases[0].isDraft
+            if (-not $releaseIsDraft) {
+              $releaseKind = if ([bool]$matchingReleases[0].isPrerelease) { "prerelease" } else { "stable Release" }
+              throw "Existing public $releaseKind already exists for $env:RELEASE_TAG. Assets are immutable in this workflow; use sync-notes for notes only or publish a new patch version."
             }
+          }
+
+          if ($releaseIsDraft) {
+            gh release upload "$env:RELEASE_TAG" $assets --clobber --repo "$repository"
+            if ($LASTEXITCODE -ne 0) {
+              throw "Unable to upload all assets to draft Release $env:RELEASE_TAG"
+            }
+          }
+
+          $releaseViewJson = gh release view "$env:RELEASE_TAG" --repo "$repository" --json isDraft,isPrerelease,assets,publishedAt
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to inspect Release $env:RELEASE_TAG"
+          }
+          $releaseView = $releaseViewJson | ConvertFrom-Json
+          $remoteAssetNames = @($releaseView.assets | ForEach-Object { $_.name })
+          $missingAssetNames = @($expectedAssetNames | Where-Object { $_ -notin $remoteAssetNames })
+          $unexpectedAssetNames = @($remoteAssetNames | Where-Object { $_ -notin $expectedAssetNames })
+          if ($missingAssetNames.Count -gt 0 -or $unexpectedAssetNames.Count -gt 0 -or $remoteAssetNames.Count -ne $expectedAssetNames.Count) {
+            throw "Release assets are not exact. Missing: $($missingAssetNames -join ', '); unexpected: $($unexpectedAssetNames -join ', ')."
+          }
+
+          $verificationDirectory = Join-Path $env:RUNNER_TEMP "release-verify-$env:PACKAGE_VERSION"
+          if (Test-Path -LiteralPath $verificationDirectory) {
+            Remove-Item -LiteralPath $verificationDirectory -Recurse -Force
+          }
+          New-Item -ItemType Directory -Path $verificationDirectory | Out-Null
+          gh release download "$env:RELEASE_TAG" --repo "$repository" --dir "$verificationDirectory" --clobber
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to download Release assets for verification"
+          }
+
+          foreach ($remoteAsset in $releaseView.assets) {
+            $downloadedPath = Join-Path $verificationDirectory $remoteAsset.name
+            if (-not (Test-Path -LiteralPath $downloadedPath)) {
+              throw "Downloaded verification asset is missing: $($remoteAsset.name)"
+            }
+            if ((Get-Item -LiteralPath $downloadedPath).Length -ne [int64]$remoteAsset.size) {
+              throw "Downloaded asset size differs from GitHub metadata: $($remoteAsset.name)"
+            }
+          }
+
+          if ($releaseIsDraft) {
+            foreach ($localAsset in $assets) {
+              $remoteAssetPath = Join-Path $verificationDirectory (Split-Path -Leaf $localAsset)
+              $localHash = (Get-FileHash -LiteralPath $localAsset -Algorithm SHA256).Hash
+              $remoteHash = (Get-FileHash -LiteralPath $remoteAssetPath -Algorithm SHA256).Hash
+              if ($localHash -ne $remoteHash) {
+                throw "Draft asset content mismatch: $(Split-Path -Leaf $localAsset)"
+              }
+            }
+          }
+
+          $remoteInstallerPath = Join-Path $verificationDirectory "PNG-Bundle-Mockup-Setup-$env:PACKAGE_VERSION.exe"
+          $remoteLatestPath = Join-Path $verificationDirectory "latest.yml"
+          $remoteLatest = Get-Content -LiteralPath $remoteLatestPath -Raw
+          $metadataVersion = [regex]::Match($remoteLatest, '(?m)^version:\s*([^\r\n]+)\s*$').Groups[1].Value.Trim(" '")
+          $metadataPath = [regex]::Match($remoteLatest, '(?m)^path:\s*([^\r\n]+)\s*$').Groups[1].Value.Trim(" '")
+          $metadataSha512 = [regex]::Match($remoteLatest, '(?m)^sha512:\s*([^\r\n]+)\s*$').Groups[1].Value.Trim(" '")
+          $metadataSizeText = [regex]::Match($remoteLatest, '(?m)^\s+size:\s*(\d+)\s*$').Groups[1].Value
+          if (-not $metadataVersion -or -not $metadataPath -or -not $metadataSha512 -or -not $metadataSizeText) {
+            throw "Remote latest.yml is missing required updater fields"
+          }
+
+          $sha512 = [System.Security.Cryptography.SHA512]::Create()
+          try {
+            $actualSha512 = [Convert]::ToBase64String(
+              $sha512.ComputeHash([IO.File]::ReadAllBytes($remoteInstallerPath))
+            )
+          } finally {
+            $sha512.Dispose()
+          }
+          $actualInstallerSize = (Get-Item -LiteralPath $remoteInstallerPath).Length
+          if (
+            $metadataVersion -ne "$env:PACKAGE_VERSION" -or
+            $metadataPath -ne "PNG-Bundle-Mockup-Setup-$env:PACKAGE_VERSION.exe" -or
+            [int64]$metadataSizeText -ne $actualInstallerSize -or
+            $metadataSha512 -ne $actualSha512
+          ) {
+            throw "Remote latest.yml does not match the remote installer"
+          }
+
+          gh release edit "$env:RELEASE_TAG" --repo "$repository" --title "PNG Bundle Mockup $env:RELEASE_TAG" --notes-file "$env:RELEASE_NOTES_PATH" --draft=false --prerelease=false --latest
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to publish/finalize stable Release $env:RELEASE_TAG"
+          }
+
+          $finalViewJson = gh release view "$env:RELEASE_TAG" --repo "$repository" --json isDraft,isPrerelease,assets,publishedAt
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to verify final Release state"
+          }
+          $finalView = $finalViewJson | ConvertFrom-Json
+          if ([bool]$finalView.isDraft -or [bool]$finalView.isPrerelease -or -not $finalView.publishedAt) {
+            throw "Release $env:RELEASE_TAG is not stable/public after finalization"
+          }
+
+          $finalReleaseListJson = gh release list --repo "$repository" --limit 1000 --json tagName
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to verify unique final Release record"
+          }
+          $finalMatchingCount = @(
+            $finalReleaseListJson |
+              ConvertFrom-Json |
+              Where-Object { $_.tagName -eq "$env:RELEASE_TAG" }
+          ).Count
+          if ($finalMatchingCount -ne 1) {
+            throw "Expected exactly one final Release record for $env:RELEASE_TAG; found $finalMatchingCount"
+          }
+
+          $latestTag = gh api "repos/$repository/releases/latest" --jq '.tag_name'
+          if ($LASTEXITCODE -ne 0 -or $latestTag -ne "$env:RELEASE_TAG") {
+            throw "/releases/latest does not point to $env:RELEASE_TAG"
           }
 
       - name: Sync release notes only

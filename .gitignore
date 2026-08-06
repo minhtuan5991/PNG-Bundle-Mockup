@@ -8,6 +8,8 @@ Thumbs.db
 .qa-sample/
 .qa-*.png
 ui-smoke.png
+tmp/
+Input/.png-bundle-input-marker*
 .env
 .env.*
 !.env.example

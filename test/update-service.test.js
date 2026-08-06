@@ -59,7 +59,7 @@ test('development build is disabled and never calls updater operations', async (
   });
 
   assert.equal(autoUpdater.autoDownload, false);
-  assert.equal(autoUpdater.autoInstallOnAppQuit, true);
+  assert.equal(autoUpdater.autoInstallOnAppQuit, false);
   assert.equal(autoUpdater.allowPrerelease, false);
   assert.deepEqual(service.getStatus(), {
     status: UPDATE_STATUS.DISABLED,
@@ -229,6 +229,7 @@ test('closed renderer and synchronous install errors are contained', () => {
   assert.doesNotThrow(() => autoUpdater.emit('download-progress', { percent: 50 }));
   assert.equal(service.getStatus().progress.percent, 50);
 
+  autoUpdater.emit('update-downloaded', { version: '1.3.0' });
   autoUpdater.installImplementation = () => {
     throw new Error('install failed');
   };
@@ -237,6 +238,25 @@ test('closed renderer and synchronous install errors are contained', () => {
     status: UPDATE_STATUS.ERROR,
     currentVersion: '1.2.0',
     message: 'install failed',
+    manual: false,
+  });
+});
+
+test('install trả false khi quitAndInstall phát lỗi đồng bộ hoặc chưa tải xong', () => {
+  const { autoUpdater, service } = createPackagedService();
+  assert.equal(service.install(), false);
+  assert.deepEqual(autoUpdater.installCalls, []);
+
+  autoUpdater.emit('update-downloaded', { version: '1.3.0' });
+  autoUpdater.installImplementation = () => {
+    autoUpdater.emit('error', new Error('cached installer missing'));
+  };
+
+  assert.equal(service.install(), false);
+  assert.deepEqual(service.getStatus(), {
+    status: UPDATE_STATUS.ERROR,
+    currentVersion: '1.2.0',
+    message: 'cached installer missing',
     manual: false,
   });
 });

@@ -4,6 +4,7 @@
 
 ## Trạng thái mốc
 
+- [x] QA local v1.2.1 ngày 2026-08-07: **66/66 test đạt**; source/package basic+region smoke, headless Input backup exit `0`, single-instance lock exit `3` và NSIS final đều đạt; GitHub CI/Release, cài mới tương tác và nâng cấp live còn chờ.
 - [x] Mốc automated ngay trước khi tích hợp updater: **20/20 test đạt**.
 - [x] QA local v1.2.0 ngày 2026-08-06: **26/26 test đạt**, 0 fail, 0 skipped/todo.
 - [x] Smoke mã nguồn và payload đóng gói đạt; NSIS build đủ ba update artifact.
@@ -11,18 +12,21 @@
 
 Môi trường QA local: Windows x64 `10.0.26200`, Node.js `24.13.0`, Electron `43.2.0`. Workflow GitHub dùng Node.js `22.x` theo yêu cầu tối thiểu của Electron 43.
 
+Các mục `[x]` hiện có là bằng chứng lịch sử của v1.2.0 trừ khi ghi rõ v1.2.1. Không kế thừa dấu đạt cũ cho tính năng mới.
+
 ## A. Automated tests
 
 ### A1. Môi trường và dependency
 
 - [x] Đã dùng Windows x64 và Node.js tương thích (`24.13.0`, yêu cầu tối thiểu `22.12.0`).
-- [ ] `npm ci` hoàn tất từ lockfile, không sửa `package-lock.json` ngoài dự kiến.
+- [x] `npm ci` hoàn tất từ lockfile, không sửa `package-lock.json` ngoài dự kiến.
 - [x] `npm audit --omit=dev --audit-level=high` trả về 0 vulnerabilities.
 
 ### A2. Test suite
 
 - [x] `npm test` trả exit code `0`.
 - [x] Ghi tổng số: `26 / 26` đạt.
+- [x] Ghi tổng số v1.2.1 sau `npm ci`: `66 / 66` đạt, 0 fail, 0 skipped/todo.
 - [x] Không có test skipped/todo ngoài chủ đích đã ghi tài liệu.
 - [x] Test chia nhóm xác nhận `30/1`, `30/2`, `31/2`, nhóm dư và giữ thứ tự.
 - [x] Test từ chối số mockup lớn hơn số PNG.
@@ -31,7 +35,7 @@ Môi trường QA local: Windows x64 `10.0.26200`, Node.js `24.13.0`, Electron `
 - [x] Test alpha bounds loại canvas trong suốt và xử lý ảnh hoàn toàn trong suốt.
 - [x] Test output giữ kích thước nền và không ghi đè file cũ.
 - [ ] Test hủy/lỗi không để lại file tạm.
-- [ ] Test watermark xác nhận thứ tự lớp, căn giữa, resize và alpha.
+- [x] Test watermark xác nhận thứ tự lớp, căn giữa, resize và alpha cho bundle lẫn mockup đơn.
 - [x] Test từ chối watermark giả PNG, opaque hoặc không hợp lệ.
 - [x] Test metadata xác nhận Comment, EXIF, XMP, EXIF thumbnail, IPTC và ICC profile đều bị xóa ở bước cuối.
 - [x] Test `removeMetadata: false` xác nhận metadata nền được giữ trong khả năng hỗ trợ.
@@ -54,6 +58,8 @@ Môi trường QA local: Windows x64 `10.0.26200`, Node.js `24.13.0`, Electron `
 
 - [x] Test updater bị vô hiệu hóa khi `app.isPackaged === false`.
 - [x] Test mặc định `autoDownload === false`.
+- [x] Test mặc định `autoInstallOnAppQuit === false`; cài update chỉ đi qua thao tác rõ ràng sau khi snapshot `Input`.
+- [x] Test packaging giữ installer assisted tương thích v1.2.0 (`oneClick === false`, `perMachine === false`, `allowElevation === true`), kiểm tra macro mode/ACL/headless và loại marker runtime khỏi payload.
 - [x] Test các trạng thái: idle, checking, available, downloading, downloaded, up-to-date, error.
 - [x] Test snapshot chỉ chứa dữ liệu tuần tự hóa được.
 - [x] Test progress gồm percent, transferred, total và bytesPerSecond khi hợp lệ.
@@ -62,6 +68,7 @@ Môi trường QA local: Windows x64 `10.0.26200`, Node.js `24.13.0`, Electron `
 - [ ] Test không chạy hai check hoặc hai download đồng thời.
 - [x] Test manual check giữ cờ `manual` đúng để renderer quyết định cách thông báo.
 - [x] Test `quitAndInstall(false, true)` chỉ được gọi trên bản packaged.
+- [x] Test install trả `false` khi update chưa ở trạng thái downloaded hoặc `quitAndInstall` phát lỗi đồng bộ.
 
 ### A5. Renderer/main smoke
 
@@ -71,7 +78,27 @@ Môi trường QA local: Windows x64 `10.0.26200`, Node.js `24.13.0`, Electron `
 - [x] Picker thumbnail mở được với dữ liệu QA.
 - [x] Khu vực preview và safe zone render được.
 - [x] API chọn watermark, app info và updater có mặt đúng theo thiết kế.
-- [x] Smoke test chạy ngoài sandbox hạn chế GPU/cache và trên payload đóng gói.
+- [x] Source basic smoke và source region-editor smoke đều PASS ngoài sandbox hạn chế GPU/cache.
+- [x] Smoke v1.2.1 xác nhận API kéo-thả, đọc `Input`, lưu vùng in, PDF Download và mockup đơn có mặt.
+- [x] Smoke v1.2.1 xác nhận checkbox/ô URL/trạng thái Input và trình chỉnh vùng in `42:48` render đúng trên ảnh mẫu thật.
+- [x] Source final basic/region smoke PASS; packaged basic/region smoke PASS trên payload cuối.
+- [x] Packaged basic smoke và packaged region-editor smoke trên `win-unpacked` đều PASS; title/header lấy version `1.2.1` từ package.
+
+### A6. Service mới v1.2.1
+
+- [x] Test `input-directory` xác nhận development dùng `<project>/Input`, packaged dùng `Input` cạnh EXE và tạo thư mục an toàn.
+- [x] 7 test backup xác nhận mirror sửa/xóa, restore sau update/cài lại, snapshot rỗng, staging lỗi và phục hồi snapshot bị gián đoạn.
+- [x] Test PDF xác nhận nhiều trang, layout link tách trang bị từ chối, commit nguyên tử và cleanup ở ba thời điểm hủy.
+- [x] Test mockup đơn xác nhận JPEG EXIF Orientation, ảnh hỏng bị bỏ qua/cảnh báo và cấu hình template tạm vắng không bị xóa.
+- [x] Test kéo-thả xác nhận nhiều thư mục, khử trùng không phân biệt hoa/thường trên Windows, chỉ nhận PNG và dùng thư mục của PNG đọc được đầu tiên làm nguồn `Done`.
+- [x] Test PDF xác nhận URL chỉ nhận HTTP(S), phải có đúng một PDF mẫu, cập nhật mọi annotation liên quan và không ghi đè output.
+- [x] Test PDF trên mẫu thật xác nhận link Drive cũ không còn, ba annotation dùng URL mới, file mở/render được và text extraction chỉ còn URL mới sau khi tạo.
+- [x] Test vùng in xác nhận normalized bounds, tỷ lệ pixel `42:48`, ghi nguyên tử và invalidation khi kích thước template đổi.
+- [x] Test mockup đơn xác nhận quét đúng định dạng ảnh, random nguồn, crop alpha, `contain`, hậu tố output và dọn file tạm.
+- [x] Test mockup đơn xác nhận watermark được composite sau thiết kế, nằm trên lớp trên cùng và metadata được xóa ở bước cuối khi bật.
+- [x] Test tích hợp xác nhận bundle, mockup đơn và PDF Download cùng được lưu vào một thư mục `Done`.
+- [x] Chạy `--sync-input-backup` headless trên payload và xác nhận đồng bộ/exit `0`; giữ app chạy rồi gọi tiến trình headless thứ hai, xác nhận single-instance lock chặn với exit `3`. NSIS coi mã khác `0` là lỗi để update/uninstall fail-closed; lượt hook tương tác hoàn chỉnh vẫn để ở mục C1.
+- [x] Ghi tổng số test v1.2.1 thực tế: **66/66 đạt**.
 
 ## B. Kiểm thử chức năng thủ công
 
@@ -87,6 +114,11 @@ Môi trường QA local: Windows x64 `10.0.26200`, Node.js `24.13.0`, Electron `
 - [ ] PNG hoàn toàn trong suốt được báo rõ khi xử lý.
 - [ ] Ảnh nền nằm trong source bị loại khỏi thiết kế.
 - [ ] Watermark nằm trong source bị loại khỏi thiết kế.
+- [ ] Kéo một PNG từ File Explorer vào vùng danh sách sẽ tự thêm và chọn file hợp lệ.
+- [ ] Kéo đồng thời PNG từ ít nhất hai thư mục giữ đủ đường dẫn và thumbnail.
+- [ ] File trùng không được thêm lần hai; file không phải PNG bị bỏ qua với thông báo rõ.
+- [ ] PNG hỏng được thêm ở trạng thái lỗi nhưng không được tự chọn để tạo output.
+- [ ] Khi bắt đầu hoàn toàn bằng kéo-thả, thư mục của file hợp lệ đầu tiên trở thành source chính và quyết định `Done`.
 
 ### B2. Ghi nhớ đường dẫn
 
@@ -139,6 +171,7 @@ Môi trường QA local: Windows x64 `10.0.26200`, Node.js `24.13.0`, Electron `
 - [ ] Watermark lớn hơn nền được thu vừa, giữ tỉ lệ và căn giữa.
 - [ ] Alpha/opacity gốc được giữ.
 - [ ] Watermark nằm trên mọi PNG thiết kế.
+- [ ] Khi tạo mockup đơn, watermark cũng nằm trên thiết kế và là lớp composite cuối.
 - [ ] Watermark opaque bị từ chối.
 - [ ] File JPEG đổi đuôi `.png` bị từ chối.
 - [ ] Watermark trùng template bị từ chối.
@@ -155,18 +188,54 @@ Môi trường QA local: Windows x64 `10.0.26200`, Node.js `24.13.0`, Electron `
 - [ ] Tên output theo đúng thứ tự `bundle_001`, `bundle_002`, ... và hậu tố khi trùng.
 - [ ] Nút mở thư mục Done mở đúng vị trí.
 - [ ] File output mở được bằng ứng dụng ảnh thông thường.
+- [ ] Khi bật các output bổ sung, bundle, mockup đơn và PDF cùng nằm trong một thư mục `Done`.
+- [ ] Nếu bước mockup đơn/PDF lỗi hoặc bị hủy, không để lại một bộ kết quả dở dang ngoài chính sách đã thiết kế.
+
+### B7. PDF Download
+
+- [ ] Nút **Mở Input** mở đúng thư mục cạnh EXE của app đã cài.
+- [ ] Không có PDF: bật PDF Download và tạo sẽ bị từ chối rõ ràng.
+- [ ] Có từ hai PDF trở lên: app yêu cầu chỉ giữ đúng một PDF mẫu.
+- [ ] URL trống, sai định dạng hoặc không dùng HTTP(S) bị từ chối trước khi tạo.
+- [ ] Với PDF mẫu thật, URL nhìn thấy được thay đầy đủ, không chồng chữ, không cắt dòng và giữ bố cục trang.
+- [ ] Click nút Download mở URL mới.
+- [ ] Click từng vùng của link hiển thị mở cùng URL mới.
+- [ ] Kiểm tra text/accessibility/outline liên quan không còn URL đích cũ ngoài nội dung không thể thay theo thiết kế.
+- [ ] PDF mới nằm trong `Done`, giữ tên mẫu và dùng `_2`, `_3`, ... khi trùng.
+- [ ] Mở PDF bằng ít nhất hai trình đọc phổ biến và xác nhận không có cảnh báo file hỏng.
+
+### B8. Mockup đơn và vùng in
+
+- [ ] `Input` nhận template PNG, JPG/JPEG, WEBP và TIF/TIFF; PDF không bị quét như ảnh.
+- [ ] Trình chỉnh lần lượt hiển thị mọi ảnh mẫu trong Preview.
+- [ ] Vùng chọn luôn giữ tỷ lệ `42:48`, kéo/resize được và không ra ngoài ảnh.
+- [ ] Nút **Lưu vùng in** chỉ hoàn tất khi mọi template có cấu hình hợp lệ.
+- [ ] Đóng/mở app vẫn tải lại đúng vùng in đã lưu.
+- [ ] Giữ tên/kích thước template dùng lại cấu hình; đổi kích thước làm cấu hình cũ hết hiệu lực.
+- [ ] Mỗi template tạo đúng một output `single_<tên template>.png`.
+- [ ] Số PNG được chọn ngẫu nhiên bằng số template; một chu kỳ không lặp khi đủ PNG nguồn.
+- [ ] Khi template nhiều hơn PNG nguồn, app có thể tái sử dụng ở chu kỳ kế tiếp nhưng không treo hoặc thiếu output.
+- [ ] Thiết kế được crop theo alpha và nằm trọn trong vùng in theo kiểu `contain`.
+- [ ] Watermark topmost, kích thước output bằng template và file trùng không bị ghi đè.
 
 ## C. Installer và footprint
 
 ### C1. Fresh install
 
 - [ ] Kiểm thử trên Windows 10 x64.
-- [x] Cài/chạy/gỡ local thành công trên Windows x64 `10.0.26200` (Windows 11).
+- [x] Lịch sử v1.2.0: cài/chạy/gỡ local thành công trên Windows x64 `10.0.26200` (Windows 11); chưa dùng kết quả này để đánh dấu fresh install v1.2.1.
 - [ ] Cài bằng tài khoản standard user không cần quyền admin ngoài dự kiến.
-- [ ] Installer cho phép chọn thư mục cài.
+- [ ] `customInstallMode` ép fresh install theo current-user/fixed writable path; installer không cho fresh install chọn nhầm `Program Files`.
+- [ ] Nâng cấp bản v1.2.0 All Users/custom path hiện có đúng tại chỗ, không tạo thêm bản HKCU hoặc shortcut trùng.
 - [ ] Installer hiển thị icon đúng.
 - [ ] Tùy chọn chạy app sau cài hoạt động.
 - [ ] Add/Remove Programs hiển thị đúng tên và version.
+- [ ] Bản v1.2.1 tạo/đặt `Input` cạnh EXE và nút **Mở Input** mở đúng vị trí thực tế.
+- [ ] Tài khoản cài đặt có thể thêm/sửa PDF và ảnh mẫu trong `Input` mà không cần quyền ngoài dự kiến.
+- [ ] Gỡ/cập nhật chạy đồng bộ headless `Input` trước khi NSIS xóa thư mục cài; nếu đồng bộ thất bại thì quy trình dừng để không làm mất tài sản.
+- [ ] Mở app tương tác lần thứ hai và xác nhận không tạo phiên làm việc song song mà khôi phục/đưa cửa sổ đang chạy lên trước. Hành vi headless lock/exit `3` đã được xác minh tự động ở mục A6.
+- [ ] Đóng cửa sổ khi đang tạo output sẽ yêu cầu hủy, đợi rollback/file tạm được dọn xong rồi mới thoát.
+- [ ] Nút cài cập nhật bị khóa khi đang tạo output, quét/lưu `Input` hoặc còn mở trình chỉnh vùng in chưa lưu.
 
 ### C2. Shortcut và nhận diện app
 
@@ -187,6 +256,9 @@ Môi trường QA local: Windows x64 `10.0.26200`, Node.js `24.13.0`, Electron `
 - [x] Chỉ có locale `vi` và `en-US` theo cấu hình.
 - [ ] Không upload `win-unpacked` hoặc file builder trung gian cho người dùng.
 - [ ] Không xóa thử DLL/resource Electron để giảm dung lượng.
+- [x] `app.asar` có service PDF/mockup đơn và dependency `pdf-lib`; packaged smoke không báo thiếu module.
+- [x] `Input` được đóng gói đúng một lần cạnh EXE, không nằm nhầm trong `app.asar` hoặc thư mục resource khó truy cập.
+- [x] `Input` trong payload chỉ có README và PDF mẫu đã làm phẳng/sanitized; không có file QA hoặc link Drive cũ.
 
 ### C4. Upgrade và uninstall
 
@@ -194,6 +266,8 @@ Môi trường QA local: Windows x64 `10.0.26200`, Node.js `24.13.0`, Electron `
 - [ ] Chỉ còn một bộ Desktop/Start Menu shortcut.
 - [ ] Version thay đổi đúng sau nâng cấp.
 - [ ] `path-preferences.json` và layout localStorage được giữ.
+- [ ] `single-mockup-regions.json` được giữ và vẫn khớp template sau nâng cấp.
+- [x] Chính sách đã được khóa bằng service/test: tài sản `Input` được snapshot trong `userData`, khôi phục khi marker mất và mirror các xóa có chủ ý khi marker còn.
 - [ ] Thư mục `Done` của người dùng không bị thay đổi.
 - [x] Uninstaller QA exit `0`, xóa thư mục app cùng Desktop/Start Menu shortcut.
 - [ ] Với `deleteAppDataOnUninstall: false`, userData được giữ đúng chủ đích.
@@ -228,6 +302,8 @@ Môi trường QA local: Windows x64 `10.0.26200`, Node.js `24.13.0`, Electron `
 - [ ] Sau cập nhật, app khởi động bình thường và hiển thị version mới.
 - [ ] Preferences, đường dẫn đã nhớ và dữ liệu `Done` được giữ.
 - [ ] Không còn installer/process tạm bị kẹt sau hoàn tất.
+- [ ] Nâng cấp live từ installer `1.2.0` lên `1.2.1` qua GitHub updater hoàn tất.
+- [ ] Sau nâng cấp lên v1.2.1, kéo-thả, PDF Download và mockup đơn hoạt động trong bản packaged.
 
 ### D4. Tình huống lỗi
 
@@ -246,7 +322,7 @@ Môi trường QA local: Windows x64 `10.0.26200`, Node.js `24.13.0`, Electron `
 - [x] Không tuyên bố portable v1.1.0 có thể tự update.
 - [ ] Sau khi cài v1.2.0 NSIS, kiểm thử update lên một patch cao hơn.
 
-## E. Kiểm tra release
+## E. Kiểm tra release v1.2.0 — lịch sử
 
 - [x] Các commit phát hành/workflow đã được review và push lên `main`.
 - [x] `package.json` và `package-lock.json` cùng version `1.2.0`.
@@ -267,15 +343,38 @@ Môi trường QA local: Windows x64 `10.0.26200`, Node.js `24.13.0`, Electron `
 - [x] Mã nguồn không chứa token/chứng thư/dữ liệu người dùng; `.gitignore` loại release, env và chứng thư local.
 - [x] Link `/releases/latest` trỏ đúng stable release `v1.2.0`.
 
+## E2. Kiểm tra release v1.2.1
+
+- [x] `package.json` và `package-lock.json` cùng version `1.2.1`; dependency `pdf-lib` có trong cả manifest và lockfile.
+- [x] `docs/RELEASE-NOTES-1.2.1.md` không còn placeholder biên tập; URL placeholder trong PDF mẫu là dữ liệu an toàn có chủ đích.
+- [x] README, changelog, project history, release guide và checklist phản ánh đúng chức năng thực tế ở mốc QA local.
+- [x] Review tài sản `Input` sẽ commit/đóng gói trước tag: chỉ README và PDF mẫu flattened dùng placeholder an toàn; marker runtime bị ignore và loại khỏi payload.
+- [ ] Working tree chỉ chứa thay đổi chủ đích; không có token, chứng thư, output `Done`, file tạm hoặc cache.
+- [ ] Windows CI trên commit phát hành đạt; ghi URL/run ID: `CHƯA XÁC MINH`.
+- [ ] Tạo tag `v1.2.1` đúng commit và khớp tuyệt đối package version.
+- [ ] Release Windows workflow đạt; ghi URL/run ID: `CHƯA XÁC MINH`.
+- [ ] GitHub Release `v1.2.1` stable/public, không draft/prerelease và chỉ có một Release record cho tag.
+- [ ] Release có đủ Setup, `.exe.blockmap`, `latest.yml` cùng version và checksum/size khớp.
+- [x] SHA-256 installer local v1.2.1 đã ghi vào release notes: `6723EF04ACE0595DEAD7C606A5F66C39F9608D2DFDE470ED73FA24ED775AC9C0`.
+- [ ] Sau khi publish, tải lại installer GitHub/CI, tính SHA-256 riêng và không dùng checksum local để xác nhận artifact remote.
+- [ ] Tải installer từ chính GitHub Release và cài/nâng cấp thành công trên máy/VM sạch.
+- [ ] `/releases/latest` trỏ đúng `v1.2.1` sau khi publish.
+- [ ] Đồng bộ body GitHub Release từ đúng `docs/RELEASE-NOTES-1.2.1.md`.
+
 ## F. Sign-off
 
 | Hạng mục | Người kiểm tra | Ngày | Kết quả/Ghi chú |
 | --- | --- | --- | --- |
-| Automated tests | Codex local QA | 2026-08-06 | 26/26 đạt; npm audit runtime 0 vulnerabilities. |
+| v1.2.0 automated tests | Codex local QA | 2026-08-06 | 26/26 đạt; npm audit runtime 0 vulnerabilities. |
 | Manual core features |  |  |  |
 | Path persistence |  |  |  |
-| Installer/shortcut/footprint | Codex local QA | 2026-08-06 | NSIS build, cài/chạy/gỡ local, shortcut target/icon, packaged smoke và footprint đạt; chưa test standard-user/VM sạch. |
-| GitHub updater | Codex local QA | 2026-08-06 | Service/mock/UI/provider và metadata remote đạt; live v1.2.0→v1.2.1 còn chờ patch release. |
-| Release artifacts | Codex + GitHub Actions | 2026-08-06 | Chỉ còn một stable v1.2.0; có đủ Setup, blockmap, latest.yml; `/releases/latest`, notes, version/size/digest đã xác minh. |
+| v1.2.0 installer/shortcut/footprint | Codex local QA | 2026-08-06 | NSIS build, cài/chạy/gỡ local, shortcut target/icon, packaged smoke và footprint đạt; chưa test standard-user/VM sạch. |
+| v1.2.0 GitHub updater | Codex local QA | 2026-08-06 | Service/mock/UI/provider và metadata remote đạt; live v1.2.0→v1.2.1 còn chờ patch release. |
+| v1.2.0 release artifacts | Codex + GitHub Actions | 2026-08-06 | Chỉ còn một stable v1.2.0; có đủ Setup, blockmap, latest.yml; `/releases/latest`, notes, version/size/digest đã xác minh. |
+| v1.2.1 automated tests | Codex local QA | 2026-08-07 | 66/66 đạt sau `npm ci`; 0 fail/skipped/todo; production audit 0 vulnerabilities. |
+| v1.2.1 local core/PDF/single | Codex local QA | 2026-08-07 | PDF mẫu thật render/click annotation/text extraction đạt; integration bundle + single + PDF chung `Done` đạt; source/package basic+region smoke đều PASS. |
+| v1.2.1 installer/Input footprint | Codex local QA | 2026-08-07 | NSIS 104,334,512 byte, blockmap 109,600 byte, `latest.yml` SHA-512 khớp; headless Input backup exit `0`, single-instance lock exit `3` và packaged basic+region smoke đạt; SHA-256 local `6723…C9C0`; Authenticode NotSigned. |
+| Live updater v1.2.0 → v1.2.1 | Chờ GitHub Release |  | Chưa thể chạy trước khi v1.2.1 public; bản v1.2.0 trên máy QA được giữ nguyên. |
+| v1.2.1 release artifacts | Chờ GitHub Actions |  | Build local đủ ba artifact; CI build/public Release chưa chạy. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.
