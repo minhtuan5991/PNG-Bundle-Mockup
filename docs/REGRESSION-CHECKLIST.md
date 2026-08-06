@@ -373,10 +373,10 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [x] Source CDP: toggle PDF không cuộn root, không có vùng tối; đóng cửa sổ exit `0`, stderr không có `Object has been destroyed`.
 - [x] Build NSIS local đạt; packaged basic/region smoke đạt và title/header đúng v1.2.2.
 - [x] Bốn JPG người dùng trong `Input` được giữ nguyên ở trạng thái untracked, không stage/commit/tag.
-- [ ] Tag `v1.2.2` trỏ đúng commit có package version khớp.
-- [ ] Windows CI và Release Windows workflow trên tag/commit v1.2.2 đạt.
-- [ ] GitHub Release v1.2.2 stable/public có đúng Setup, blockmap và `latest.yml`.
-- [ ] Tải lại ba asset public và xác minh checksum/metadata độc lập.
+- [x] Tag `v1.2.2` trỏ đúng commit `fcd9e15487697264810d52ba00d39566fae86c54`, package version khớp.
+- [ ] Windows CI và Release Windows workflow trên tag/commit v1.2.2 đạt. GitHub Actions đang `major_outage` và chưa tạo run; dùng fallback thủ công từ `git archive v1.2.2` sạch.
+- [x] GitHub Release ID `366391357` của v1.2.2 là stable/public, không prerelease, có đúng Setup, blockmap và `latest.yml`; `/releases/latest` trỏ đúng Release này.
+- [x] Tải lại ba asset và xác minh độc lập: installer 104,334,963 byte, SHA-256 `BF99CAD9F7BBB405C5ECFD8A5FF5DAD970562619E71FB9E70523CB32C9FB1F13`; `latest.yml` khớp version/path/size/SHA-512.
 
 ## F. Sign-off
 
@@ -393,6 +393,6 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 | v1.2.1 installer/Input footprint | Codex local QA | 2026-08-07 | NSIS 104,334,512 byte, blockmap 109,600 byte, `latest.yml` SHA-512 khớp; headless Input backup exit `0`, single-instance lock exit `3` và packaged basic+region smoke đạt; SHA-256 local `6723…C9C0`; Authenticode NotSigned. |
 | Live updater v1.2.0 → v1.2.1 | Codex local QA | 2026-08-07 | Auto-check/thông báo version mới đạt; download, restart/cài và xác minh dữ liệu sau nâng cấp chưa chạy. |
 | v1.2.1 release artifacts | Codex + GitHub Actions + manual fallback | 2026-08-07 | Release ID `366371391` stable/public, đúng ba asset, `/releases/latest` và checksum/metadata remote đạt; Windows CI `31126793200` success. Release Windows `31126661713` bị cancelled trước runner/step; asset public giữ nguyên. |
-| v1.2.2 hotfix QA | Codex local QA | 2026-08-07 | 73/73 test; source CDP chọn mockup đơn/kéo vùng/PDF viewport/đóng app đạt; packaged basic+region smoke và NSIS build đạt. Chờ tag/Release sạch từ GitHub Actions. |
+| v1.2.2 hotfix QA/release | Codex local QA + manual fallback | 2026-08-07 | 73/73 test; source/package QA đạt; Release ID `366391357` public với đúng ba asset sạch và checksum tải ngược khớp. GitHub Actions major outage, chưa tạo run cho v1.2.2. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.

@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
 > Cập nhật: 2026-08-07
-> Phiên bản mã nguồn hiện tại: `1.2.2` — ứng viên bản vá
-> Bản stable hiện có: `v1.2.1`
-> Trạng thái: v1.2.2 đã hoàn tất QA local và đóng gói; chờ commit/tag để phát hành qua GitHub. Bản stable công khai gần nhất vẫn là v1.2.1.
+> Phiên bản mã nguồn hiện tại: `1.2.2` — đã phát hành stable/public
+> Bản stable hiện có: `v1.2.2`
+> Trạng thái: tag và GitHub Release v1.2.2 đã public với đúng ba asset sạch; `/releases/latest` trỏ đúng bản vá. Release được publish thủ công sau khi tải ngược/xác minh checksum vì GitHub Actions đang ở trạng thái major outage.
 
 ## 1. Mục đích tài liệu
 
@@ -20,7 +20,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.2.2` — ứng viên bản vá |
+| Phiên bản mã nguồn | `1.2.2` — đã phát hành stable/public |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
@@ -411,6 +411,9 @@ Mốc QA local v1.2.2 ngày 2026-08-07:
 - `window.close()` thoát mã `0`, không bị ép dừng và stderr không có `Object has been destroyed` hay lỗi ứng dụng.
 - Bản `win-unpacked` v1.2.2 đạt basic smoke và region-editor smoke; title/header đúng phiên bản. NSIS local tạo đủ Setup, blockmap và `latest.yml`; Authenticode vẫn **NotSigned**.
 - Bốn ảnh `chambray.jpg`, `ivory.jpg`, `orchild.jpg`, `sand.jpg` trong `Input` là tài sản người dùng/QA chưa track. Không commit hoặc đưa chúng vào tag. Vì local builder sao chép toàn bộ `Input`, checksum local có các ảnh này không được dùng làm checksum Release; GitHub Actions phải build từ commit sạch chỉ chứa tài sản được track.
+- Bản phát hành sạch được dựng lại từ `git archive v1.2.2`, chạy `npm ci`, 73/73 test và NSIS build. `Input` trong artifact chỉ có `README.txt` cùng `Toystory HLW1.pdf`; không có bốn JPG người dùng.
+- GitHub Actions báo `major_outage` và chưa tạo run cho commit/tag v1.2.2. Dùng fallback API với credential Git hiện có: tạo Release nháp, tải ba asset sạch, tải ngược từng asset, so SHA-256 cùng metadata SHA-512 rồi mới publish stable/public.
+- Release ID `366391357`; installer 104,334,963 byte, SHA-256 `BF99CAD9F7BBB405C5ECFD8A5FF5DAD970562619E71FB9E70523CB32C9FB1F13`; blockmap 109,706 byte; `latest.yml` 363 byte. `/releases/latest` trỏ đúng `v1.2.2`.
 
 ## 12. Trạng thái chốt v1.2.0
 
@@ -455,6 +458,7 @@ Mốc QA local v1.2.2 ngày 2026-08-07:
 - [x] Đồng bộ version `1.2.2` trong `package.json` và `package-lock.json`.
 - [x] Tạo `docs/RELEASE-NOTES-1.2.2.md`, cập nhật changelog, README, project history và checklist.
 - [x] Xác nhận bốn JPG người dùng trong `Input` không được stage/commit.
-- [ ] Commit và push mã nguồn v1.2.2 lên `main`.
-- [ ] Tạo tag `v1.2.2`, publish GitHub Release và xác minh đúng ba asset sạch.
-- [ ] Tải ngược asset công khai, kiểm tra version/path/size/SHA-512 và ghi SHA-256 remote.
+- [x] Commit `fcd9e15` và push mã nguồn v1.2.2 lên `main`.
+- [x] Tạo tag `v1.2.2`, publish GitHub Release ID `366391357` và xác minh đúng ba asset sạch.
+- [x] Tải ngược asset, kiểm tra version/path/size/SHA-512; installer remote SHA-256 `BF99CAD9F7BBB405C5ECFD8A5FF5DAD970562619E71FB9E70523CB32C9FB1F13`.
+- [ ] Windows CI/Release Windows workflow chạy trên commit/tag v1.2.2; GitHub Actions đang `major_outage` và chưa tạo run, nên Release dùng fallback thủ công đã xác minh.

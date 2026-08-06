@@ -31,4 +31,4 @@ App tạo một ảnh PNG cho mỗi ảnh mockup trong `Input` và lưu chung v�
 
 ## Cập nhật
 
-Người đang dùng installer v1.2.0 hoặc v1.2.1 có thể nhận v1.2.2 qua nút **Cập nhật** trong app sau khi GitHub Release được publish. Người dùng portable v1.1.0 cần tải file Setup thủ công từ mục Releases.
+Người đang dùng installer v1.2.0 hoặc v1.2.1 có thể nhận v1.2.2 qua nút **Cập nhật** trong app. Người dùng portable v1.1.0 cần tải file Setup thủ công từ [GitHub Release v1.2.2](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.2.2).
