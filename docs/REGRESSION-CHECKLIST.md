@@ -4,7 +4,7 @@
 
 ## Trạng thái mốc
 
-- [ ] QA local v1.2.3: kiểm thử tự động, NSIS build và xác minh trang chọn thư mục cài mới đang thực hiện; nâng cấp phải giữ nguyên vị trí cũ.
+- [x] QA local v1.2.3 ngày 2026-08-07: **73/73 test đạt**; build sạch tạo đủ installer/blockmap/`latest.yml`, version/checksum/Input payload đạt. Kiểm thử cài mới custom path và nâng cấp tại chỗ trên máy/VM sạch còn chờ.
 - [x] QA local v1.2.2 ngày 2026-08-07: **73/73 test đạt**; source CDP kiểm tra chọn mockup đơn, kéo vùng `42:48`, ổn định viewport và đóng cửa sổ đều đạt; packaged basic/region smoke trên `win-unpacked` đạt, title/header đúng v1.2.2.
 - [x] QA/release v1.2.1 ngày 2026-08-07: **66/66 test đạt**; Windows CI thử lại, source/package basic+region smoke, headless Input backup exit `0`, single-instance lock exit `3`, NSIS final, GitHub Release/asset và thông báo updater v1.2.0 đều đạt. Cài mới và download/cài nâng cấp tương tác còn chờ.
 - [x] Mốc automated ngay trước khi tích hợp updater: **20/20 test đạt**.
@@ -385,9 +385,9 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [x] `package.json`, `package-lock.json` và package root trong lockfile cùng version `1.2.3`.
 - [x] Cấu hình NSIS giữ assisted installer và bật `allowToChangeInstallationDirectory: true`.
 - [x] Kiểm thử cấu hình xác nhận template NSIS có trang `MUI_PAGE_DIRECTORY`, bỏ qua trang này khi update và tự thêm thư mục con `${APP_FILENAME}`.
-- [ ] Chạy toàn bộ automated tests; 0 fail, 0 skipped/todo.
-- [ ] Build sạch từ source đã track, không đưa bốn JPG người dùng trong `Input` vào payload.
-- [ ] Installer, blockmap và `latest.yml` cùng version/size/SHA-512; ghi SHA-256 installer.
+- [x] Chạy toàn bộ automated tests: 73/73 đạt; 0 fail, 0 skipped/todo.
+- [x] Build sạch từ source đã track, không đưa bốn JPG người dùng trong `Input` vào payload.
+- [x] Installer 104.341.579 byte, blockmap 109.625 byte và `latest.yml` 363 byte cùng version; size/SHA-512 khớp. SHA-256 installer `72F630F927D86DF7ABDA8748759A546B5A2492E6BF12597176BCA19C86FF02DA`; Authenticode NotSigned.
 - [ ] Kiểm thử tương tác trên máy/VM sạch: trang chọn thư mục xuất hiện và cài đúng vị trí tùy chọn.
 - [ ] Kiểm thử nâng cấp tại chỗ từ v1.2.2: giữ nguyên `InstallLocation`, `Input` và shortcut.
 - [ ] Push source/tag `v1.2.3`; GitHub Release stable/public có đúng ba asset và `/releases/latest` trỏ đúng bản mới.
@@ -408,5 +408,6 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 | Live updater v1.2.0 → v1.2.1 | Codex local QA | 2026-08-07 | Auto-check/thông báo version mới đạt; download, restart/cài và xác minh dữ liệu sau nâng cấp chưa chạy. |
 | v1.2.1 release artifacts | Codex + GitHub Actions + manual fallback | 2026-08-07 | Release ID `366371391` stable/public, đúng ba asset, `/releases/latest` và checksum/metadata remote đạt; Windows CI `31126793200` success. Release Windows `31126661713` bị cancelled trước runner/step; asset public giữ nguyên. |
 | v1.2.2 hotfix QA/release | Codex local QA + manual fallback | 2026-08-07 | 73/73 test; source/package QA đạt; Release ID `366391357` public với đúng ba asset sạch và checksum tải ngược khớp. GitHub Actions major outage, chưa tạo run cho v1.2.2. |
+| v1.2.3 installer path QA | Codex local QA | 2026-08-07 | 73/73 test; clean NSIS build và metadata/payload đạt; cài mới custom path và nâng cấp tại chỗ trên máy/VM sạch còn chờ. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.

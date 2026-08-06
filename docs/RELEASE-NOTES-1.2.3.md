@@ -11,8 +11,12 @@ v1.2.3 bổ sung quyền chọn thư mục đích khi cài mới trên Windows.
 
 ## Kiểm thử
 
-- Xác minh cấu hình NSIS assisted bật `allowToChangeInstallationDirectory` và vẫn giữ `oneClick: false`.
-- Chạy toàn bộ kiểm thử tự động và build lại installer, blockmap cùng `latest.yml` cho phiên bản 1.2.3.
+- 73/73 kiểm thử tự động đạt, không có test fail/skipped/todo.
+- Xác minh cấu hình NSIS assisted bật `allowToChangeInstallationDirectory`, vẫn giữ `oneClick: false`, và template NSIS bỏ qua trang thư mục khi cập nhật.
+- Build sạch từ commit phát hành chỉ chứa `README.txt` và PDF mẫu trong `Input`; bốn JPG riêng trên máy phát triển không nằm trong artifact.
+- Installer, blockmap và `latest.yml` đều mang phiên bản 1.2.3; size và SHA-512 trong metadata khớp installer.
+- Installer có kích thước 104.341.579 byte, SHA-256 `72F630F927D86DF7ABDA8748759A546B5A2492E6BF12597176BCA19C86FF02DA`. Bản này chưa có chữ ký số Authenticode.
+- Kiểm thử cài mới tương tác tại đường dẫn tùy chọn và nâng cấp tại chỗ trên máy/VM sạch vẫn là hạng mục QA thủ công sau phát hành.
 
 ## Cập nhật
 

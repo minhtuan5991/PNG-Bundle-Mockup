@@ -422,6 +422,14 @@ Mốc QA local v1.2.2 ngày 2026-08-07:
 - NSIS tự nối thư mục con `PNG Bundle Mockup` nếu đường dẫn người dùng chọn chưa chứa tên app, tránh rải file ứng dụng trực tiếp vào thư mục cha.
 - Bổ sung kiểm thử cấu hình đóng gói và tài liệu phát hành v1.2.3. Bốn JPG trong `Input` vẫn là tài sản người dùng untracked, không được đưa vào commit/tag/artifact phát hành.
 
+Mốc QA local v1.2.3 ngày 2026-08-07:
+
+- Build sạch từ commit `e1d1e42`: `npm ci` đạt với 0 vulnerability và `npm test` đạt **73/73**, 0 fail/skipped/todo.
+- Test cấu hình đọc đúng template NSIS: `MUI_PAGE_DIRECTORY` chỉ xuất hiện khi bật lựa chọn thư mục, có `skipPageIfUpdated` và tự nối `${APP_FILENAME}`.
+- Payload `win-unpacked/Input` chỉ có `README.txt` và `Toystory HLW1.pdf`; package trong ASAR và metadata EXE đều là v1.2.3.
+- NSIS tạo installer 104.341.579 byte, blockmap 109.625 byte và `latest.yml` 363 byte; SHA-512/size metadata khớp. SHA-256 installer: `72F630F927D86DF7ABDA8748759A546B5A2492E6BF12597176BCA19C86FF02DA`; Authenticode **NotSigned**.
+- Chưa chạy cài mới tương tác tại custom path hoặc nâng cấp v1.2.2 trên máy/VM sạch; hai mục này tiếp tục để mở trong checklist.
+
 ## 12. Trạng thái chốt v1.2.0
 
 - [x] Tích hợp update service với main/preload/renderer.
