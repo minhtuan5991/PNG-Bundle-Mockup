@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
 > Cập nhật: 2026-08-07
-> Phiên bản mã nguồn hiện tại: `1.2.3` — đang chuẩn bị phát hành
-> Bản stable hiện có: `v1.2.2`
-> Trạng thái: đang QA v1.2.3 với thay đổi cho phép chọn thư mục khi cài mới; v1.2.2 vẫn là bản stable/public gần nhất.
+> Phiên bản mã nguồn hiện tại: `1.2.3` — đã phát hành stable/public
+> Bản stable hiện có: `v1.2.3`
+> Trạng thái: tag và GitHub Release v1.2.3 đã public với đúng ba asset sạch; `/releases/latest` trỏ đúng bản mới. Release được publish bằng fallback đã tải ngược/xác minh checksum vì GitHub Actions vẫn `major_outage`.
 
 ## 1. Mục đích tài liệu
 
@@ -20,7 +20,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.2.3` — đang chuẩn bị phát hành |
+| Phiên bản mã nguồn | `1.2.3` — đã phát hành stable/public |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
@@ -429,6 +429,7 @@ Mốc QA local v1.2.3 ngày 2026-08-07:
 - Payload `win-unpacked/Input` chỉ có `README.txt` và `Toystory HLW1.pdf`; package trong ASAR và metadata EXE đều là v1.2.3.
 - NSIS tạo installer 104.341.579 byte, blockmap 109.625 byte và `latest.yml` 363 byte; SHA-512/size metadata khớp. SHA-256 installer: `72F630F927D86DF7ABDA8748759A546B5A2492E6BF12597176BCA19C86FF02DA`; Authenticode **NotSigned**.
 - Chưa chạy cài mới tương tác tại custom path hoặc nâng cấp v1.2.2 trên máy/VM sạch; hai mục này tiếp tục để mở trong checklist.
+- Commit `16d802c` và tag `v1.2.3` đã push. Do GitHub Actions vẫn `major_outage` và không tạo run, Release ID `366396345` được publish bằng fallback thủ công sau khi tải ngược cả ba asset; từng SHA-256 khớp local và `/releases/latest` trỏ đúng v1.2.3.
 
 ## 12. Trạng thái chốt v1.2.0
 
@@ -477,3 +478,14 @@ Mốc QA local v1.2.3 ngày 2026-08-07:
 - [x] Tạo tag `v1.2.2`, publish GitHub Release ID `366391357` và xác minh đúng ba asset sạch.
 - [x] Tải ngược asset, kiểm tra version/path/size/SHA-512; installer remote SHA-256 `BF99CAD9F7BBB405C5ECFD8A5FF5DAD970562619E71FB9E70523CB32C9FB1F13`.
 - [ ] Windows CI/Release Windows workflow chạy trên commit/tag v1.2.2; GitHub Actions đang `major_outage` và chưa tạo run, nên Release dùng fallback thủ công đã xác minh.
+
+## 15. Trạng thái phát hành v1.2.3
+
+- [x] Bật chọn thư mục cho fresh assisted install; giữ nguyên nhận diện và vị trí khi nâng cấp.
+- [x] Chạy 73/73 automated tests và clean NSIS build từ source chỉ có tài sản `Input` đã track.
+- [x] Đồng bộ version `1.2.3`, release notes, changelog, README, project history và regression checklist.
+- [x] Push commit `16d802c`, tạo/push annotated tag `v1.2.3`.
+- [x] Publish GitHub Release ID `366396345` stable/public với đúng ba asset; `/releases/latest` trỏ đúng v1.2.3.
+- [x] Tải ngược cả ba asset và xác minh SHA-256 từng byte; `latest.yml` khớp version/path/size/SHA-512 của installer.
+- [ ] GitHub Actions workflow chạy trên tag/commit v1.2.3; Actions vẫn `major_outage` và chưa tạo run, nên Release dùng fallback thủ công đã xác minh.
+- [ ] Kiểm thử tương tác fresh custom path và nâng cấp tại chỗ từ v1.2.2 trên máy/VM sạch.

@@ -390,7 +390,9 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [x] Installer 104.341.579 byte, blockmap 109.625 byte và `latest.yml` 363 byte cùng version; size/SHA-512 khớp. SHA-256 installer `72F630F927D86DF7ABDA8748759A546B5A2492E6BF12597176BCA19C86FF02DA`; Authenticode NotSigned.
 - [ ] Kiểm thử tương tác trên máy/VM sạch: trang chọn thư mục xuất hiện và cài đúng vị trí tùy chọn.
 - [ ] Kiểm thử nâng cấp tại chỗ từ v1.2.2: giữ nguyên `InstallLocation`, `Input` và shortcut.
-- [ ] Push source/tag `v1.2.3`; GitHub Release stable/public có đúng ba asset và `/releases/latest` trỏ đúng bản mới.
+- [x] Push commit `16d802c` và tag `v1.2.3`; GitHub Release ID `366396345` stable/public có đúng ba asset và `/releases/latest` trỏ đúng bản mới.
+- [x] Tải ngược cả ba asset: SHA-256 installer `72F630F927D86DF7ABDA8748759A546B5A2492E6BF12597176BCA19C86FF02DA`, blockmap `9F3F4B42F88D0D39C74090C5CF32554AD4090C4A4611589EDEBD717B9B909245`, `latest.yml` `B94F8F013D4DD8AF32E75EF65533B7A6CF271C5846DAAC74C41B4E34FC39263E`; metadata updater khớp installer remote.
+- [ ] Windows CI/Release Windows workflow chạy trên tag/commit v1.2.3; GitHub Actions vẫn `major_outage` và chưa tạo run, nên Release dùng fallback thủ công đã xác minh.
 
 ## F. Sign-off
 
@@ -408,6 +410,6 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 | Live updater v1.2.0 → v1.2.1 | Codex local QA | 2026-08-07 | Auto-check/thông báo version mới đạt; download, restart/cài và xác minh dữ liệu sau nâng cấp chưa chạy. |
 | v1.2.1 release artifacts | Codex + GitHub Actions + manual fallback | 2026-08-07 | Release ID `366371391` stable/public, đúng ba asset, `/releases/latest` và checksum/metadata remote đạt; Windows CI `31126793200` success. Release Windows `31126661713` bị cancelled trước runner/step; asset public giữ nguyên. |
 | v1.2.2 hotfix QA/release | Codex local QA + manual fallback | 2026-08-07 | 73/73 test; source/package QA đạt; Release ID `366391357` public với đúng ba asset sạch và checksum tải ngược khớp. GitHub Actions major outage, chưa tạo run cho v1.2.2. |
-| v1.2.3 installer path QA | Codex local QA | 2026-08-07 | 73/73 test; clean NSIS build và metadata/payload đạt; cài mới custom path và nâng cấp tại chỗ trên máy/VM sạch còn chờ. |
+| v1.2.3 installer path QA/release | Codex local QA + manual fallback | 2026-08-07 | 73/73 test; clean NSIS build và metadata/payload đạt; Release ID `366396345` public với đúng ba asset tải ngược khớp. Cài mới custom path và nâng cấp tại chỗ trên máy/VM sạch còn chờ. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.
