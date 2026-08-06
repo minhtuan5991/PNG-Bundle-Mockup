@@ -391,7 +391,7 @@ Mốc QA local v1.2.1 ngày 2026-08-07:
 - Release ID `366371391` đã public với đúng ba asset. Cả ba asset được tải ngược từ GitHub và khớp từng byte với bản local; installer remote có SHA-256 `6723EF04ACE0595DEAD7C606A5F66C39F9608D2DFDE470ED73FA24ED775AC9C0`.
 - `latest.yml` public có SHA-256 `64407FAE9A0EEF3041C6BEA1BC031499F941C962DA0C94DBA5BFC84BBAD9911B`; version/path/size/SHA-512 khớp installer public.
 - Bản cài v1.2.0 trên máy QA đã tự hiện **Có phiên bản mới**, `v1.2.0 → v1.2.1`, với action `download`. Không bấm tải/cài để không thay đổi app và dữ liệu thật.
-- Windows CI run đầu `31125907971` kết thúc failure vì GitHub hủy trước khi cấp runner hoặc chạy step nào trong incident Actions. Lượt thử lại trên đúng tag/commit `31126793200` đạt toàn bộ checkout, Node 22, `npm ci`, regression tests và package unpacked. Webhook tag được giao trễ thành Release Windows run `31126661713`, vẫn queued; cancel/force-cancel tiếp tục trả 500/502. Bản public dùng fallback thủ công đã xác minh ở trên; workflow fail-closed trước Release public nên không thể ghi đè asset hiện có.
+- Windows CI run đầu `31125907971` kết thúc failure vì GitHub hủy trước khi cấp runner hoặc chạy step nào trong incident Actions. Lượt thử lại trên đúng tag/commit `31126793200` đạt toàn bộ checkout, Node 22, `npm ci`, regression tests và package unpacked. Webhook tag được giao trễ thành Release Windows run `31126661713`; sau các yêu cầu cancel trả lỗi trong outage, run kết thúc failure với job cancelled trước runner/step. Ba asset public giữ nguyên timestamp, size và SHA-256; workflow không chạm vào Release.
 
 ## 12. Trạng thái chốt v1.2.0
 
@@ -425,5 +425,5 @@ Mốc QA local v1.2.1 ngày 2026-08-07:
 - [ ] Cài/nâng cấp live `v1.2.0 → v1.2.1`; xác nhận preferences, localStorage, `Done`, app identity và các chức năng v1.2.1 sau nâng cấp.
 - [ ] Kiểm tra persistence riêng từ v1.2.1: lưu vùng in và tài sản `Input`, sau đó gỡ/cài lại hoặc nâng lên patch kế tiếp để xác nhận snapshot/hook khôi phục đúng.
 - [x] Windows CI đạt trên đúng tag/commit tại run `31126793200`; run đầu `31125907971` bị hủy trước runner do outage, không phải lỗi code.
-- [ ] Release Windows workflow đạt; run giao trễ `31126661713` vẫn queued không có runner trong outage và API hủy trả 500/502. Bản phát hành đã dùng fallback thủ công; workflow không ghi đè Release public.
+- [ ] Release Windows workflow đạt; run giao trễ `31126661713` kết thúc failure với job cancelled trước runner/step trong outage. Bản phát hành đã dùng fallback thủ công và ba asset public không thay đổi.
 - [x] Thay placeholder trong `docs/RELEASE-NOTES-1.2.1.md` bằng kết quả QA, GitHub Release, updater và ngoại lệ CI thực tế.
