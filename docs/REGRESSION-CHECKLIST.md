@@ -407,7 +407,7 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [ ] Cài/gỡ và nâng cấp tương tác trên Windows Sandbox/VM sạch ngoài registry sandbox của Codex.
 - [x] Tạo installer QA local SHA-256 `53A60FB9162A185CC48B304BBC40D64E591A590B1FB291C78E86F2DFAD3D78DB`; artifact phát hành sẽ được build lại từ commit chốt.
 - [x] Viết `docs/MANUAL-GITHUB-UPDATE.md`; hướng dẫn tránh `git add .` và xác minh đúng ba Release asset.
-- [ ] Build lại đủ ba artifact sạch cùng version 1.2.3 từ commit chốt và xác minh checksum/metadata.
+- [x] Build lại đủ ba artifact sạch cùng version 1.2.3 từ commit `775d567`; installer SHA-256 `E9557F175F6489F1509300D28996675A971CEFD22A9F221BD1CCC5710D915339`, metadata size/SHA-512 khớp và packaged `Input` chỉ có hai file đã track.
 - [ ] Xóa Release ID `366396345` cùng remote tag cũ, trỏ tag `v1.2.3` sang commit mới và push `main`.
 - [ ] Publish Release v1.2.3 thay thế, tải ngược ba asset và xác minh `/releases/latest`.
 

@@ -19,7 +19,8 @@ v1.2.3 bổ sung quyền chọn thư mục đích khi cài mới trên Windows v
 - Build sạch từ commit phát hành chỉ chứa `README.txt` và PDF mẫu trong `Input`; bốn JPG riêng trên máy phát triển không nằm trong artifact.
 - Silent install thật tại custom path chỉ hiện ba mục người dùng; 20 mục kỹ thuật Hidden, 0 mục ReadOnly.
 - Packaged smoke đạt 16/16 check và chế độ backup `Input` thoát mã `0`.
-- Installer, blockmap và `latest.yml` thay thế đều mang phiên bản 1.2.3; size và SHA-512 trong metadata phải khớp installer trước khi publish.
+- Installer, blockmap và `latest.yml` thay thế đều mang phiên bản 1.2.3; size và SHA-512 trong metadata khớp installer.
+- Installer thay thế có kích thước 104.342.486 byte, SHA-256 `E9557F175F6489F1509300D28996675A971CEFD22A9F221BD1CCC5710D915339`. Blockmap có SHA-256 `2B1E785E1B1324FF9CE6885BC241118F246FD35A7BD322B4A856FA3ADCDB5B4A`; `latest.yml` có SHA-256 `6B27C6CF0E12ED87F3FEC7C7C4430D62D12B6FC91DC968046E19221909C02A68`.
 - Bản này chưa có chữ ký số Authenticode.
 - Kiểm thử cài mới tương tác tại đường dẫn tùy chọn và nâng cấp tại chỗ trên máy/VM sạch vẫn là hạng mục QA thủ công sau phát hành.
 
