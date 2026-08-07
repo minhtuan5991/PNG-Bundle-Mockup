@@ -1,5 +1,7 @@
 # PNG Bundle Mockup v1.2.3
 
+> Trạng thái: bản thay thế đã public tại [GitHub Release v1.2.3](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.2.3), Release ID `366501729`.
+
 v1.2.3 bổ sung quyền chọn thư mục đích khi cài mới trên Windows và làm gọn thư mục cài đặt. Release v1.2.3 ban đầu được chủ dự án yêu cầu xóa để thay trực tiếp bằng bộ cài mới cùng version.
 
 ## Thay đổi

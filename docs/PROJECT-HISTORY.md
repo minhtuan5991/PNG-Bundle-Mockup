@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
 > Cập nhật: 2026-08-07
-> Phiên bản mã nguồn hiện tại: `1.2.3` — đang chuẩn bị Release thay thế cùng version
+> Phiên bản mã nguồn hiện tại: `1.2.3` — Release thay thế cùng version đã hoàn tất
 > Bản stable hiện có: `v1.2.3`
-> Trạng thái: chủ dự án yêu cầu xóa Release/tag v1.2.3 cũ và thay bằng bộ cài hidden-runtime mới mà không tăng version. Chưa xóa remote cho đến khi ba artifact mới được build sạch và xác minh.
+> Trạng thái: Release/tag v1.2.3 cũ đã được thay bằng bản hidden-runtime mới cùng version. Release ID `366501729` đang public/stable và `/releases/latest` đã được xác minh.
 
 ## 1. Mục đích tài liệu
 
@@ -480,13 +480,13 @@ Mốc QA local v1.2.3 ngày 2026-08-07:
 - [x] Tải ngược asset, kiểm tra version/path/size/SHA-512; installer remote SHA-256 `BF99CAD9F7BBB405C5ECFD8A5FF5DAD970562619E71FB9E70523CB32C9FB1F13`.
 - [ ] Windows CI/Release Windows workflow chạy trên commit/tag v1.2.2; GitHub Actions đang `major_outage` và chưa tạo run, nên Release dùng fallback thủ công đã xác minh.
 
-## 15. Trạng thái phát hành v1.2.3
+## 15. Trạng thái phát hành v1.2.3 ban đầu — đã được thay thế
 
 - [x] Bật chọn thư mục cho fresh assisted install; giữ nguyên nhận diện và vị trí khi nâng cấp.
 - [x] Chạy 73/73 automated tests và clean NSIS build từ source chỉ có tài sản `Input` đã track.
 - [x] Đồng bộ version `1.2.3`, release notes, changelog, README, project history và regression checklist.
 - [x] Push commit `16d802c`, tạo/push annotated tag `v1.2.3`.
-- [x] Publish GitHub Release ID `366396345` stable/public với đúng ba asset; `/releases/latest` trỏ đúng v1.2.3.
+- [x] Từng publish GitHub Release ID `366396345` stable/public với đúng ba asset; Release này sau đó đã bị xóa theo yêu cầu để thay bằng bản hidden-runtime cùng version.
 - [x] Tải ngược cả ba asset và xác minh SHA-256 từng byte; `latest.yml` khớp version/path/size/SHA-512 của installer.
 - [ ] GitHub Actions workflow chạy trên tag/commit v1.2.3; Actions vẫn `major_outage` và chưa tạo run, nên Release dùng fallback thủ công đã xác minh.
 - [ ] Kiểm thử tương tác fresh custom path và nâng cấp tại chỗ từ v1.2.2 trên máy/VM sạch.
@@ -509,3 +509,6 @@ Mốc QA local ngày 2026-08-07:
 - Silent-uninstall không thể kết luận trong registry sandbox của Codex: cả installer mới và installer v1.2.3 public không thay đổi (SHA-256 `72F630...02DA`) đều để lại thư mục trong bài test này. Đây không phải sai khác do cờ Hidden; template uninstaller vẫn dùng `RMDir /r`, và thay đổi không thêm `ReadOnly`/`System`. Cài–gỡ tương tác trên máy/VM sạch vẫn để mở.
 - Bản local QA ban đầu: 104.342.393 byte, SHA-256 `53A60FB9162A185CC48B304BBC40D64E591A590B1FB291C78E86F2DFAD3D78DB`, Authenticode **NotSigned**. Artifact phát hành thay thế phải được dựng lại sạch từ commit chốt.
 - Ba artifact phát hành đã được dựng sạch từ commit `775d567`: installer 104.342.486 byte, SHA-256 `E9557F175F6489F1509300D28996675A971CEFD22A9F221BD1CCC5710D915339`; blockmap SHA-256 `2B1E785E1B1324FF9CE6885BC241118F246FD35A7BD322B4A856FA3ADCDB5B4A`; `latest.yml` SHA-256 `6B27C6CF0E12ED87F3FEC7C7C4430D62D12B6FC91DC968046E19221909C02A68`. `latest.yml` khớp size/SHA-512 của installer, `app.asar` mang version 1.2.3, packaged `Input` chỉ có README/PDF đã track và installer **NotSigned**.
+- Nhánh `main` đã push tới `33f8b95`; annotated tag `v1.2.3` đã được thay và trỏ đúng commit này. Release cũ ID `366396345` cùng tag cũ đã bị xóa.
+- Lượt workflow `31144247866` chạy trên tag cũ do tag cũ bị đẩy lại trong một lần lệnh Git bị Windows chặn giữa chuỗi; nó đã publish asset cũ vào Release mới. Release lập tức được đưa về draft, workflow đúng commit `31144270671` được hủy để tránh ghi đè, toàn bộ asset sai bị xóa và thay thủ công bằng ba artifact đã QA.
+- Release thay thế ID `366501729` đã public/stable. Ba asset được tải ngược và khớp SHA-256 từng byte; `latest.yml` remote khớp version/path/size/SHA-512 của installer; cả endpoint theo tag và `/releases/latest` đều trỏ đúng Release mới.
