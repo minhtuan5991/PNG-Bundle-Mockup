@@ -1,6 +1,6 @@
 # PNG Bundle Mockup v1.2.4
 
-> Trạng thái: đang chuẩn bị local, chưa push/tag/Release GitHub.
+> Bản phát hành Windows x64 stable. Bộ cài chưa có chữ ký số Authenticode.
 
 v1.2.4 thay đổi cơ chế gỡ cài đặt để xóa dữ liệu kỹ thuật của app nhưng vẫn giữ tài sản người dùng.
 

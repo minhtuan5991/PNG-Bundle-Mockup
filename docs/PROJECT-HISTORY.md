@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
 > Cập nhật: 2026-08-07
-> Phiên bản mã nguồn hiện tại: `1.2.4` — thay đổi local, chưa phát hành
+> Phiên bản mã nguồn hiện tại: `1.2.4` — sẵn sàng phát hành
 > Bản stable hiện có: `v1.2.3`
-> Trạng thái: v1.2.3 Release ID `366501729` vẫn là stable. Local v1.2.4 bổ sung uninstall sạch nhưng giữ `Input`; chưa push/tag/Release.
+> Trạng thái: v1.2.4 đã hoàn tất code, tài liệu, clean build và QA tự động; đang push/tag/publish GitHub.
 
 ## 1. Mục đích tài liệu
 
@@ -21,7 +21,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.2.4` — local, chưa phát hành |
+| Phiên bản mã nguồn | `1.2.4` — sẵn sàng phát hành |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
