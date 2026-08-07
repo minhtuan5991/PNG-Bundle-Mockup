@@ -423,7 +423,7 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [x] Không có lệnh quét/xóa `Done`, PNG nguồn, mockup hoặc PDF bên ngoài thư mục cài đặt.
 - [x] Automated tests đạt 73/73; NSIS v1.2.4 build thành công.
 - [ ] Cài–gỡ tương tác trên Windows/VM bình thường: xác nhận chỉ còn `Input`/file riêng tại install path và AppData/updater cache đã mất. Registry sandbox hiện trả exit `0` nhưng không thực thi phần xóa nên không được tính là đạt.
-- [ ] Build sạch artifact cuối từ commit chốt, xác minh packaged `Input` không chứa bốn JPG riêng.
+- [x] Build sạch artifact từ commit `152a51e`; packaged `Input` chỉ có README/PDF đã track, installer SHA-256 `E5B71C2A614EEF788B31F815F4ED6914539716A79FCA88074156EF9082CD25D9` và updater metadata khớp.
 - [ ] Push/tag/publish v1.2.4 và tải ngược ba asset để xác minh checksum/metadata.
 
 ## F. Sign-off
