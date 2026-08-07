@@ -4,7 +4,10 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
-Chưa có thay đổi sau bản phát hành v1.2.3.
+### Changed
+
+- Installer gắn thuộc tính Hidden cho các thư mục/file kỹ thuật của Electron trong thư mục cài đặt. `Input`, file mở app và file gỡ cài đặt vẫn hiển thị; không xóa bất kỳ runtime bắt buộc nào.
+- Bổ sung hướng dẫn phát hành thủ công để chủ dự án tự cập nhật GitHub ở phiên bản patch tiếp theo, không ghi đè Release v1.2.3 đã public.
 
 ## [1.2.3] - 2026-08-07
 

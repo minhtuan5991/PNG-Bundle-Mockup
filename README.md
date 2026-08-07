@@ -102,6 +102,10 @@ Khi bỏ chọn, app giữ metadata của ảnh nền trong khả năng định 
 
 Sau khi cài, dùng nút **Mở Input** để xác nhận thư mục `Input` nằm cạnh EXE và thêm PDF/ảnh mẫu của bạn. Bản stable hiện tại là [`v1.2.3`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.2.3), có đủ installer, blockmap và `latest.yml`. Người đang dùng installer từ v1.2.0 đến v1.2.2 có thể chủ động kiểm tra, tải và cài bản vá này ngay trong app.
 
+Bộ cài local mới (chưa phát hành lại lên GitHub) giữ các file runtime Electron bắt buộc nhưng gắn thuộc tính **Hidden** để thư mục cài đặt gọn hơn. Mặc định File Explorer chỉ hiện `Input`, **PNG Bundle Mockup.exe** và **Uninstall PNG Bundle Mockup.exe**. Việc bật **Show hidden files** sẽ làm các file kỹ thuật xuất hiện lại; không xóa hoặc đổi tên chúng vì app cần chúng để chạy.
+
+Chủ dự án muốn tự đưa bản mới lên GitHub xem [hướng dẫn cập nhật thủ công](docs/MANUAL-GITHUB-UPDATE.md). Release v1.2.3 đã public không được ghi đè; thay đổi tiếp theo phải tăng lên v1.2.4 hoặc cao hơn.
+
 Từ bản installer `1.2.0`, app tự kiểm tra phiên bản ổn định mới sau khi mở, sau đó kiểm tra lại định kỳ. Khi có bản mới, người dùng chủ động chọn **Tải cập nhật** và **Khởi động lại và cài đặt**; app đồng bộ backup `Input` ngay trước khi gọi bộ cài. App chặn cài cập nhật khi đang tạo ảnh, quét/lưu `Input` hoặc còn mở trình chỉnh vùng in; nếu đóng cửa sổ trong lúc tạo ảnh, tác vụ được hủy và dọn file tạm trước khi app thoát, còn thay đổi vùng in chưa lưu sẽ được cảnh báo. Đóng app thông thường không tự cài bản đã tải. App chỉ chạy một cửa sổ tương tác: mở icon lần nữa sẽ khôi phục và đưa cửa sổ hiện có lên trước. Nếu tiến trình backup headless không lấy được single-instance lock vì app còn chạy, update/uninstall sẽ dừng an toàn thay vì tiếp tục khi chưa bảo toàn `Input`. Bản portable `1.1.0` cũ không có updater nên cần cài file Setup một lần để chuyển sang kênh cập nhật này.
 
 ## Chạy mã nguồn dành cho phát triển

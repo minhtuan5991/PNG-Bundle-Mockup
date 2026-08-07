@@ -80,6 +80,30 @@
   !endif
 !macroend
 
+; Keep the installation root readable without deleting Electron runtime files.
+; Use an exact allowlist so a custom install directory can never hide unrelated user files.
+!macro hideTechnicalInstallFile FILE_NAME
+  ${If} ${FileExists} "$INSTDIR\${FILE_NAME}"
+    ClearErrors
+    SetFileAttributes "$INSTDIR\${FILE_NAME}" HIDDEN|ARCHIVE
+    ${If} ${Errors}
+      DetailPrint "Could not hide technical install file: ${FILE_NAME}"
+      ClearErrors
+    ${EndIf}
+  ${EndIf}
+!macroend
+
+!macro hideTechnicalInstallDirectory DIRECTORY_NAME
+  ${If} ${FileExists} "$INSTDIR\${DIRECTORY_NAME}\*.*"
+    ClearErrors
+    SetFileAttributes "$INSTDIR\${DIRECTORY_NAME}" HIDDEN
+    ${If} ${Errors}
+      DetailPrint "Could not hide technical install directory: ${DIRECTORY_NAME}"
+      ClearErrors
+    ${EndIf}
+  ${EndIf}
+!macroend
+
 !macro customInstall
   ${If} $installMode == "all"
     DetailPrint "Granting local users modify access to the shared Input directory..."
@@ -94,6 +118,28 @@
       Abort "Unable to grant write access to Input."
     ${EndIf}
   ${EndIf}
+
+  DetailPrint "Hiding Electron runtime files from the installation root..."
+  !insertmacro hideTechnicalInstallDirectory "locales"
+  !insertmacro hideTechnicalInstallDirectory "resources"
+  !insertmacro hideTechnicalInstallFile "chrome_100_percent.pak"
+  !insertmacro hideTechnicalInstallFile "chrome_200_percent.pak"
+  !insertmacro hideTechnicalInstallFile "d3dcompiler_47.dll"
+  !insertmacro hideTechnicalInstallFile "dxcompiler.dll"
+  !insertmacro hideTechnicalInstallFile "dxil.dll"
+  !insertmacro hideTechnicalInstallFile "ffmpeg.dll"
+  !insertmacro hideTechnicalInstallFile "icudtl.dat"
+  !insertmacro hideTechnicalInstallFile "libEGL.dll"
+  !insertmacro hideTechnicalInstallFile "libGLESv2.dll"
+  !insertmacro hideTechnicalInstallFile "LICENSE.electron.txt"
+  !insertmacro hideTechnicalInstallFile "LICENSES.chromium.html"
+  !insertmacro hideTechnicalInstallFile "resources.pak"
+  !insertmacro hideTechnicalInstallFile "snapshot_blob.bin"
+  !insertmacro hideTechnicalInstallFile "v8_context_snapshot.bin"
+  !insertmacro hideTechnicalInstallFile "vk_swiftshader.dll"
+  !insertmacro hideTechnicalInstallFile "vk_swiftshader_icd.json"
+  !insertmacro hideTechnicalInstallFile "vulkan-1.dll"
+  !insertmacro hideTechnicalInstallFile "uninstallerIcon.ico"
 !macroend
 
 !macro customUnInstall
