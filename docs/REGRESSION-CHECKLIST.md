@@ -412,6 +412,20 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [x] Publish Release thay thế ID `366501729`; tải ngược đúng ba asset và xác minh SHA-256 từng byte, updater metadata, endpoint theo tag cùng `/releases/latest`.
 - [x] Xử lý race từ workflow tag cũ: đưa Release về draft, hủy run đúng commit `31144270671`, xóa ba asset cũ do run `31144247866` tạo và chỉ public lại sau khi asset mới khớp.
 
+## E6. v1.2.4 — uninstall sạch nhưng giữ Input
+
+- [x] `package.json`, `package-lock.json` và package root cùng version `1.2.4`.
+- [x] `deleteAppDataOnUninstall` bật; template electron-builder chỉ xóa AppData khi gỡ thật, không xóa trong update.
+- [x] Gỡ thật xóa updater cache trong LocalAppData; update không chạy bước này.
+- [x] `customRemoveFiles` không dùng `RMDir /r $INSTDIR`; chỉ xóa chính xác runtime/app files và giữ `Input` cùng file riêng không thuộc app.
+- [x] Luồng update giữ `un.atomicRMDir`/`un.restoreFiles` và backup/restore `Input` hiện có.
+- [x] Marker nội bộ của app bị xóa khỏi `Input` khi uninstall thật; nội dung còn lại trong `Input` được giữ.
+- [x] Không có lệnh quét/xóa `Done`, PNG nguồn, mockup hoặc PDF bên ngoài thư mục cài đặt.
+- [x] Automated tests đạt 73/73; NSIS v1.2.4 build thành công.
+- [ ] Cài–gỡ tương tác trên Windows/VM bình thường: xác nhận chỉ còn `Input`/file riêng tại install path và AppData/updater cache đã mất. Registry sandbox hiện trả exit `0` nhưng không thực thi phần xóa nên không được tính là đạt.
+- [ ] Build sạch artifact cuối từ commit chốt, xác minh packaged `Input` không chứa bốn JPG riêng.
+- [ ] Push/tag/publish v1.2.4 và tải ngược ba asset để xác minh checksum/metadata.
+
 ## F. Sign-off
 
 | Hạng mục | Người kiểm tra | Ngày | Kết quả/Ghi chú |

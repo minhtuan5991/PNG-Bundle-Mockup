@@ -8,12 +8,13 @@ const path = require('node:path');
 const packageJson = require('../package.json');
 const electronPackageJson = require('electron/package.json');
 
-test('installer assisted cho chọn thư mục, ẩn đúng runtime và không đóng gói marker Input', () => {
+test('installer chọn thư mục, ẩn runtime và uninstall sạch nhưng giữ Input', () => {
   assert.match(packageJson.version, /^\d+\.\d+\.\d+$/);
   assert.equal(packageJson.build.nsis.oneClick, false);
   assert.equal(packageJson.build.nsis.perMachine, false);
   assert.equal(packageJson.build.nsis.allowElevation, true);
   assert.equal(packageJson.build.nsis.allowToChangeInstallationDirectory, true);
+  assert.equal(packageJson.build.nsis.deleteAppDataOnUninstall, true);
   assert.equal(packageJson.build.nsis.include, 'build/installer.nsh');
 
   const assistedInstallerTemplate = fs.readFileSync(
@@ -87,6 +88,31 @@ test('installer assisted cho chọn thư mục, ẩn đúng runtime và không �
   assert.ok(!hiddenFiles.includes('${APP_EXECUTABLE_FILENAME}'));
   assert.ok(!hiddenFiles.includes('${UNINSTALL_FILENAME}'));
   assert.doesNotMatch(installerInclude, /hideTechnicalInstallFile "[^"*?]*[*?]/);
+
+  assert.match(installerInclude, /!macro customRemoveFiles/);
+  assert.match(installerInclude, /Call un\.atomicRMDir/);
+  assert.match(installerInclude, /Call un\.restoreFiles/);
+  assert.match(
+    installerInclude,
+    /\$\{IfNot\} \$\{isUpdated\}[\s\S]*?RMDir \/r "\$LOCALAPPDATA\\\$\{APP_PACKAGE_NAME\}-updater"/,
+  );
+  assert.match(installerInclude, /Delete "\$INSTDIR\\Input\\\.png-bundle-input-marker"/);
+  assert.doesNotMatch(installerInclude, /RMDir \/r "\$INSTDIR\\Input(?:\\|\")/);
+  assert.doesNotMatch(installerInclude, /RMDir \/r \$INSTDIR(?:\s|$)/m);
+
+  const removedFiles = [...installerInclude.matchAll(
+    /!insertmacro removeInstalledFile "([^"]+)"/g,
+  )].map((match) => match[1]);
+  assert.deepEqual(removedFiles, [
+    ...hiddenFiles,
+    '${APP_EXECUTABLE_FILENAME}',
+    '${UNINSTALL_FILENAME}',
+  ]);
+
+  const removedDirectories = [...installerInclude.matchAll(
+    /!insertmacro removeInstalledDirectory "([^"]+)"/g,
+  )].map((match) => match[1]);
+  assert.deepEqual(removedDirectories, hiddenDirectories);
 
   assert.equal(electronPackageJson.version, '43.2.0');
 

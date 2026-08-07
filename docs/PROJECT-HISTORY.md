@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
 > Cập nhật: 2026-08-07
-> Phiên bản mã nguồn hiện tại: `1.2.3` — Release thay thế cùng version đã hoàn tất
+> Phiên bản mã nguồn hiện tại: `1.2.4` — thay đổi local, chưa phát hành
 > Bản stable hiện có: `v1.2.3`
-> Trạng thái: Release/tag v1.2.3 cũ đã được thay bằng bản hidden-runtime mới cùng version. Release ID `366501729` đang public/stable và `/releases/latest` đã được xác minh.
+> Trạng thái: v1.2.3 Release ID `366501729` vẫn là stable. Local v1.2.4 bổ sung uninstall sạch nhưng giữ `Input`; chưa push/tag/Release.
 
 ## 1. Mục đích tài liệu
 
@@ -21,7 +21,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.2.3` — đang chuẩn bị Release thay thế |
+| Phiên bản mã nguồn | `1.2.4` — local, chưa phát hành |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
@@ -512,3 +512,12 @@ Mốc QA local ngày 2026-08-07:
 - Nhánh `main` đã push tới `33f8b95`; annotated tag `v1.2.3` đã được thay và trỏ đúng commit này. Release cũ ID `366396345` cùng tag cũ đã bị xóa.
 - Lượt workflow `31144247866` chạy trên tag cũ do tag cũ bị đẩy lại trong một lần lệnh Git bị Windows chặn giữa chuỗi; nó đã publish asset cũ vào Release mới. Release lập tức được đưa về draft, workflow đúng commit `31144270671` được hủy để tránh ghi đè, toàn bộ asset sai bị xóa và thay thủ công bằng ba artifact đã QA.
 - Release thay thế ID `366501729` đã public/stable. Ba asset được tải ngược và khớp SHA-256 từng byte; `latest.yml` remote khớp version/path/size/SHA-512 của installer; cả endpoint theo tag và `/releases/latest` đều trỏ đúng Release mới.
+
+## 17. Thay đổi local v1.2.4 — uninstall sạch nhưng giữ Input
+
+- Bật `deleteAppDataOnUninstall`: khi gỡ thật, electron-builder xóa dữ liệu roaming theo product/package name, gồm cache Chromium, thiết lập đường dẫn, vùng in và `input-backup`. Khi update, dữ liệu này không bị xóa.
+- `customUnInstall` vẫn đồng bộ `Input` trước mọi lượt gỡ/update. Gỡ thật xóa marker nội bộ trong `Input` và xóa `%LOCALAPPDATA%\png-bundle-mockup-updater`; update bỏ qua hai bước này.
+- `customRemoveFiles` giữ nguyên atomic remove/restore của electron-builder khi update. Khi gỡ thật, nó chỉ xóa hai thư mục runtime và danh sách file app chính xác, không dùng `RMDir /r $INSTDIR`; vì vậy `Input` và file riêng không thuộc app tại custom install path được giữ lại.
+- `Done`, PNG nguồn, ảnh mockup và PDF kết quả nằm ngoài thư mục cài đặt không được uninstaller liệt kê hoặc quét nên luôn được giữ.
+- Version nguồn và lockfile đã tăng lên `1.2.4`. Automated tests đạt 73/73 và NSIS build local thành công.
+- Silent-uninstall trong registry sandbox vẫn trả `0` nhưng không thực thi phần xóa, giống giới hạn QA đã thấy ở v1.2.3; chưa dùng kết quả này để kết luận. Cần cài–gỡ tương tác trên Windows/VM bình thường trước khi phát hành.

@@ -1,6 +1,6 @@
 {
   "name": "png-bundle-mockup",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Ứng dụng desktop tự động sắp xếp PNG lên ảnh nền mockup.",
   "main": "src/main.js",
   "author": "PNG Bundle Mockup",
@@ -92,7 +92,7 @@
       "installerIcon": "assets/app-icon.ico",
       "uninstallerIcon": "assets/app-icon.ico",
       "installerHeaderIcon": "assets/app-icon.ico",
-      "deleteAppDataOnUninstall": false,
+      "deleteAppDataOnUninstall": true,
       "runAfterFinish": true
     },
     "npmRebuild": false

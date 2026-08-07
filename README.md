@@ -106,6 +106,8 @@ Bộ cài v1.2.3 thay thế giữ các file runtime Electron bắt buộc nhưng
 
 Chủ dự án muốn tự đưa bản mới lên GitHub xem [hướng dẫn cập nhật thủ công](docs/MANUAL-GITHUB-UPDATE.md). Sau lần thay thế v1.2.3 theo yêu cầu này, thay đổi tiếp theo nên tăng lên v1.2.4 hoặc cao hơn.
 
+Mã nguồn v1.2.4 đang chuẩn bị thay đổi cơ chế gỡ cài đặt: uninstall thật giữ nguyên `Input` tại vị trí cài đặt nhưng xóa EXE/runtime, shortcut, registry, `%APPDATA%\png-bundle-mockup` và `%LOCALAPPDATA%\png-bundle-mockup-updater`. Các thư mục `Done`, PNG nguồn, mockup và PDF nằm ngoài thư mục cài đặt luôn được giữ nguyên. Luồng update không xóa dữ liệu người dùng và tiếp tục dùng backup/restore `Input`.
+
 Từ bản installer `1.2.0`, app tự kiểm tra phiên bản ổn định mới sau khi mở, sau đó kiểm tra lại định kỳ. Khi có bản mới, người dùng chủ động chọn **Tải cập nhật** và **Khởi động lại và cài đặt**; app đồng bộ backup `Input` ngay trước khi gọi bộ cài. App chặn cài cập nhật khi đang tạo ảnh, quét/lưu `Input` hoặc còn mở trình chỉnh vùng in; nếu đóng cửa sổ trong lúc tạo ảnh, tác vụ được hủy và dọn file tạm trước khi app thoát, còn thay đổi vùng in chưa lưu sẽ được cảnh báo. Đóng app thông thường không tự cài bản đã tải. App chỉ chạy một cửa sổ tương tác: mở icon lần nữa sẽ khôi phục và đưa cửa sổ hiện có lên trước. Nếu tiến trình backup headless không lấy được single-instance lock vì app còn chạy, update/uninstall sẽ dừng an toàn thay vì tiếp tục khi chưa bảo toàn `Input`. Bản portable `1.1.0` cũ không có updater nên cần cài file Setup một lần để chuyển sang kênh cập nhật này.
 
 ## Chạy mã nguồn dành cho phát triển

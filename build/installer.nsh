@@ -104,6 +104,23 @@
   ${EndIf}
 !macroend
 
+; A real uninstall must leave the user-managed Input directory in place while
+; removing only files that belong to the application. Keep this list explicit:
+; a custom installation directory may contain unrelated user files.
+!macro removeInstalledFile FILE_NAME
+  ${If} ${FileExists} "$INSTDIR\${FILE_NAME}"
+    SetFileAttributes "$INSTDIR\${FILE_NAME}" NORMAL
+    Delete "$INSTDIR\${FILE_NAME}"
+  ${EndIf}
+!macroend
+
+!macro removeInstalledDirectory DIRECTORY_NAME
+  ${If} ${FileExists} "$INSTDIR\${DIRECTORY_NAME}\*.*"
+    SetFileAttributes "$INSTDIR\${DIRECTORY_NAME}" NORMAL
+    RMDir /r "$INSTDIR\${DIRECTORY_NAME}"
+  ${EndIf}
+!macroend
+
 !macro customInstall
   ${If} $installMode == "all"
     DetailPrint "Granting local users modify access to the shared Input directory..."
@@ -165,4 +182,67 @@
     Abort "Input backup failed with exit code $R9."
 
   inputSyncDone:
+  ${IfNot} ${isUpdated}
+    ; The Input directory itself remains at $INSTDIR\Input. Remove its internal
+    ; lifecycle marker because the app is no longer installed.
+    Delete "$INSTDIR\Input\.png-bundle-input-marker"
+    Delete "$INSTDIR\Input\.png-bundle-input-marker.tmp-*"
+
+    ; electron-builder only removes Roaming AppData. Its updater cache lives in
+    ; LocalAppData and must be removed separately on a real uninstall.
+    ${If} $installMode == "all"
+      SetShellVarContext current
+    ${EndIf}
+    RMDir /r "$LOCALAPPDATA\${APP_PACKAGE_NAME}-updater"
+    ${If} $installMode == "all"
+      SetShellVarContext all
+    ${EndIf}
+  ${EndIf}
+!macroend
+
+!macro customRemoveFiles
+  ${If} ${isUpdated}
+    ; Preserve electron-builder's atomic update behaviour. Input was already
+    ; mirrored to userData above and will be restored into the new installation.
+    CreateDirectory "$PLUGINSDIR\old-install"
+
+    Push ""
+    Call un.atomicRMDir
+    Pop $R0
+
+    ${If} $R0 != 0
+      DetailPrint "File is busy, aborting: $R0"
+      Push ""
+      Call un.restoreFiles
+      Pop $R0
+      Abort `Can't rename "$INSTDIR" to "$PLUGINSDIR\old-install".`
+    ${EndIf}
+  ${Else}
+    !insertmacro removeInstalledDirectory "locales"
+    !insertmacro removeInstalledDirectory "resources"
+    !insertmacro removeInstalledFile "chrome_100_percent.pak"
+    !insertmacro removeInstalledFile "chrome_200_percent.pak"
+    !insertmacro removeInstalledFile "d3dcompiler_47.dll"
+    !insertmacro removeInstalledFile "dxcompiler.dll"
+    !insertmacro removeInstalledFile "dxil.dll"
+    !insertmacro removeInstalledFile "ffmpeg.dll"
+    !insertmacro removeInstalledFile "icudtl.dat"
+    !insertmacro removeInstalledFile "libEGL.dll"
+    !insertmacro removeInstalledFile "libGLESv2.dll"
+    !insertmacro removeInstalledFile "LICENSE.electron.txt"
+    !insertmacro removeInstalledFile "LICENSES.chromium.html"
+    !insertmacro removeInstalledFile "resources.pak"
+    !insertmacro removeInstalledFile "snapshot_blob.bin"
+    !insertmacro removeInstalledFile "v8_context_snapshot.bin"
+    !insertmacro removeInstalledFile "vk_swiftshader.dll"
+    !insertmacro removeInstalledFile "vk_swiftshader_icd.json"
+    !insertmacro removeInstalledFile "vulkan-1.dll"
+    !insertmacro removeInstalledFile "uninstallerIcon.ico"
+    !insertmacro removeInstalledFile "${APP_EXECUTABLE_FILENAME}"
+    !insertmacro removeInstalledFile "${UNINSTALL_FILENAME}"
+
+    ; This only succeeds when no unrelated entry exists. Normally Input is the
+    ; sole remaining child, so the installation root intentionally remains.
+    RMDir "$INSTDIR"
+  ${EndIf}
 !macroend
