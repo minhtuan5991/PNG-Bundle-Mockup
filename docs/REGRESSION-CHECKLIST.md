@@ -394,7 +394,7 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [x] Tải ngược cả ba asset: SHA-256 installer `72F630F927D86DF7ABDA8748759A546B5A2492E6BF12597176BCA19C86FF02DA`, blockmap `9F3F4B42F88D0D39C74090C5CF32554AD4090C4A4611589EDEBD717B9B909245`, `latest.yml` `B94F8F013D4DD8AF32E75EF65533B7A6CF271C5846DAAC74C41B4E34FC39263E`; metadata updater khớp installer remote.
 - [ ] Windows CI/Release Windows workflow chạy trên tag/commit v1.2.3; GitHub Actions vẫn `major_outage` và chưa tạo run, nên Release dùng fallback thủ công đã xác minh.
 
-## E5. Làm gọn thư mục cài đặt — local sau v1.2.3
+## E5. Release v1.2.3 thay thế — làm gọn thư mục cài đặt
 
 - [x] Không xóa runtime; chỉ dùng `SetFileAttributes` với danh sách chính xác, không wildcard hoặc vòng lặp chạm file lạ.
 - [x] `Input`, `${APP_EXECUTABLE_FILENAME}` và `${UNINSTALL_FILENAME}` không nằm trong danh sách ẩn.
@@ -405,8 +405,11 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [x] Packaged smoke đạt 16/16 check; headless Input backup thoát `0` và tạo snapshot đúng.
 - [x] Đối chứng silent-uninstall bằng installer v1.2.3 public cho cùng kết quả sandbox như installer mới, nên không có hồi quy quan sát được do Hidden.
 - [ ] Cài/gỡ và nâng cấp tương tác trên Windows Sandbox/VM sạch ngoài registry sandbox của Codex.
-- [x] Tạo installer local SHA-256 `53A60FB9162A185CC48B304BBC40D64E591A590B1FB291C78E86F2DFAD3D78DB`; không push GitHub/tag/Release.
-- [x] Viết `docs/MANUAL-GITHUB-UPDATE.md`; hướng dẫn bắt buộc tăng v1.2.4+, tránh `git add .` và xác minh đúng ba Release asset.
+- [x] Tạo installer QA local SHA-256 `53A60FB9162A185CC48B304BBC40D64E591A590B1FB291C78E86F2DFAD3D78DB`; artifact phát hành sẽ được build lại từ commit chốt.
+- [x] Viết `docs/MANUAL-GITHUB-UPDATE.md`; hướng dẫn tránh `git add .` và xác minh đúng ba Release asset.
+- [ ] Build lại đủ ba artifact sạch cùng version 1.2.3 từ commit chốt và xác minh checksum/metadata.
+- [ ] Xóa Release ID `366396345` cùng remote tag cũ, trỏ tag `v1.2.3` sang commit mới và push `main`.
+- [ ] Publish Release v1.2.3 thay thế, tải ngược ba asset và xác minh `/releases/latest`.
 
 ## F. Sign-off
 
@@ -425,6 +428,6 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 | v1.2.1 release artifacts | Codex + GitHub Actions + manual fallback | 2026-08-07 | Release ID `366371391` stable/public, đúng ba asset, `/releases/latest` và checksum/metadata remote đạt; Windows CI `31126793200` success. Release Windows `31126661713` bị cancelled trước runner/step; asset public giữ nguyên. |
 | v1.2.2 hotfix QA/release | Codex local QA + manual fallback | 2026-08-07 | 73/73 test; source/package QA đạt; Release ID `366391357` public với đúng ba asset sạch và checksum tải ngược khớp. GitHub Actions major outage, chưa tạo run cho v1.2.2. |
 | v1.2.3 installer path QA/release | Codex local QA + manual fallback | 2026-08-07 | 73/73 test; clean NSIS build và metadata/payload đạt; Release ID `366396345` public với đúng ba asset tải ngược khớp. Cài mới custom path và nâng cấp tại chỗ trên máy/VM sạch còn chờ. |
-| Local hidden-runtime installer QA | Codex local QA | 2026-08-07 | 73/73 clean test; silent install thấy đúng 3 mục, 20 mục kỹ thuật Hidden/0 ReadOnly; packaged smoke 16/16 và Input backup đạt. Không push GitHub; uninstall tương tác trên VM sạch còn chờ. |
+| v1.2.3 replacement hidden-runtime QA | Codex local QA | 2026-08-07 | 73/73 clean test; silent install thấy đúng 3 mục, 20 mục kỹ thuật Hidden/0 ReadOnly; packaged smoke 16/16 và Input backup đạt. Đang chuẩn bị thay Release cùng version theo yêu cầu chủ dự án. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.

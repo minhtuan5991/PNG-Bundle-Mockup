@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
 > Cập nhật: 2026-08-07
-> Phiên bản mã nguồn hiện tại: `1.2.3` — có thay đổi local sau release, chưa phát hành lại
+> Phiên bản mã nguồn hiện tại: `1.2.3` — đang chuẩn bị Release thay thế cùng version
 > Bản stable hiện có: `v1.2.3`
-> Trạng thái: GitHub vẫn giữ nguyên v1.2.3 public. Nhánh `main` local đã bổ sung cơ chế ẩn file runtime kỹ thuật và hướng dẫn tự phát hành; chưa push, chưa tạo tag/Release mới.
+> Trạng thái: chủ dự án yêu cầu xóa Release/tag v1.2.3 cũ và thay bằng bộ cài hidden-runtime mới mà không tăng version. Chưa xóa remote cho đến khi ba artifact mới được build sạch và xác minh.
 
 ## 1. Mục đích tài liệu
 
@@ -21,7 +21,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.2.3` — có thay đổi local chưa phát hành |
+| Phiên bản mã nguồn | `1.2.3` — đang chuẩn bị Release thay thế |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
@@ -491,13 +491,13 @@ Mốc QA local v1.2.3 ngày 2026-08-07:
 - [ ] GitHub Actions workflow chạy trên tag/commit v1.2.3; Actions vẫn `major_outage` và chưa tạo run, nên Release dùng fallback thủ công đã xác minh.
 - [ ] Kiểm thử tương tác fresh custom path và nâng cấp tại chỗ từ v1.2.2 trên máy/VM sạch.
 
-## 16. Thay đổi local sau v1.2.3 — làm gọn thư mục cài đặt
+## 16. Bản v1.2.3 thay thế — làm gọn thư mục cài đặt
 
 - Không xóa hoặc di chuyển bất kỳ DLL/PAK/BIN/runtime nào. Cuối hook `customInstall`, NSIS chỉ gắn cờ `Hidden` cho danh sách chính xác của Electron 43.2.0 và `uninstallerIcon.ico`.
 - Hai thư mục kỹ thuật `locales`, `resources` dùng `Hidden`; 18 file kỹ thuật dùng `Hidden|Archive`. Không dùng wildcard/vòng lặp nên file riêng có sẵn trong custom install path không bị ảnh hưởng.
 - Giữ hiển thị `Input`, `PNG Bundle Mockup.exe` và `Uninstall PNG Bundle Mockup.exe`. Không mục kỹ thuật nào bị gắn `ReadOnly` hoặc `System`.
 - Test cấu hình khóa chính xác danh sách runtime và version Electron `43.2.0`; khi nâng Electron, test buộc người bảo trì rà lại danh sách.
-- Bổ sung `docs/MANUAL-GITHUB-UPDATE.md`. Vì v1.2.3 đã public, lần phát hành thay đổi này phải tăng thành v1.2.4 hoặc cao hơn; không ghi đè asset/tag v1.2.3.
+- Bổ sung `docs/MANUAL-GITHUB-UPDATE.md`. Theo yêu cầu trực tiếp của chủ dự án, Release/tag v1.2.3 cũ sẽ bị xóa và thay một lần bằng bộ cài mới cùng version; các thay đổi sau đó nên tăng v1.2.4+.
 
 Mốc QA local ngày 2026-08-07:
 
@@ -507,4 +507,4 @@ Mốc QA local ngày 2026-08-07:
 - Packaged smoke từ chính thư mục đã cài đạt 16/16 check: preload API, title/version, controls/preview, metadata, watermark, kéo-thả, Input, PDF, mockup đơn, vùng in và updater UI.
 - Chế độ `--sync-input-backup` trên bản đã cài thoát `0` và snapshot đúng PDF mẫu, chứng minh app vẫn truy cập `resources`/ASAR/native runtime khi các mục gốc bị ẩn.
 - Silent-uninstall không thể kết luận trong registry sandbox của Codex: cả installer mới và installer v1.2.3 public không thay đổi (SHA-256 `72F630...02DA`) đều để lại thư mục trong bài test này. Đây không phải sai khác do cờ Hidden; template uninstaller vẫn dùng `RMDir /r`, và thay đổi không thêm `ReadOnly`/`System`. Cài–gỡ tương tác trên máy/VM sạch vẫn để mở.
-- Installer local chưa phát hành: 104.342.393 byte, SHA-256 `53A60FB9162A185CC48B304BBC40D64E591A590B1FB291C78E86F2DFAD3D78DB`, Authenticode **NotSigned**. Không upload file này dưới tag v1.2.3.
+- Bản local QA ban đầu: 104.342.393 byte, SHA-256 `53A60FB9162A185CC48B304BBC40D64E591A590B1FB291C78E86F2DFAD3D78DB`, Authenticode **NotSigned**. Artifact phát hành thay thế phải được dựng lại sạch từ commit chốt.

@@ -4,10 +4,7 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
-### Changed
-
-- Installer gắn thuộc tính Hidden cho các thư mục/file kỹ thuật của Electron trong thư mục cài đặt. `Input`, file mở app và file gỡ cài đặt vẫn hiển thị; không xóa bất kỳ runtime bắt buộc nào.
-- Bổ sung hướng dẫn phát hành thủ công để chủ dự án tự cập nhật GitHub ở phiên bản patch tiếp theo, không ghi đè Release v1.2.3 đã public.
+Chưa có thay đổi sau bản phát hành thay thế v1.2.3.
 
 ## [1.2.3] - 2026-08-07
 
@@ -15,6 +12,8 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 - Bộ cài assisted hiển thị trang chọn thư mục cho lần cài mới. NSIS vẫn tự thêm thư mục con `PNG Bundle Mockup` nếu người dùng chỉ chọn thư mục cha.
 - Khi cập nhật bản đã cài, trang chọn vị trí được tự động bỏ qua và app tiếp tục nâng cấp tại đúng thư mục hiện có, tránh tạo bản cài trùng.
+- Bộ cài thay thế gắn thuộc tính Hidden cho các thư mục/file kỹ thuật của Electron. `Input`, file mở app và file gỡ cài đặt vẫn hiển thị; không xóa bất kỳ runtime bắt buộc nào.
+- Bổ sung hướng dẫn phát hành GitHub thủ công cho chủ dự án.
 
 ## [1.2.2] - 2026-08-07
 
