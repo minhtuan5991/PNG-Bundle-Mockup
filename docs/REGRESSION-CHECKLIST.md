@@ -424,7 +424,8 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [x] Automated tests đạt 73/73; NSIS v1.2.4 build thành công.
 - [ ] Cài–gỡ tương tác trên Windows/VM bình thường: xác nhận chỉ còn `Input`/file riêng tại install path và AppData/updater cache đã mất. Registry sandbox hiện trả exit `0` nhưng không thực thi phần xóa nên không được tính là đạt.
 - [x] Build sạch artifact từ commit `152a51e`; packaged `Input` chỉ có README/PDF đã track, installer SHA-256 `E5B71C2A614EEF788B31F815F4ED6914539716A79FCA88074156EF9082CD25D9` và updater metadata khớp.
-- [ ] Push/tag/publish v1.2.4 và tải ngược ba asset để xác minh checksum/metadata.
+- [x] Push commit `7d52662`/tag `v1.2.4`; Windows CI `31148857568` và Release Windows `31148871833` success.
+- [x] Release ID `366528649` public/stable có đúng ba asset; tải ngược xác minh checksum/metadata và `/releases/latest` trỏ đúng v1.2.4.
 
 ## F. Sign-off
 
@@ -444,5 +445,6 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 | v1.2.2 hotfix QA/release | Codex local QA + manual fallback | 2026-08-07 | 73/73 test; source/package QA đạt; Release ID `366391357` public với đúng ba asset sạch và checksum tải ngược khớp. GitHub Actions major outage, chưa tạo run cho v1.2.2. |
 | v1.2.3 installer path QA/release | Codex local QA + manual fallback | 2026-08-07 | Bản phát hành ban đầu ID `366396345` đã được xóa và thay thế theo yêu cầu chủ dự án. Cài mới custom path và nâng cấp tại chỗ trên máy/VM sạch còn chờ. |
 | v1.2.3 replacement hidden-runtime QA/release | Codex local QA + GitHub API | 2026-08-07 | 73/73 clean test; silent install đúng 3 mục hiện/20 mục kỹ thuật Hidden/0 ReadOnly; smoke 16/16 và Input backup đạt. Tag trỏ `33f8b95`; Release ID `366501729` stable/public có đúng ba asset tải ngược khớp và là `/releases/latest`. |
+| v1.2.4 clean uninstall QA/release | Codex local QA + GitHub Actions | 2026-08-07 | 73/73 test; clean build/Input payload đạt; CI và Release workflow success. Release ID `366528649` có đúng ba asset tải ngược khớp. Uninstall tương tác ngoài registry sandbox còn chờ. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.

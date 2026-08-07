@@ -1,6 +1,6 @@
 # PNG Bundle Mockup v1.2.4
 
-> Bản phát hành Windows x64 stable. Bộ cài chưa có chữ ký số Authenticode.
+> Bản phát hành Windows x64 stable tại [GitHub Release v1.2.4](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.2.4), Release ID `366528649`. Bộ cài chưa có chữ ký số Authenticode.
 
 v1.2.4 thay đổi cơ chế gỡ cài đặt để xóa dữ liệu kỹ thuật của app nhưng vẫn giữ tài sản người dùng.
 
@@ -19,7 +19,8 @@ Mockup bundle, mockup đơn, PDF và các file thiết lập vẫn dùng file `.
 ## Kiểm thử hiện tại
 
 - 73/73 automated tests đạt.
-- Clean `npm ci` báo 0 vulnerability; NSIS v1.2.4 build thành công từ commit `152a51e` với packaged `Input` chỉ có README/PDF đã track.
-- Installer local có kích thước 104.343.023 byte, SHA-256 `E5B71C2A614EEF788B31F815F4ED6914539716A79FCA88074156EF9082CD25D9`; Authenticode **NotSigned**. Blockmap SHA-256 `77874955AD9058A10B12AEDC1C4DFF5509B31D45A42C3E0CB539CBC2B2DF874E`; `latest.yml` SHA-256 `C2A8C8F22E06427518A0DA6C17367250008C61E9510E83F2F9870864ED6CDDC6` và khớp size/SHA-512 của installer.
+- Windows CI `31148857568` và Release Windows `31148871833` đều thành công trên commit/tag `7d52662`; clean `npm ci`, 73/73 test, packaged `Input` và build NSIS đều đạt.
+- Installer public có kích thước 104.343.028 byte, SHA-256 `9A4B93EA670B9C42CB8C4FE3E26B236EBB0C079884514BAA4CA2E42EFC1B468C`; Authenticode **NotSigned**. Blockmap SHA-256 `0C5E4C5081527069AF917AC06D8BB814EBF3D24983EF119D325E7ADD82FF1B8B`; `latest.yml` SHA-256 `42A378200FBA0DAE48D18E9F3D4E651C883A9D0D02C893E25BA248B92E75E8C6` và khớp version/path/size/SHA-512 của installer remote.
 - Test cấu hình khóa việc giữ `Input`, xóa đúng app files, xóa AppData/updater cache chỉ khi uninstall thật và bảo toàn atomic update.
-- Silent-uninstall trong registry sandbox không thực thi phần xóa dù trả mã `0`; cần kiểm tra cài–gỡ tương tác trên Windows/VM bình thường trước khi phát hành.
+- Ba asset GitHub đã được tải ngược và xác minh từng byte; `/releases/latest` trỏ đúng v1.2.4.
+- Silent-uninstall trong registry sandbox không thực thi phần xóa dù trả mã `0`; vẫn cần kiểm tra cài–gỡ tương tác trên Windows/VM bình thường.
