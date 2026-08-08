@@ -21,9 +21,8 @@ Mockup bundle, mockup đơn, PDF và các file thiết lập vẫn dùng file `.
 
 ## Kiểm thử hiện tại
 
-- 73/73 automated tests đạt.
 - 74/74 automated tests đạt, gồm kiểm thử bỏ qua mockup đơn trước mọi validation và không nhận nhầm mockup bundle.
-- Artifact thay thế được dựng sạch từ source chỉ chứa tài sản `Input` đã track; checksum public được xác minh sau khi workflow hoàn tất.
+- Artifact thay thế được dựng sạch từ source chỉ chứa tài sản `Input` đã track. Installer 104.343.270 byte, SHA-256 `406E4AFEFDAE453D6A2057366787DC352FDBACE0BDB267E0D00B96237BB2839E`; checksum public sẽ được đối chiếu lại sau khi workflow hoàn tất.
 - Test cấu hình khóa việc giữ `Input`, xóa đúng app files, xóa AppData/updater cache chỉ khi uninstall thật và bảo toàn atomic update.
 - Release/tag v1.2.4 ban đầu bị xóa và thay bằng đúng ba asset mới; từng asset được tải ngược để xác minh trước khi chốt.
 - Silent-uninstall trong registry sandbox không thực thi phần xóa dù trả mã `0`; vẫn cần kiểm tra cài–gỡ tương tác trên Windows/VM bình thường.

@@ -435,7 +435,7 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [x] Renderer giữ checkbox bật để backend có thể skip; main trả `singleMockupSkipped` và UI hiển thị lý do.
 - [x] Watermark/metadata vẫn hoạt động khi tạo lần đầu trong một `Done` mới.
 - [x] `node --check` đạt; automated tests **74/74**, 0 fail/skipped/todo.
-- [ ] Build sạch ba artifact replacement cùng version 1.2.4; packaged `Input` không chứa bốn JPG riêng.
+- [x] Build sạch ba artifact replacement cùng version 1.2.4; packaged `Input` chỉ có README/PDF đã track, không chứa bốn JPG riêng. Installer 104.343.270 byte, SHA-256 `406E4AFEFDAE453D6A2057366787DC352FDBACE0BDB267E0D00B96237BB2839E`; blockmap SHA-256 `114680994A90DA3416B9EE90F95D043649F105AB93DCBE32E662526A6B6F378E`; `latest.yml` SHA-256 `EEEB7D97A23176C48FC94AB9BE6FC73FA7991D0962865E986AB37165A101FED5`, metadata khớp installer và Authenticode NotSigned.
 - [ ] Xóa Release ID `366528649` và remote tag v1.2.4 cũ; push source/tag replacement.
 - [ ] Publish Release replacement, tải ngược ba asset và xác minh updater metadata cùng `/releases/latest`.
 

@@ -533,3 +533,4 @@ Mốc QA local ngày 2026-08-07:
 - Rollback chỉ quản lý file mới của lượt hiện tại; mockup đơn cũ không được đưa vào `createdPaths` và không bị xóa nếu PDF/bước khác lỗi.
 - Automated tests tăng lên 74/74 và kiểm tra skip trước validation, nhận diện tên file, giữ file cũ, UI không tắt checkbox và luồng metadata/watermark ở thư mục `Done` mới.
 - Theo yêu cầu trực tiếp của chủ dự án, thay đổi này giữ version 1.2.4. Người đã cài v1.2.4 cũ phải chạy installer thay thế thủ công.
+- Clean `npm ci` báo 0 vulnerability và clean test đạt 74/74. Artifact thay thế: installer 104.343.270 byte, SHA-256 `406E4AFEFDAE453D6A2057366787DC352FDBACE0BDB267E0D00B96237BB2839E`, Authenticode **NotSigned**; blockmap SHA-256 `114680994A90DA3416B9EE90F95D043649F105AB93DCBE32E662526A6B6F378E`; `latest.yml` SHA-256 `EEEB7D97A23176C48FC94AB9BE6FC73FA7991D0962865E986AB37165A101FED5`, version/path/size/SHA-512 khớp installer. Packaged `Input` chỉ có README/PDF đã track.
