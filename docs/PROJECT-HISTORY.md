@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
 > Cập nhật: 2026-08-09
-> Phiên bản mã nguồn hiện tại: `1.2.5` — đang chuẩn bị phát hành
-> Bản stable hiện có: `v1.2.4`
-> Trạng thái: đã thêm nút dọn danh sách PNG và đang QA/build sạch trước khi tạo tag v1.2.5.
+> Phiên bản mã nguồn hiện tại: `1.2.5`
+> Bản stable hiện có: `v1.2.5`
+> Trạng thái: Release v1.2.5 public/stable đã được build, tải ngược và xác minh đầy đủ.
 
 ## 1. Mục đích tài liệu
 
@@ -21,7 +21,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.2.5` — đang chuẩn bị phát hành |
+| Phiên bản mã nguồn | `1.2.5` |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
@@ -548,3 +548,5 @@ Mốc QA local ngày 2026-08-07:
 - QA source ngày 2026-08-09: `node --check` và `git diff --check` đạt; 75/75 test đạt; production audit 0 vulnerability. Renderer thật xác nhận title v1.2.5, nút khóa ở 0 PNG/bật ở 1 PNG và sau click trở về 0/0 với nguồn/output rỗng.
 - Clean build từ commit code `f4ca4ba` đạt: installer 104.343.581 byte, SHA-256 `C5A792FB52E97F93AB781B8579D2AFBB8E5FD8B910B4D71E74B029B66B78F7CD`, Authenticode **NotSigned**; blockmap SHA-256 `6227A24AC5F126DDC10FF565E4FC445773F87D64C73DCFF62BE278A0CF7C0BBE`; `latest.yml` SHA-256 `6F6B17417F51A744179DFECFB4C1310873BCEF025A741EDD5D1AF3029B1CE4C1`, version/path/size/SHA-512 khớp installer. Packaged `Input` chỉ có README/PDF đã track.
 - Packaged renderer smoke trên chính `win-unpacked` đạt: API/title v1.2.5, nút và thao tác dọn state PNG/source/output hoạt động đúng.
+- Commit release `ed37630` và annotated tag v1.2.5 đã push. Windows CI `31270193124` và Release Windows `31270217854` đều success.
+- Release ID `367263645` public/stable có đúng ba asset và là `/releases/latest`. Tải ngược xác minh: installer 104.343.581 byte, SHA-256 `2EA990EAF0189AD4F304B124D251E63C03BE12C4B4629812AF5413E88ACCF214`; blockmap SHA-256 `5BC30873669A630D7DB41C86728FBD94D61E88AE75C0BAA00272B077C65DC14F`; `latest.yml` SHA-256 `6A7E5ADE5879AC84E1D23F599118E78D869B102A12DA593818B940C6F4DAB70B`, version/path/size/SHA-512 khớp installer remote.

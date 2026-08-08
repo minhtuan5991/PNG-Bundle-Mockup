@@ -450,8 +450,8 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [x] QA renderer thật: app hiện title v1.2.5, không còn chuỗi cũ; nút bị khóa ở 0 PNG, bật ở 1 PNG, sau click trở về 0/0, nguồn `null`, nhãn “Chưa chọn thư mục” và output `null`.
 - [x] Build sạch từ commit code `f4ca4ba` đủ installer/blockmap/`latest.yml`; packaged `Input` chỉ có README/PDF đã track và không chứa bốn JPG riêng. Installer 104.343.581 byte, SHA-256 `C5A792FB52E97F93AB781B8579D2AFBB8E5FD8B910B4D71E74B029B66B78F7CD`; blockmap SHA-256 `6227A24AC5F126DDC10FF565E4FC445773F87D64C73DCFF62BE278A0CF7C0BBE`; `latest.yml` SHA-256 `6F6B17417F51A744179DFECFB4C1310873BCEF025A741EDD5D1AF3029B1CE4C1`, metadata khớp installer và Authenticode NotSigned.
 - [x] Packaged renderer smoke đạt: title/API version 1.2.5, không có chuỗi cũ, nạp 1 PNG bật nút và click đặt lại files/selected/source/output về trạng thái rỗng.
-- [ ] Push commit/tag v1.2.5; Windows CI và Release Windows success.
-- [ ] Release v1.2.5 public/stable có đúng ba asset; tải ngược xác minh checksum, updater metadata và `/releases/latest`.
+- [x] Push commit `ed37630`/annotated tag v1.2.5; Windows CI `31270193124` và Release Windows `31270217854` success.
+- [x] Release ID `367263645` public/stable có đúng ba asset; tải ngược xác minh SHA-256 installer `2EA990EAF0189AD4F304B124D251E63C03BE12C4B4629812AF5413E88ACCF214`, blockmap `5BC30873669A630D7DB41C86728FBD94D61E88AE75C0BAA00272B077C65DC14F`, `latest.yml` `6A7E5ADE5879AC84E1D23F599118E78D869B102A12DA593818B940C6F4DAB70B`; updater metadata khớp và `/releases/latest` trỏ đúng Release này.
 
 ## F. Sign-off
 
@@ -473,6 +473,6 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 | v1.2.3 replacement hidden-runtime QA/release | Codex local QA + GitHub API | 2026-08-07 | 73/73 clean test; silent install đúng 3 mục hiện/20 mục kỹ thuật Hidden/0 ReadOnly; smoke 16/16 và Input backup đạt. Tag trỏ `33f8b95`; Release ID `366501729` stable/public có đúng ba asset tải ngược khớp và là `/releases/latest`. |
 | v1.2.4 clean uninstall QA/release | Codex local QA + GitHub Actions | 2026-08-07 | 73/73 test; clean build/Input payload đạt; CI và Release workflow success. Release ID `366528649` có đúng ba asset tải ngược khớp. Uninstall tương tác ngoài registry sandbox còn chờ. |
 | v1.2.4 replacement single-mockup QA/release | Codex local QA + GitHub Actions | 2026-08-08 | 74/74 test; mockup đơn bỏ qua nếu `Done` đã có `single_*.png`. Release cũ bị xóa; tag trỏ `1231fc9`; Release ID `367243225` và ba asset tải ngược đều được xác minh. |
-| v1.2.5 remove-PNG QA/release | Codex local QA | 2026-08-09 | 75/75 test; renderer thật xác nhận nút và state dọn danh sách đúng; artifact/GitHub Release đang chờ. |
+| v1.2.5 remove-PNG QA/release | Codex local QA + GitHub Actions | 2026-08-09 | 75/75 test; source/package smoke đạt; Release ID `367263645`, đúng ba asset tải ngược, updater metadata và `/releases/latest` đều được xác minh. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.
