@@ -436,8 +436,8 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [x] Watermark/metadata vẫn hoạt động khi tạo lần đầu trong một `Done` mới.
 - [x] `node --check` đạt; automated tests **74/74**, 0 fail/skipped/todo.
 - [x] Build sạch ba artifact replacement cùng version 1.2.4; packaged `Input` chỉ có README/PDF đã track, không chứa bốn JPG riêng. Installer 104.343.270 byte, SHA-256 `406E4AFEFDAE453D6A2057366787DC352FDBACE0BDB267E0D00B96237BB2839E`; blockmap SHA-256 `114680994A90DA3416B9EE90F95D043649F105AB93DCBE32E662526A6B6F378E`; `latest.yml` SHA-256 `EEEB7D97A23176C48FC94AB9BE6FC73FA7991D0962865E986AB37165A101FED5`, metadata khớp installer và Authenticode NotSigned.
-- [ ] Xóa Release ID `366528649` và remote tag v1.2.4 cũ; push source/tag replacement.
-- [ ] Publish Release replacement, tải ngược ba asset và xác minh updater metadata cùng `/releases/latest`.
+- [x] Xóa Release ID `366528649` và remote tag v1.2.4 cũ; push `main` và annotated tag replacement trỏ đúng commit `1231fc9`.
+- [x] Windows CI `31266128606` và Release Windows `31266163163` success. Release replacement ID `367243225` public/stable có đúng ba asset; tải ngược xác minh SHA-256 installer `9658FBA73E63F056A4CF6199BE9B89319B72DE4B6D77771790523666D19025C2`, blockmap `D8404E8CA07F8D87A55D513511D05E1553E01139294A3F7AEE9161BEB425C211`, `latest.yml` `8D10F277EE18B06831DF0BFEC0E17E09980FDE29479AD567CC746ED739606491`; updater metadata khớp và `/releases/latest` trỏ đúng Release mới.
 
 ## F. Sign-off
 
@@ -458,5 +458,6 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 | v1.2.3 installer path QA/release | Codex local QA + manual fallback | 2026-08-07 | Bản phát hành ban đầu ID `366396345` đã được xóa và thay thế theo yêu cầu chủ dự án. Cài mới custom path và nâng cấp tại chỗ trên máy/VM sạch còn chờ. |
 | v1.2.3 replacement hidden-runtime QA/release | Codex local QA + GitHub API | 2026-08-07 | 73/73 clean test; silent install đúng 3 mục hiện/20 mục kỹ thuật Hidden/0 ReadOnly; smoke 16/16 và Input backup đạt. Tag trỏ `33f8b95`; Release ID `366501729` stable/public có đúng ba asset tải ngược khớp và là `/releases/latest`. |
 | v1.2.4 clean uninstall QA/release | Codex local QA + GitHub Actions | 2026-08-07 | 73/73 test; clean build/Input payload đạt; CI và Release workflow success. Release ID `366528649` có đúng ba asset tải ngược khớp. Uninstall tương tác ngoài registry sandbox còn chờ. |
+| v1.2.4 replacement single-mockup QA/release | Codex local QA + GitHub Actions | 2026-08-08 | 74/74 test; mockup đơn bỏ qua nếu `Done` đã có `single_*.png`. Release cũ bị xóa; tag trỏ `1231fc9`; Release ID `367243225` và ba asset tải ngược đều được xác minh. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.

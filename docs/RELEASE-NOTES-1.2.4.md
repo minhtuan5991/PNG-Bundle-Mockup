@@ -22,7 +22,8 @@ Mockup bundle, mockup đơn, PDF và các file thiết lập vẫn dùng file `.
 ## Kiểm thử hiện tại
 
 - 74/74 automated tests đạt, gồm kiểm thử bỏ qua mockup đơn trước mọi validation và không nhận nhầm mockup bundle.
-- Artifact thay thế được dựng sạch từ source chỉ chứa tài sản `Input` đã track. Installer 104.343.270 byte, SHA-256 `406E4AFEFDAE453D6A2057366787DC352FDBACE0BDB267E0D00B96237BB2839E`; checksum public sẽ được đối chiếu lại sau khi workflow hoàn tất.
+- Artifact thay thế được dựng sạch từ source chỉ chứa tài sản `Input` đã track. Installer công khai 104.343.267 byte, SHA-256 `9658FBA73E63F056A4CF6199BE9B89319B72DE4B6D77771790523666D19025C2`; blockmap SHA-256 `D8404E8CA07F8D87A55D513511D05E1553E01139294A3F7AEE9161BEB425C211`; `latest.yml` SHA-256 `8D10F277EE18B06831DF0BFEC0E17E09980FDE29479AD567CC746ED739606491`.
 - Test cấu hình khóa việc giữ `Input`, xóa đúng app files, xóa AppData/updater cache chỉ khi uninstall thật và bảo toàn atomic update.
-- Release/tag v1.2.4 ban đầu bị xóa và thay bằng đúng ba asset mới; từng asset được tải ngược để xác minh trước khi chốt.
+- Release/tag v1.2.4 ban đầu đã bị xóa. Tag mới trỏ commit `1231fc9`; Release thay thế ID `367243225` có đúng ba asset mới, từng asset được tải ngược để xác minh; `latest.yml` khớp installer và `/releases/latest` trỏ đúng v1.2.4.
+- Windows CI `31266128606` và Release Windows `31266163163` đều hoàn tất thành công.
 - Silent-uninstall trong registry sandbox không thực thi phần xóa dù trả mã `0`; vẫn cần kiểm tra cài–gỡ tương tác trên Windows/VM bình thường.
