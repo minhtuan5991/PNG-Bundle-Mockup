@@ -546,3 +546,5 @@ Mốc QA local ngày 2026-08-07:
 - Ảnh nền, watermark, tùy chọn PDF/mockup đơn và thiết lập bố cục được giữ để người dùng có thể tái sử dụng cho bộ PNG tiếp theo.
 - Nút bị khóa khi app đang quét, tạo ảnh hoặc chỉnh vùng in; toast xác nhận rõ file gốc vẫn được giữ nguyên.
 - QA source ngày 2026-08-09: `node --check` và `git diff --check` đạt; 75/75 test đạt; production audit 0 vulnerability. Renderer thật xác nhận title v1.2.5, nút khóa ở 0 PNG/bật ở 1 PNG và sau click trở về 0/0 với nguồn/output rỗng.
+- Clean build từ commit code `f4ca4ba` đạt: installer 104.343.581 byte, SHA-256 `C5A792FB52E97F93AB781B8579D2AFBB8E5FD8B910B4D71E74B029B66B78F7CD`, Authenticode **NotSigned**; blockmap SHA-256 `6227A24AC5F126DDC10FF565E4FC445773F87D64C73DCFF62BE278A0CF7C0BBE`; `latest.yml` SHA-256 `6F6B17417F51A744179DFECFB4C1310873BCEF025A741EDD5D1AF3029B1CE4C1`, version/path/size/SHA-512 khớp installer. Packaged `Input` chỉ có README/PDF đã track.
+- Packaged renderer smoke trên chính `win-unpacked` đạt: API/title v1.2.5, nút và thao tác dọn state PNG/source/output hoạt động đúng.

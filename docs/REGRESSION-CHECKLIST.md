@@ -448,7 +448,8 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [x] Nút bị khóa khi danh sách rỗng, đang quét/xử lý hoặc đang chỉnh vùng in.
 - [x] `node --check`, `git diff --check` và automated tests **75/75** đạt; `npm audit --omit=dev --audit-level=high` báo 0 vulnerability.
 - [x] QA renderer thật: app hiện title v1.2.5, không còn chuỗi cũ; nút bị khóa ở 0 PNG, bật ở 1 PNG, sau click trở về 0/0, nguồn `null`, nhãn “Chưa chọn thư mục” và output `null`.
-- [ ] Build sạch đủ installer/blockmap/`latest.yml`; packaged `Input` chỉ có README/PDF đã track và không chứa bốn JPG riêng.
+- [x] Build sạch từ commit code `f4ca4ba` đủ installer/blockmap/`latest.yml`; packaged `Input` chỉ có README/PDF đã track và không chứa bốn JPG riêng. Installer 104.343.581 byte, SHA-256 `C5A792FB52E97F93AB781B8579D2AFBB8E5FD8B910B4D71E74B029B66B78F7CD`; blockmap SHA-256 `6227A24AC5F126DDC10FF565E4FC445773F87D64C73DCFF62BE278A0CF7C0BBE`; `latest.yml` SHA-256 `6F6B17417F51A744179DFECFB4C1310873BCEF025A741EDD5D1AF3029B1CE4C1`, metadata khớp installer và Authenticode NotSigned.
+- [x] Packaged renderer smoke đạt: title/API version 1.2.5, không có chuỗi cũ, nạp 1 PNG bật nút và click đặt lại files/selected/source/output về trạng thái rỗng.
 - [ ] Push commit/tag v1.2.5; Windows CI và Release Windows success.
 - [ ] Release v1.2.5 public/stable có đúng ba asset; tải ngược xác minh checksum, updater metadata và `/releases/latest`.
 

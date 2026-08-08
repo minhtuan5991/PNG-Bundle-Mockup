@@ -14,5 +14,6 @@
 
 - 75/75 kiểm thử tự động đạt; kiểm thử xác nhận nút tồn tại, chuỗi cũ đã bị loại bỏ, toàn bộ state PNG/source/output được đặt lại và không có luồng xóa file gốc.
 - QA renderer thật xác nhận title v1.2.5, trạng thái bật/tắt của nút và kết quả sau click đều đúng; production audit báo 0 vulnerability.
-- Artifact sạch và checksum công khai được cập nhật sau khi build/workflow hoàn tất.
+- Packaged renderer smoke trên `win-unpacked` đạt cùng trạng thái; packaged `Input` chỉ có README/PDF đã track, không chứa ảnh JPG riêng của người dùng.
+- Clean build local: installer 104.343.581 byte, SHA-256 `C5A792FB52E97F93AB781B8579D2AFBB8E5FD8B910B4D71E74B029B66B78F7CD`; blockmap SHA-256 `6227A24AC5F126DDC10FF565E4FC445773F87D64C73DCFF62BE278A0CF7C0BBE`; `latest.yml` SHA-256 `6F6B17417F51A744179DFECFB4C1310873BCEF025A741EDD5D1AF3029B1CE4C1` và metadata khớp installer. Checksum công khai được đối chiếu lại sau workflow.
 - Cài–gỡ tương tác trên Windows/VM bình thường vẫn là kiểm tra thủ công hậu phát hành như các phiên bản trước.
