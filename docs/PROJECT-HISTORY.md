@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
 > Cập nhật: 2026-08-07
-> Phiên bản mã nguồn hiện tại: `1.2.4` — đã phát hành
+> Phiên bản mã nguồn hiện tại: `1.2.4` — đang chuẩn bị Release thay thế cùng version
 > Bản stable hiện có: `v1.2.4`
-> Trạng thái: Release ID `366528649` public/stable; Windows CI, Release Windows, ba asset tải ngược và `/releases/latest` đều đã xác minh.
+> Trạng thái: chủ dự án yêu cầu xóa Release/tag v1.2.4 hiện có và thay bằng bản sửa logic mockup đơn cùng version. Chưa xóa remote trước khi artifact mới được dựng sạch.
 
 ## 1. Mục đích tài liệu
 
@@ -21,7 +21,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.2.4` — đã phát hành |
+| Phiên bản mã nguồn | `1.2.4` — đang chuẩn bị Release thay thế |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
@@ -524,3 +524,12 @@ Mốc QA local ngày 2026-08-07:
 - Silent-uninstall trong registry sandbox vẫn trả `0` nhưng không thực thi phần xóa, giống giới hạn QA đã thấy ở v1.2.3; chưa dùng kết quả này để kết luận. Cài–gỡ tương tác trên Windows/VM bình thường tiếp tục là kiểm tra hậu phát hành.
 - Commit phát hành `7d52662` và annotated tag `v1.2.4` đã push. Windows CI run `31148857568` và Release Windows run `31148871833` đều success.
 - Release ID `366528649` đã public/stable với đúng ba asset. Tải ngược xác minh SHA-256: installer `9A4B93EA670B9C42CB8C4FE3E26B236EBB0C079884514BAA4CA2E42EFC1B468C`, blockmap `0C5E4C5081527069AF917AC06D8BB814EBF3D24983EF119D325E7ADD82FF1B8B`, `latest.yml` `42A378200FBA0DAE48D18E9F3D4E651C883A9D0D02C893E25BA248B92E75E8C6`; metadata updater remote khớp và `/releases/latest` trỏ v1.2.4.
+
+## 18. Bản v1.2.4 thay thế — chỉ tạo mockup đơn một lần
+
+- `findExistingSingleMockupOutputs` nhận đúng file `single_*.png` không phân biệt chữ hoa/thường và không nhận mockup bundle PNG.
+- `generateSingleMockups` xác định `Done` rồi kiểm tra kết quả cũ trước khi đọc `Input`, kiểm tra PNG nguồn hoặc vùng in. Khi đã có kết quả, service trả `skipped: true`, reason `SINGLE_MOCKUP_ALREADY_EXISTS` và không tạo hậu tố `_2`, `_3`.
+- Main không prevalidate template/vùng in trước bundle; renderer không tự bỏ checkbox hoặc chặn request. Kết quả trả về có `singleMockupSkipped` để UI báo rõ đã bỏ qua.
+- Rollback chỉ quản lý file mới của lượt hiện tại; mockup đơn cũ không được đưa vào `createdPaths` và không bị xóa nếu PDF/bước khác lỗi.
+- Automated tests tăng lên 74/74 và kiểm tra skip trước validation, nhận diện tên file, giữ file cũ, UI không tắt checkbox và luồng metadata/watermark ở thư mục `Done` mới.
+- Theo yêu cầu trực tiếp của chủ dự án, thay đổi này giữ version 1.2.4. Người đã cài v1.2.4 cũ phải chạy installer thay thế thủ công.

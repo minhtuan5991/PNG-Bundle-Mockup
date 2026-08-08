@@ -311,17 +311,8 @@ function readAdditionalGenerationOptions() {
   } else {
     elements.downloadUrl.classList.remove('is-invalid');
   }
-  if (options.createSingleMockups) {
-    if (state.inputAssets.singleMockupTemplates.length === 0) {
-      throw new Error('Hãy thêm ảnh mockup đơn vào thư mục Input.');
-    }
-    const missing = templatesMissingRegions();
-    if (missing.length > 0) {
-      throw new Error(
-        `Hãy chỉnh và lưu vùng in cho: ${missing.map((template) => template.name).join(', ')}.`,
-      );
-    }
-  }
+  // Main checks Done before validating Input/regions. This allows a repeated
+  // run to skip single mockups without requiring templates that are no longer present.
   return options;
 }
 
@@ -1691,11 +1682,14 @@ async function generate() {
     const singleCount = Number(result.singleMockupCount) || result.singleMockupFiles?.length || 0;
     const pdfCount = result.pdfDownload ? 1 : 0;
     const pdfSkipped = result.pdfDownloadSkipped?.reason === 'PDF_ALREADY_EXISTS';
+    const singleSkipped =
+      result.singleMockupSkipped?.reason === 'SINGLE_MOCKUP_ALREADY_EXISTS';
     const totalOutputCount = bundleCount + singleCount + pdfCount;
     const outputParts = [`${bundleCount} mockup bundle`];
     if (singleCount > 0) outputParts.push(`${singleCount} mockup đơn`);
     if (pdfCount > 0) outputParts.push('1 PDF Download');
     elements.progressMessage.textContent = `Đã lưu ${outputParts.join(', ')} vào Done` +
+      (singleSkipped ? '; đã bỏ qua mockup đơn vì Done đã có mockup đơn' : '') +
       (pdfSkipped ? '; đã bỏ qua PDF Download vì Done đã có PDF' : '');
     setAppStatus('Hoàn tất', 'ready');
     showToast(`Đã tạo thành công ${totalOutputCount} file.`, 'success');
@@ -1704,6 +1698,9 @@ async function generate() {
     const completionNotes = [`Phân chia: ${result.groupSizes.join(' + ')} PNG.`];
     if (result.watermarkApplied) completionNotes.push(`Watermark: ${result.watermarkName}.`);
     if (singleCount > 0) completionNotes.push(`Mockup đơn: ${singleCount} file.`);
+    if (singleSkipped) {
+      completionNotes.push('Mockup đơn: đã bỏ qua vì Done đã có kết quả mockup đơn.');
+    }
     if (result.pdfDownload) completionNotes.push(`PDF Download: ${result.pdfDownload.name}.`);
     if (pdfSkipped) {
       completionNotes.push(
@@ -1863,16 +1860,15 @@ elements.createSingleMockups.addEventListener('change', async () => {
   if (elements.createSingleMockups.checked) {
     const refreshed = await refreshInputAssets();
     if (!refreshed) {
-      elements.createSingleMockups.checked = false;
+      elements.singleMockupSummary.textContent =
+        'App sẽ kiểm tra Done trước khi yêu cầu ảnh mockup trong Input.';
       updateControls();
       return;
     }
     if (!elements.createSingleMockups.checked) return;
     if (state.inputAssets.singleMockupTemplates.length === 0) {
-      elements.createSingleMockups.checked = false;
       elements.singleMockupSummary.textContent =
-        'Chưa có ảnh mockup đơn trong Input. Hãy thêm ảnh rồi quay lại App.';
-      showError(new Error('Hãy thêm ảnh mockup đơn vào thư mục Input.'));
+        'App sẽ bỏ qua nếu Done đã có mockup đơn; nếu chưa có, hãy thêm ảnh vào Input.';
       updateControls();
       return;
     }

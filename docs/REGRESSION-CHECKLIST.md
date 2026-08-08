@@ -427,6 +427,18 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [x] Push commit `7d52662`/tag `v1.2.4`; Windows CI `31148857568` và Release Windows `31148871833` success.
 - [x] Release ID `366528649` public/stable có đúng ba asset; tải ngược xác minh checksum/metadata và `/releases/latest` trỏ đúng v1.2.4.
 
+## E7. Replacement v1.2.4 — chỉ tạo mockup đơn một lần
+
+- [x] Nhận diện kết quả cũ bằng `single_*.png`, không phân biệt chữ hoa/thường và không nhận nhầm mockup bundle.
+- [x] Kiểm tra `Done` trước PNG nguồn, `Input`, template và vùng in; khi có kết quả trả `SINGLE_MOCKUP_ALREADY_EXISTS` với `outputPaths` rỗng.
+- [x] Lượt thứ hai giữ nguyên file cũ, không tạo `_2`, `_3` và không đưa file cũ vào rollback.
+- [x] Renderer giữ checkbox bật để backend có thể skip; main trả `singleMockupSkipped` và UI hiển thị lý do.
+- [x] Watermark/metadata vẫn hoạt động khi tạo lần đầu trong một `Done` mới.
+- [x] `node --check` đạt; automated tests **74/74**, 0 fail/skipped/todo.
+- [ ] Build sạch ba artifact replacement cùng version 1.2.4; packaged `Input` không chứa bốn JPG riêng.
+- [ ] Xóa Release ID `366528649` và remote tag v1.2.4 cũ; push source/tag replacement.
+- [ ] Publish Release replacement, tải ngược ba asset và xác minh updater metadata cùng `/releases/latest`.
+
 ## F. Sign-off
 
 | Hạng mục | Người kiểm tra | Ngày | Kết quả/Ghi chú |

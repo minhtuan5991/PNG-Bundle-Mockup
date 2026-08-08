@@ -13,6 +13,7 @@ const {
 } = require('../src/services/single-mockup-regions');
 const {
   calculatePixelPrintRegion,
+  findExistingSingleMockupOutputs,
   generateSingleMockups,
   listSingleMockupTemplates,
   selectRandomSourcePngs,
@@ -296,7 +297,7 @@ test('lưu lại các template hiện có không xóa vùng in của template t�
   assert.deepEqual(Object.keys(diskDocument.templates).sort(), ['cup.png', 'shirt.png']);
 });
 
-test('generateSingleMockups crop alpha, contain trong vùng in và không ghi đè file Done', async (t) => {
+test('generateSingleMockups chỉ tạo một lần trong Done và bỏ qua các lượt sau', async (t) => {
   const directory = await createTempDirectory(t, 'single-mockup-generate-');
   const inputDirectory = path.join(directory, 'Input');
   const userDataPath = path.join(directory, 'UserData');
@@ -325,6 +326,8 @@ test('generateSingleMockups crop alpha, contain trong vùng in và không ghi đ
   };
 
   const first = await generateSingleMockups(options);
+  assert.equal(first.created, true);
+  assert.equal(first.skipped, false);
   assert.deepEqual(first.outputPaths.map((filePath) => path.basename(filePath)), ['single_shirt.png']);
   assert.deepEqual(first.assignments[0].pixelRegion, { left: 20, top: 20, width: 70, height: 80 });
   assert.deepEqual(await rgbaAt(first.outputPaths[0], 23, 60), [245, 245, 245, 255]);
@@ -332,16 +335,24 @@ test('generateSingleMockups crop alpha, contain trong vùng in và không ghi đ
   assert.deepEqual(await rgbaAt(first.outputPaths[0], 100, 60), [245, 245, 245, 255]);
 
   const second = await generateSingleMockups(options);
-  assert.deepEqual(second.outputPaths.map((filePath) => path.basename(filePath)), ['single_shirt_2.png']);
+  assert.equal(second.created, false);
+  assert.equal(second.skipped, true);
+  assert.equal(second.skipReason, 'SINGLE_MOCKUP_ALREADY_EXISTS');
+  assert.deepEqual(second.outputPaths, []);
+  assert.deepEqual(second.existingPaths, [first.outputPaths[0]]);
   assert.equal(await fs.stat(first.outputPaths[0]).then((stat) => stat.isFile()), true);
-  assert.equal(await fs.stat(second.outputPaths[0]).then((stat) => stat.isFile()), true);
+  assert.deepEqual(await fs.readdir(path.join(directory, 'Done')), ['single_shirt.png']);
 
   const watermarkPath = path.join(directory, 'watermark.png');
   await createWatermark(watermarkPath);
-  const withWatermark = await generateSingleMockups({ ...options, watermarkPath });
+  const withWatermark = await generateSingleMockups({
+    ...options,
+    outputDirectory: path.join(directory, 'Done-watermark'),
+    watermarkPath,
+  });
   assert.deepEqual(
     withWatermark.outputPaths.map((filePath) => path.basename(filePath)),
-    ['single_shirt_3.png'],
+    ['single_shirt.png'],
   );
   assert.equal(withWatermark.watermarkApplied, true);
   assert.equal(withWatermark.watermarkName, 'watermark.png');
@@ -350,6 +361,30 @@ test('generateSingleMockups crop alpha, contain trong vùng in và không ghi đ
   assert.deepEqual(
     (await fs.readdir(path.join(directory, 'Done'))).filter((name) => name.endsWith('.tmp')),
     [],
+  );
+});
+
+test('Done có mockup đơn thì bỏ qua trước khi yêu cầu PNG, Input hoặc vùng in', async (t) => {
+  const directory = await createTempDirectory(t, 'single-mockup-skip-');
+  const outputDirectory = path.join(directory, 'Done');
+  await fs.mkdir(outputDirectory);
+  await Promise.all([
+    fs.writeFile(path.join(outputDirectory, 'mockup_001.png'), 'bundle'),
+    fs.writeFile(path.join(outputDirectory, 'SINGLE_existing.PnG'), 'single'),
+  ]);
+
+  const found = await findExistingSingleMockupOutputs(outputDirectory);
+  assert.deepEqual(found.map((filePath) => path.basename(filePath)), ['SINGLE_existing.PnG']);
+
+  const result = await generateSingleMockups({ outputDirectory });
+  assert.equal(result.created, false);
+  assert.equal(result.skipped, true);
+  assert.equal(result.skipReason, 'SINGLE_MOCKUP_ALREADY_EXISTS');
+  assert.deepEqual(result.outputPaths, []);
+  assert.deepEqual(result.existingPaths, found);
+  assert.deepEqual(
+    (await fs.readdir(outputDirectory)).sort(),
+    ['SINGLE_existing.PnG', 'mockup_001.png'],
   );
 });
 
@@ -398,7 +433,11 @@ test('mockup đơn mặc định xóa 6 nhóm metadata ở bước cuối và c�
   assert.equal(cleanedMetadata.icc, undefined);
   assert.equal(cleanedMetadata.hasProfile, false);
 
-  const preserved = await generateSingleMockups({ ...options, removeMetadata: false });
+  const preserved = await generateSingleMockups({
+    ...options,
+    outputDirectory: path.join(directory, 'Done-preserved'),
+    removeMetadata: false,
+  });
   assert.equal(preserved.metadataRemoved, false);
   assert.deepEqual(preserved.removedMetadataGroups, []);
   const preservedMetadata = await sharp(preserved.outputPaths[0]).metadata();

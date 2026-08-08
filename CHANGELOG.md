@@ -14,6 +14,10 @@ Chưa có thay đổi sau v1.2.4.
 - Quá trình update vẫn giữ cơ chế backup/restore `Input`; các thư mục `Done`, PNG nguồn, mockup và PDF nằm ngoài thư mục cài đặt không bị quét hoặc xóa.
 - Uninstaller dùng danh sách file/thư mục app chính xác thay vì xóa đệ quy toàn bộ thư mục cài đặt, tránh chạm file cá nhân không thuộc app.
 
+### Fixed
+
+- Mockup đơn chỉ được tạo một lần cho mỗi thư mục `Done`. Nếu đã có file `single_*.png`, app giữ nguyên kết quả cũ và bỏ qua trước khi kiểm tra PNG nguồn, ảnh mẫu hoặc vùng in.
+
 ## [1.2.3] - 2026-08-07
 
 ### Changed

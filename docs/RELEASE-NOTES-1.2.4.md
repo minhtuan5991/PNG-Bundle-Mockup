@@ -1,6 +1,6 @@
 # PNG Bundle Mockup v1.2.4
 
-> Bản phát hành Windows x64 stable tại [GitHub Release v1.2.4](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.2.4), Release ID `366528649`. Bộ cài chưa có chữ ký số Authenticode.
+> Bản phát hành Windows x64 stable tại [GitHub Release v1.2.4](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.2.4). Bản này thay trực tiếp Release v1.2.4 ban đầu theo yêu cầu chủ dự án; bộ cài chưa có chữ ký số Authenticode.
 
 v1.2.4 thay đổi cơ chế gỡ cài đặt để xóa dữ liệu kỹ thuật của app nhưng vẫn giữ tài sản người dùng.
 
@@ -11,6 +11,9 @@ v1.2.4 thay đổi cơ chế gỡ cài đặt để xóa dữ liệu kỹ thuậ
 - Xóa shortcut, registry, cache/thiết lập tại `%APPDATA%\png-bundle-mockup` và bộ cài cập nhật tại `%LOCALAPPDATA%\png-bundle-mockup-updater`.
 - Không chạm tới `Done`, PNG nguồn, mockup hoặc PDF đã tạo trong các thư mục làm việc bên ngoài.
 - Khi update, giữ nguyên cơ chế backup/restore `Input`, AppData và updater cache để không mất thiết lập giữa hai phiên bản.
+- Chỉ tạo mockup đơn một lần cho mỗi thư mục `Done`. Nếu đã có file `single_*.png` (không phân biệt chữ hoa/thường), app giữ nguyên file cũ và bỏ qua toàn bộ bước mockup đơn.
+- Kiểm tra kết quả cũ diễn ra trước validation PNG nguồn, ảnh mẫu và vùng in; mockup bundle PNG không bị nhận nhầm là mockup đơn.
+- UI giữ checkbox **Tạo mockup đơn** ngay cả khi `Input` đang thiếu ảnh để backend có thể bỏ qua an toàn nếu `Done` đã có kết quả.
 
 ## File tạm
 
@@ -19,8 +22,8 @@ Mockup bundle, mockup đơn, PDF và các file thiết lập vẫn dùng file `.
 ## Kiểm thử hiện tại
 
 - 73/73 automated tests đạt.
-- Windows CI `31148857568` và Release Windows `31148871833` đều thành công trên commit/tag `7d52662`; clean `npm ci`, 73/73 test, packaged `Input` và build NSIS đều đạt.
-- Installer public có kích thước 104.343.028 byte, SHA-256 `9A4B93EA670B9C42CB8C4FE3E26B236EBB0C079884514BAA4CA2E42EFC1B468C`; Authenticode **NotSigned**. Blockmap SHA-256 `0C5E4C5081527069AF917AC06D8BB814EBF3D24983EF119D325E7ADD82FF1B8B`; `latest.yml` SHA-256 `42A378200FBA0DAE48D18E9F3D4E651C883A9D0D02C893E25BA248B92E75E8C6` và khớp version/path/size/SHA-512 của installer remote.
+- 74/74 automated tests đạt, gồm kiểm thử bỏ qua mockup đơn trước mọi validation và không nhận nhầm mockup bundle.
+- Artifact thay thế được dựng sạch từ source chỉ chứa tài sản `Input` đã track; checksum public được xác minh sau khi workflow hoàn tất.
 - Test cấu hình khóa việc giữ `Input`, xóa đúng app files, xóa AppData/updater cache chỉ khi uninstall thật và bảo toàn atomic update.
-- Ba asset GitHub đã được tải ngược và xác minh từng byte; `/releases/latest` trỏ đúng v1.2.4.
+- Release/tag v1.2.4 ban đầu bị xóa và thay bằng đúng ba asset mới; từng asset được tải ngược để xác minh trước khi chốt.
 - Silent-uninstall trong registry sandbox không thực thi phần xóa dù trả mã `0`; vẫn cần kiểm tra cài–gỡ tương tác trên Windows/VM bình thường.

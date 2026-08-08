@@ -31,6 +31,7 @@ const SINGLE_MOCKUP_TEMPLATE_EXTENSIONS = Object.freeze([
 const TEMPLATE_EXTENSION_SET = new Set(SINGLE_MOCKUP_TEMPLATE_EXTENSIONS);
 const SUPPORTED_SHARP_FORMATS = new Set(['png', 'jpeg', 'webp', 'tiff']);
 const MAX_OUTPUT_REVISIONS = 10000;
+const DEFAULT_SINGLE_MOCKUP_PREFIX = 'single';
 const REMOVED_METADATA_GROUPS = Object.freeze([
   'Comment',
   'EXIF',
@@ -448,6 +449,41 @@ function sanitizeFileStem(value, fallback) {
   return (sanitized || fallback).slice(0, 160);
 }
 
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function findExistingSingleMockupOutputs(outputDirectory, options = {}) {
+  const fsImpl = options.fsImpl || fs;
+  const resolvedOutputDirectory = normalizeDirectory(outputDirectory, 'outputDirectory');
+  const safePrefix = sanitizeFileStem(
+    options.prefix ?? DEFAULT_SINGLE_MOCKUP_PREFIX,
+    DEFAULT_SINGLE_MOCKUP_PREFIX,
+  );
+  let entries;
+  try {
+    entries = await fsImpl.readdir(resolvedOutputDirectory, { withFileTypes: true });
+  } catch (error) {
+    if (error?.code === 'ENOENT') return [];
+    if (error?.code === 'ENOTDIR') {
+      throw new SingleMockupError(
+        'Thư mục kết quả mockup đơn không hợp lệ.',
+        'INVALID_SINGLE_MOCKUP_OUTPUT_DIRECTORY',
+        { filePath: resolvedOutputDirectory, cause: error },
+      );
+    }
+    throw error;
+  }
+
+  const outputPattern = new RegExp(`^${escapeRegExp(safePrefix)}_.+\\.png$`, 'i');
+  return entries
+    .filter((entry) => entry.isFile() && outputPattern.test(entry.name))
+    .sort((left, right) =>
+      left.name.localeCompare(right.name, 'vi', { numeric: true, sensitivity: 'base' }),
+    )
+    .map((entry) => path.join(resolvedOutputDirectory, entry.name));
+}
+
 async function commitWithoutOverwrite(tempPath, outputDirectory, stem) {
   for (let revision = 1; revision <= MAX_OUTPUT_REVISIONS; revision += 1) {
     const suffix = revision === 1 ? '' : `_${revision}`;
@@ -476,7 +512,7 @@ async function generateSingleMockups(options = {}) {
     regionStore = null,
     regions = null,
     random = Math.random,
-    prefix = 'single',
+    prefix = DEFAULT_SINGLE_MOCKUP_PREFIX,
     watermarkPath = null,
     removeMetadata = true,
     onProgress,
@@ -484,6 +520,31 @@ async function generateSingleMockups(options = {}) {
   } = options;
   const alphaThreshold = options.alphaThreshold ?? options.settings?.alphaThreshold ?? 0;
   const shouldRemoveMetadata = removeMetadata !== false;
+  const resolvedOutputDirectory = outputDirectory
+    ? normalizeDirectory(outputDirectory, 'outputDirectory')
+    : path.join(normalizeDirectory(sourceDirectory, 'sourceDirectory'), 'Done');
+  const safePrefix = sanitizeFileStem(prefix, DEFAULT_SINGLE_MOCKUP_PREFIX);
+
+  throwIfCancelled(isCancelled);
+  const existingPaths = await findExistingSingleMockupOutputs(resolvedOutputDirectory, {
+    prefix: safePrefix,
+  });
+  throwIfCancelled(isCancelled);
+  if (existingPaths.length > 0) {
+    return {
+      created: false,
+      skipped: true,
+      skipReason: 'SINGLE_MOCKUP_ALREADY_EXISTS',
+      existingPaths,
+      outputDir: resolvedOutputDirectory,
+      outputPaths: [],
+      watermarkApplied: false,
+      watermarkName: null,
+      metadataRemoved: false,
+      removedMetadataGroups: [],
+      assignments: [],
+    };
+  }
 
   const templates = providedTemplates || await listSingleMockupTemplates(inputDirectory);
   if (!Array.isArray(templates) || templates.length === 0) {
@@ -520,16 +581,12 @@ async function generateSingleMockups(options = {}) {
     regions,
     isCancelled,
   });
-  const resolvedOutputDirectory = outputDirectory
-    ? normalizeDirectory(outputDirectory, 'outputDirectory')
-    : path.join(normalizeDirectory(sourceDirectory, 'sourceDirectory'), 'Done');
   await fs.mkdir(resolvedOutputDirectory, { recursive: true });
 
   const tempPaths = [];
   const committedPaths = [];
   const rendered = [];
   const jobId = randomUUID();
-  const safePrefix = sanitizeFileStem(prefix, 'single');
   const progress = (fraction, message, stage) => {
     if (typeof onProgress === 'function') {
       onProgress({ fraction: Math.max(0, Math.min(1, fraction)), message, stage });
@@ -601,6 +658,8 @@ async function generateSingleMockups(options = {}) {
     await Promise.allSettled(tempPaths.map((filePath) => fs.rm(filePath, { force: true })));
 
     return {
+      created: true,
+      skipped: false,
       outputDir: resolvedOutputDirectory,
       outputPaths: committedPaths,
       watermarkApplied: Boolean(watermarkPath),
@@ -629,6 +688,7 @@ async function generateSingleMockups(options = {}) {
 }
 
 module.exports = {
+  DEFAULT_SINGLE_MOCKUP_PREFIX,
   SINGLE_MOCKUP_TEMPLATE_EXTENSIONS,
   SingleMockupError,
   SingleMockupCancelledError,
@@ -636,6 +696,7 @@ module.exports = {
   selectRandomSourcePngs,
   validateSourcePngPaths,
   calculatePixelPrintRegion,
+  findExistingSingleMockupOutputs,
   resolveTemplateRegions,
   renderSingleMockupToFile,
   generateSingleMockups,

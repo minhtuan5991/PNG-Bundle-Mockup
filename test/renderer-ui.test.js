@@ -39,6 +39,11 @@ test('checkbox mockup đơn luôn có thể bật để tự làm mới Input ho
   );
   assert.doesNotMatch(
     script,
+    /singleMockupTemplates\.length\s*===\s*0[\s\S]{0,180}createSingleMockups\.checked\s*=\s*false/,
+  );
+  assert.match(script, /Main checks Done before validating Input\/regions/);
+  assert.doesNotMatch(
+    script,
     /editSingleMockupRegions\.disabled\s*=\s*[\s\S]{0,180}singleMockupTemplates\.length/,
   );
 });

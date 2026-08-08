@@ -722,24 +722,8 @@ function registerIpc() {
       try {
         const createPdfDownload = payload?.createPdfDownload === true;
         const createSingleMockups = payload?.createSingleMockups === true;
-        let singleMockupTemplates = null;
-
         if ((createPdfDownload || createSingleMockups) && inputBackupService) {
           await inputBackupService.synchronize();
-        }
-
-        if (createSingleMockups) {
-          singleMockupTemplates = await listSingleMockupTemplates(inputDirectory, {
-            ignoreInvalid: true,
-          });
-          if (singleMockupTemplates.length === 0) {
-            const error = new Error('Thư mục Input chưa có ảnh để tạo mockup đơn.');
-            error.code = 'NO_SINGLE_MOCKUP_TEMPLATES';
-            throw error;
-          }
-          await resolveTemplateRegions(singleMockupTemplates, {
-            regionStore: singleMockupRegionStore,
-          });
         }
 
         const bundleEnd = createSingleMockups
@@ -762,7 +746,6 @@ function registerIpc() {
             sourcePaths: payload.sourcePaths,
             inputDirectory,
             outputDirectory: result.outputDir,
-            templates: singleMockupTemplates,
             regionStore: singleMockupRegionStore,
             settings: payload.settings,
             alphaThreshold: payload.settings?.alphaThreshold,
@@ -813,6 +796,13 @@ function registerIpc() {
             name: path.basename(filePath),
           })),
           singleMockupCount: singleResult?.outputPaths.length || 0,
+          singleMockupSkipped: singleResult?.skipped
+            ? {
+                reason: singleResult.skipReason,
+                existingNames: (singleResult.existingPaths || []).map((filePath) =>
+                  path.basename(filePath)),
+              }
+            : null,
           pdfDownload: pdfResult && !pdfResult.skipped
             ? {
                 ...pdfResult,
