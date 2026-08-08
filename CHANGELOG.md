@@ -4,7 +4,18 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
-Chưa có thay đổi sau v1.2.4.
+Chưa có thay đổi sau v1.2.5.
+
+## [1.2.5] - 2026-08-09
+
+### Added
+
+- Thêm nút **Loại bỏ PNG** ở cuối danh sách để xóa toàn bộ PNG đã nạp khỏi phiên làm việc mà không xóa file gốc trên máy.
+
+### Changed
+
+- Bỏ dòng “Giữ nguyên thứ tự tên file” ở góc dưới danh sách PNG.
+- Khi loại bỏ PNG, app đồng thời xóa lựa chọn, thư mục nguồn/đích `Done` và preview kết quả cũ để lượt kéo-thả tiếp theo dùng đúng thư mục của bộ PNG mới; ảnh nền, watermark và thiết lập vẫn được giữ để tái sử dụng.
 
 ## [1.2.4] - 2026-08-07
 

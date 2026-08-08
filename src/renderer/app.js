@@ -12,9 +12,9 @@ const elements = {
   fileSearch: document.querySelector('#fileSearch'),
   selectAllButton: document.querySelector('#selectAllButton'),
   selectNoneButton: document.querySelector('#selectNoneButton'),
+  removePngButton: document.querySelector('#removePngButton'),
   fileList: document.querySelector('#fileList'),
   selectionCount: document.querySelector('#selectionCount'),
-  selectionHint: document.querySelector('#selectionHint'),
   chooseTemplateButton: document.querySelector('#chooseTemplateButton'),
   templateThumb: document.querySelector('#templateThumb'),
   templateName: document.querySelector('#templateName'),
@@ -828,6 +828,35 @@ function mergeDroppedFiles(result) {
   };
 }
 
+function clearPngFiles() {
+  if (
+    state.busy || state.folderScanning || state.dropScanning || state.regionEditor ||
+    state.files.length === 0
+  ) return;
+
+  const removedCount = state.files.length;
+  state.sourceDirectory = null;
+  state.sourceDirectories = new Set();
+  state.files = [];
+  state.selected = new Set();
+  state.sourcePicker = null;
+  state.output = null;
+  state.previewLayout = null;
+  elements.fileSearch.value = '';
+  elements.openOutputButton.classList.add('is-hidden');
+  setFileDropState();
+  renderSourcePathSummary();
+  renderFileList();
+  updateSelectionState();
+  restorePreviewAfterRegionEditor(null);
+  setAppStatus('Sẵn sàng', 'ready');
+  showToast(
+    `Đã loại bỏ ${removedCount} PNG khỏi danh sách. File gốc vẫn được giữ nguyên.`,
+    'success',
+    3600,
+  );
+}
+
 async function addDroppedPngFiles(dataTransfer) {
   if (state.busy || state.folderScanning || state.dropScanning || state.regionEditor) return;
   const droppedFiles = Array.from(dataTransfer?.files || []);
@@ -983,9 +1012,7 @@ function updateSelectionState() {
   const valid = state.files.filter(
     (file) => !file.error && !isTemplateFile(file) && !isWatermarkFile(file),
   ).length;
-  const invalid = state.files.filter((file) => file.error).length;
   elements.selectionCount.textContent = `Đã chọn ${selected}/${valid} PNG`;
-  elements.selectionHint.textContent = invalid > 0 ? `${invalid} file lỗi đã bỏ qua` : state.files.length ? 'Giữ nguyên thứ tự tên file' : 'Chưa có dữ liệu';
   elements.statSelected.textContent = String(selected);
   updateDistribution();
   updateControls();
@@ -1011,6 +1038,7 @@ function updateControls() {
     scanning || state.inputAssetsLoading || state.inputAssetsSaving || !ready || editorActive;
   elements.selectAllButton.disabled = scanning || state.files.length === 0;
   elements.selectNoneButton.disabled = scanning || state.selected.size === 0;
+  elements.removePngButton.disabled = scanning || state.files.length === 0 || editorActive;
   elements.createPdfDownload.disabled =
     state.inputAssetsLoading || editorActive;
   elements.downloadUrl.disabled =
@@ -1910,6 +1938,7 @@ elements.selectNoneButton.addEventListener('click', () => {
   renderFileList();
   updateSelectionState();
 });
+elements.removePngButton.addEventListener('click', clearPngFiles);
 elements.previewButton.addEventListener('click', () => runPreview(0));
 elements.generateButton.addEventListener('click', generate);
 elements.cancelButton.addEventListener('click', cancelCurrentJob);

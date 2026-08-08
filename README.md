@@ -8,6 +8,7 @@
 - Kéo trực tiếp nhiều file PNG từ File Explorer vào vùng danh sách; các file có thể đến từ nhiều thư mục khác nhau.
 - Nhớ vị trí đã chọn gần nhất của thư mục PNG, ảnh nền và watermark cho lần mở hộp thoại tiếp theo.
 - Có thể tiếp tục chọn/bỏ từng PNG trong danh sách chính.
+- Nút **Loại bỏ PNG** dọn toàn bộ danh sách để bắt đầu bộ mới mà không xóa file PNG gốc.
 - Chọn ảnh nền PNG/JPG/WEBP/TIFF.
 - Chia đều file: `30 / 2 → 15 + 15`, `31 / 2 → 16 + 15`.
 - Chỉ dùng bounding box của pixel có alpha lớn hơn ngưỡng; canvas trong suốt không làm thiết kế bị thu nhỏ.
@@ -29,6 +30,7 @@
 1. Nếu cần PDF Download hoặc mockup đơn, chuẩn bị tài sản trong thư mục `Input` theo hướng dẫn bên dưới.
 2. Bấm **Chọn thư mục và xem PNG**, hoặc kéo trực tiếp các file `.png` từ File Explorer vào vùng danh sách PNG.
 3. Trong cửa sổ thumbnail, chọn các ảnh cần dùng rồi bấm **Nạp X PNG**. Hủy hoặc nhấn `Esc` sẽ giữ nguyên danh sách cũ.
+   Khi muốn chạy một bộ mới, bấm **Loại bỏ PNG** rồi kéo/thêm PNG mới; app sẽ không trộn với danh sách cũ.
 4. Bấm **Chọn ảnh nền mẫu** để chọn nền cho mockup bundle.
 5. Giữ **Xóa Metadata** được bật nếu muốn làm sạch sáu nhóm metadata ở các file ảnh bundle và mockup đơn cuối.
 6. Nếu cần watermark, bật **Gắn Watermark** và chọn một PNG có pixel nền trong suốt. Watermark cũng được áp dụng cho mockup đơn khi chức năng này được bật.
@@ -100,15 +102,17 @@ Khi bỏ chọn, app giữ metadata của ảnh nền trong khả năng định 
 2. Chạy bộ cài. Khi cài mới, bạn có thể chọn thư mục đích; nên chọn thư mục mà tài khoản hiện tại có quyền ghi để có thể thêm PDF/ảnh mẫu vào `Input`. Nếu chỉ chọn thư mục cha, bộ cài tự thêm thư mục con `PNG Bundle Mockup`. Khi nâng cấp, installer giữ nguyên chế độ/vị trí của bản hiện có, kể cả All Users/custom path, thay vì tạo app thứ hai. Với bản All Users cũ, installer chỉ cấp quyền Modify cho thư mục `Input` và dừng trước khi thay đổi bản cũ nếu bước kiểm tra quyền thất bại.
 3. Mở app bằng icon **PNG Bundle Mockup** trên Desktop hoặc Start Menu.
 
-Sau khi cài, dùng nút **Mở Input** để xác nhận thư mục `Input` nằm cạnh EXE và thêm PDF/ảnh mẫu của bạn. Bản stable hiện tại là [`v1.2.4`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.2.4), có đủ installer, blockmap và `latest.yml`.
+Sau khi cài, dùng nút **Mở Input** để xác nhận thư mục `Input` nằm cạnh EXE và thêm PDF/ảnh mẫu của bạn. Bản stable hiện tại là [`v1.2.5`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.2.5), có đủ installer, blockmap và `latest.yml`.
 
 Bộ cài v1.2.3 thay thế giữ các file runtime Electron bắt buộc nhưng gắn thuộc tính **Hidden** để thư mục cài đặt gọn hơn. Mặc định File Explorer chỉ hiện `Input`, **PNG Bundle Mockup.exe** và **Uninstall PNG Bundle Mockup.exe**. Việc bật **Show hidden files** sẽ làm các file kỹ thuật xuất hiện lại; không xóa hoặc đổi tên chúng vì app cần chúng để chạy.
 
-Chủ dự án muốn tự đưa bản mới lên GitHub xem [hướng dẫn cập nhật thủ công](docs/MANUAL-GITHUB-UPDATE.md). Thay đổi tiếp theo sau v1.2.4 phải tăng lên v1.2.5 hoặc cao hơn.
+Chủ dự án muốn tự đưa bản mới lên GitHub xem [hướng dẫn cập nhật thủ công](docs/MANUAL-GITHUB-UPDATE.md). Thay đổi tiếp theo sau v1.2.5 phải tăng lên v1.2.6 hoặc cao hơn.
 
 Từ v1.2.4, uninstall thật giữ nguyên `Input` tại vị trí cài đặt nhưng xóa EXE/runtime, shortcut, registry, `%APPDATA%\png-bundle-mockup` và `%LOCALAPPDATA%\png-bundle-mockup-updater`. Các thư mục `Done`, PNG nguồn, mockup và PDF nằm ngoài thư mục cài đặt luôn được giữ nguyên. Luồng update không xóa dữ liệu người dùng và tiếp tục dùng backup/restore `Input`.
 
 Bản v1.2.4 thay thế chỉ tạo mockup đơn một lần trong mỗi `Done`: nếu đã có kết quả `single_*.png`, app bỏ qua bước mockup đơn mà không yêu cầu lại ảnh mẫu, PNG nguồn hoặc thiết lập vùng in. Người đã cài v1.2.4 trước lần thay thế này cần chạy installer mới thủ công vì updater không tự tải lại cùng version.
+
+Từ v1.2.5, dùng **Loại bỏ PNG** để dọn danh sách trước khi kéo bộ PNG tiếp theo. Thao tác này chỉ xóa dữ liệu phiên làm việc trong app, đặt lại thư mục nguồn/đích `Done` và preview cũ; file gốc, ảnh nền, watermark và các thiết lập không bị xóa.
 
 Từ bản installer `1.2.0`, app tự kiểm tra phiên bản ổn định mới sau khi mở, sau đó kiểm tra lại định kỳ. Khi có bản mới, người dùng chủ động chọn **Tải cập nhật** và **Khởi động lại và cài đặt**; app đồng bộ backup `Input` ngay trước khi gọi bộ cài. App chặn cài cập nhật khi đang tạo ảnh, quét/lưu `Input` hoặc còn mở trình chỉnh vùng in; nếu đóng cửa sổ trong lúc tạo ảnh, tác vụ được hủy và dọn file tạm trước khi app thoát, còn thay đổi vùng in chưa lưu sẽ được cảnh báo. Đóng app thông thường không tự cài bản đã tải. App chỉ chạy một cửa sổ tương tác: mở icon lần nữa sẽ khôi phục và đưa cửa sổ hiện có lên trước. Nếu tiến trình backup headless không lấy được single-instance lock vì app còn chạy, update/uninstall sẽ dừng an toàn thay vì tiếp tục khi chưa bảo toàn `Input`. Bản portable `1.1.0` cũ không có updater nên cần cài file Setup một lần để chuyển sang kênh cập nhật này.
 

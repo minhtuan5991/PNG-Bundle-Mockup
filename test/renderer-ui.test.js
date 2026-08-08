@@ -62,3 +62,23 @@ test('focus ô link PDF không được tự cuộn toàn bộ cửa sổ', () =
 
   assert.match(script, /downloadUrl\.focus\(\{\s*preventScroll:\s*true\s*\}\)/);
 });
+
+test('nút Loại bỏ PNG xóa sạch phiên làm việc PNG nhưng giữ nguyên file gốc', () => {
+  const html = fs.readFileSync(path.join(rendererDirectory, 'index.html'), 'utf8');
+  const script = fs.readFileSync(path.join(rendererDirectory, 'app.js'), 'utf8');
+  const clearStart = script.indexOf('function clearPngFiles()');
+  const clearEnd = script.indexOf('\nasync function addDroppedPngFiles', clearStart);
+  const clearSource = script.slice(clearStart, clearEnd);
+
+  assert.match(html, /id="removePngButton"[^>]*>[\s\S]*?Loại bỏ PNG<\/button>/);
+  assert.doesNotMatch(html, /Giữ nguyên thứ tự tên file/);
+  assert.doesNotMatch(script, /Giữ nguyên thứ tự tên file/);
+  assert.match(
+    script,
+    /function clearPngFiles\(\)[\s\S]*?state\.sourceDirectory = null;[\s\S]*?state\.sourceDirectories = new Set\(\);[\s\S]*?state\.files = \[\];[\s\S]*?state\.selected = new Set\(\);/,
+  );
+  assert.match(script, /state\.output = null;[\s\S]*?renderSourcePathSummary\(\);/);
+  assert.match(script, /File gốc vẫn được giữ nguyên\./);
+  assert.match(script, /removePngButton\.addEventListener\('click', clearPngFiles\)/);
+  assert.doesNotMatch(clearSource, /\bapi\.|unlink|rmSync|removeItem/i);
+});

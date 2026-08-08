@@ -439,6 +439,19 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [x] Xóa Release ID `366528649` và remote tag v1.2.4 cũ; push `main` và annotated tag replacement trỏ đúng commit `1231fc9`.
 - [x] Windows CI `31266128606` và Release Windows `31266163163` success. Release replacement ID `367243225` public/stable có đúng ba asset; tải ngược xác minh SHA-256 installer `9658FBA73E63F056A4CF6199BE9B89319B72DE4B6D77771790523666D19025C2`, blockmap `D8404E8CA07F8D87A55D513511D05E1553E01139294A3F7AEE9161BEB425C211`, `latest.yml` `8D10F277EE18B06831DF0BFEC0E17E09980FDE29479AD567CC746ED739606491`; updater metadata khớp và `/releases/latest` trỏ đúng Release mới.
 
+## E8. v1.2.5 — Loại bỏ PNG khỏi phiên làm việc
+
+- [x] `package.json`, `package-lock.json` và package root cùng version `1.2.5`.
+- [x] Không còn chuỗi “Giữ nguyên thứ tự tên file” trong HTML/renderer.
+- [x] Có nút **Loại bỏ PNG**; thao tác đặt lại danh sách, lựa chọn, thư mục nguồn/đích và output cũ nhưng không có lệnh xóa file trên ổ đĩa.
+- [x] Sau khi dọn, preview trở về ảnh nền/vùng an toàn nếu đã chọn nền; ảnh nền, watermark và thiết lập khác được giữ.
+- [x] Nút bị khóa khi danh sách rỗng, đang quét/xử lý hoặc đang chỉnh vùng in.
+- [x] `node --check`, `git diff --check` và automated tests **75/75** đạt; `npm audit --omit=dev --audit-level=high` báo 0 vulnerability.
+- [x] QA renderer thật: app hiện title v1.2.5, không còn chuỗi cũ; nút bị khóa ở 0 PNG, bật ở 1 PNG, sau click trở về 0/0, nguồn `null`, nhãn “Chưa chọn thư mục” và output `null`.
+- [ ] Build sạch đủ installer/blockmap/`latest.yml`; packaged `Input` chỉ có README/PDF đã track và không chứa bốn JPG riêng.
+- [ ] Push commit/tag v1.2.5; Windows CI và Release Windows success.
+- [ ] Release v1.2.5 public/stable có đúng ba asset; tải ngược xác minh checksum, updater metadata và `/releases/latest`.
+
 ## F. Sign-off
 
 | Hạng mục | Người kiểm tra | Ngày | Kết quả/Ghi chú |
@@ -459,5 +472,6 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 | v1.2.3 replacement hidden-runtime QA/release | Codex local QA + GitHub API | 2026-08-07 | 73/73 clean test; silent install đúng 3 mục hiện/20 mục kỹ thuật Hidden/0 ReadOnly; smoke 16/16 và Input backup đạt. Tag trỏ `33f8b95`; Release ID `366501729` stable/public có đúng ba asset tải ngược khớp và là `/releases/latest`. |
 | v1.2.4 clean uninstall QA/release | Codex local QA + GitHub Actions | 2026-08-07 | 73/73 test; clean build/Input payload đạt; CI và Release workflow success. Release ID `366528649` có đúng ba asset tải ngược khớp. Uninstall tương tác ngoài registry sandbox còn chờ. |
 | v1.2.4 replacement single-mockup QA/release | Codex local QA + GitHub Actions | 2026-08-08 | 74/74 test; mockup đơn bỏ qua nếu `Done` đã có `single_*.png`. Release cũ bị xóa; tag trỏ `1231fc9`; Release ID `367243225` và ba asset tải ngược đều được xác minh. |
+| v1.2.5 remove-PNG QA/release | Codex local QA | 2026-08-09 | 75/75 test; renderer thật xác nhận nút và state dọn danh sách đúng; artifact/GitHub Release đang chờ. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.

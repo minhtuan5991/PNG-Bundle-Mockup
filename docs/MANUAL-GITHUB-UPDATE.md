@@ -4,8 +4,8 @@ Tài liệu này dùng khi chủ dự án muốn tự phát hành bản Windows 
 
 ## 1. Quy tắc phiên bản
 
-- `v1.2.4` đã là Release public và không được ghi đè asset hoặc di chuyển tag.
-- Bản chứa thay đổi sau v1.2.4 phải dùng `1.2.5` hoặc cao hơn.
+- `v1.2.5` đã là Release public và không được ghi đè asset hoặc di chuyển tag.
+- Bản chứa thay đổi sau v1.2.5 phải dùng `1.2.6` hoặc cao hơn.
 - Mỗi Release chỉ có đúng ba asset:
   - `PNG-Bundle-Mockup-Setup-X.Y.Z.exe`
   - `PNG-Bundle-Mockup-Setup-X.Y.Z.exe.blockmap`
@@ -20,12 +20,12 @@ Mở PowerShell tại repository:
 Set-Location D:\File2Mockup
 git pull --ff-only
 npm ci
-npm version 1.2.5 --no-git-tag-version
+npm version 1.2.6 --no-git-tag-version
 ```
 
 Sau đó:
 
-1. Tạo `docs/RELEASE-NOTES-1.2.5.md` và ghi rõ thay đổi, kết quả QA cùng giới hạn còn lại.
+1. Tạo `docs/RELEASE-NOTES-1.2.6.md` và ghi rõ thay đổi, kết quả QA cùng giới hạn còn lại.
 2. Cập nhật `CHANGELOG.md`, `README.md`, `docs/PROJECT-HISTORY.md` và `docs/REGRESSION-CHECKLIST.md` nếu cần.
 3. Kiểm tra `package.json`, `package-lock.json` và package root trong lockfile cùng mang version mới.
 

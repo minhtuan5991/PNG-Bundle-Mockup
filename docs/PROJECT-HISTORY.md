@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
-> Cập nhật: 2026-08-07
-> Phiên bản mã nguồn hiện tại: `1.2.4` — đang chuẩn bị Release thay thế cùng version
+> Cập nhật: 2026-08-09
+> Phiên bản mã nguồn hiện tại: `1.2.5` — đang chuẩn bị phát hành
 > Bản stable hiện có: `v1.2.4`
-> Trạng thái: chủ dự án yêu cầu xóa Release/tag v1.2.4 hiện có và thay bằng bản sửa logic mockup đơn cùng version. Chưa xóa remote trước khi artifact mới được dựng sạch.
+> Trạng thái: đã thêm nút dọn danh sách PNG và đang QA/build sạch trước khi tạo tag v1.2.5.
 
 ## 1. Mục đích tài liệu
 
@@ -21,7 +21,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.2.4` — đang chuẩn bị Release thay thế |
+| Phiên bản mã nguồn | `1.2.5` — đang chuẩn bị phát hành |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
@@ -537,3 +537,12 @@ Mốc QA local ngày 2026-08-07:
 - `main` được push tới `1231fc9`. Release ID `366528649` và remote tag cũ đã bị xóa; annotated tag v1.2.4 mới trỏ đúng commit `1231fc9`.
 - Windows CI `31266128606` và Release Windows `31266163163` đều success. Release thay thế ID `367243225` public/stable có đúng ba asset và là `/releases/latest`.
 - Ba asset công khai được tải ngược độc lập: installer 104.343.267 byte, SHA-256 `9658FBA73E63F056A4CF6199BE9B89319B72DE4B6D77771790523666D19025C2`; blockmap SHA-256 `D8404E8CA07F8D87A55D513511D05E1553E01139294A3F7AEE9161BEB425C211`; `latest.yml` SHA-256 `8D10F277EE18B06831DF0BFEC0E17E09980FDE29479AD567CC746ED739606491`. Metadata version/path/size/SHA-512 khớp installer remote.
+
+## 19. Bản v1.2.5 — dọn danh sách PNG để chạy bộ mới
+
+- Bỏ dòng “Giữ nguyên thứ tự tên file” ở cuối gallery và thay bằng nút **Loại bỏ PNG**.
+- Nút chỉ dọn dữ liệu trong app: `files`, `selected`, các thư mục nguồn, output và preview cũ; không gọi API xóa file và không chạm PNG gốc trên ổ đĩa.
+- Thư mục nguồn được đặt lại để PNG kéo vào đầu tiên của lượt mới quyết định đúng thư mục `Done`, tránh lưu nhầm về nguồn của lượt trước.
+- Ảnh nền, watermark, tùy chọn PDF/mockup đơn và thiết lập bố cục được giữ để người dùng có thể tái sử dụng cho bộ PNG tiếp theo.
+- Nút bị khóa khi app đang quét, tạo ảnh hoặc chỉnh vùng in; toast xác nhận rõ file gốc vẫn được giữ nguyên.
+- QA source ngày 2026-08-09: `node --check` và `git diff --check` đạt; 75/75 test đạt; production audit 0 vulnerability. Renderer thật xác nhận title v1.2.5, nút khóa ở 0 PNG/bật ở 1 PNG và sau click trở về 0/0 với nguồn/output rỗng.

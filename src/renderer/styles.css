@@ -546,10 +546,17 @@ input:disabled {
   color: #c4b5fd;
 }
 
-.selection-summary span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.selection-summary .remove-png-button {
+  min-height: 24px;
+  color: #fecdd3;
+  border-color: rgba(251, 113, 133, 0.32);
+  background: rgba(127, 29, 29, 0.16);
+}
+
+.selection-summary .remove-png-button:hover:not(:disabled) {
+  color: #fff1f2;
+  border-color: rgba(251, 113, 133, 0.62);
+  background: rgba(159, 18, 57, 0.24);
 }
 
 .template-picker {
