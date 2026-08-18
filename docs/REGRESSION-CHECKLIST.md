@@ -476,7 +476,7 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [ ] Electron source/packaged smoke: môi trường local hiện lỗi GPU process trước khi renderer load; chạy lại trên Windows/CI artifact.
 - [x] Build installer local chỉ chứa `Input/README.txt` và PDF mẫu; Setup 104.367.149 byte, blockmap 109.389 byte, `latest.yml` 363 byte, version/path/size/SHA-512 khớp. SHA-256 installer `503A14125E0BED8E333BA9D6A43006A6E0CD22754B2759D257042CC0B18614D1`; Authenticode NotSigned.
 - [ ] Cài mới/nâng cấp trên VM sạch; xác minh vùng Group Shirt còn sau khi mở lại app và uninstall vẫn giữ Input/output.
-- [ ] Commit, annotated tag `v1.3.0`, Windows CI/Release workflow và ba asset public được xác minh.
+- [x] Commit `2f652dd` và annotated tag `v1.3.0` được push atomic; Windows CI `32167145210` và Release Windows `32167145143` success. Release ID `372536307` stable/public có đúng ba asset, checksum/size API khớp và `/releases/latest` trỏ v1.3.0.
 
 ## F. Sign-off
 
@@ -499,6 +499,6 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 | v1.2.4 clean uninstall QA/release | Codex local QA + GitHub Actions | 2026-08-07 | 73/73 test; clean build/Input payload đạt; CI và Release workflow success. Release ID `366528649` có đúng ba asset tải ngược khớp. Uninstall tương tác ngoài registry sandbox còn chờ. |
 | v1.2.4 replacement single-mockup QA/release | Codex local QA + GitHub Actions | 2026-08-08 | 74/74 test; mockup đơn bỏ qua nếu `Done` đã có `single_*.png`. Release cũ bị xóa; tag trỏ `1231fc9`; Release ID `367243225` và ba asset tải ngược đều được xác minh. |
 | v1.2.5 remove-PNG QA/release | Codex local QA + GitHub Actions | 2026-08-09 | 75/75 test; source/package smoke đạt; Release ID `367263645`, đúng ba asset tải ngược, updater metadata và `/releases/latest` đều được xác minh. |
-| v1.3.0 Group Shirt source QA | Codex local QA | 2026-08-19 | 116/116 automated test; engine Group Shirt 30/30; capability/fingerprint/metadata/orientation đạt. NSIS build và payload Input/version/checksum đạt; Electron smoke bị chặn bởi GPU process của môi trường, VM/release còn chờ. |
+| v1.3.0 Group Shirt QA/release | Codex local QA + GitHub Actions | 2026-08-19 | 116/116 automated test; local NSIS payload/checksum đạt. Commit `2f652dd`, CI/Release workflow success; Release ID `372536307` stable/public có đúng ba asset và là `/releases/latest`. Electron smoke local bị chặn bởi GPU process; cài/nâng cấp VM vẫn còn chờ. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.

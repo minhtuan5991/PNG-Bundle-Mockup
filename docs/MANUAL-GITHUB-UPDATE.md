@@ -5,7 +5,7 @@ Tài liệu này dùng khi chủ dự án muốn tự phát hành bản Windows 
 ## 1. Quy tắc phiên bản
 
 - `v1.2.5` đã là Release public và không được ghi đè asset hoặc di chuyển tag.
-- Mã nguồn v1.3.0 là bản Group Shirt đang chuẩn bị phát hành. Sau khi v1.3.0 đã public, mọi thay đổi tiếp theo phải dùng `1.3.1` hoặc cao hơn.
+- `v1.3.0` là bản Group Shirt stable/public. Mọi thay đổi tiếp theo phải dùng `1.3.1` hoặc cao hơn; không di chuyển tag hoặc ghi đè asset v1.3.0.
 - Mỗi Release chỉ có đúng ba asset:
   - `PNG-Bundle-Mockup-Setup-X.Y.Z.exe`
   - `PNG-Bundle-Mockup-Setup-X.Y.Z.exe.blockmap`
@@ -48,7 +48,7 @@ Get-ChildItem `
   ".\release\latest.yml"
 ```
 
-Lưu ý: repository hiện có thể chứa các JPG riêng chưa được Git theo dõi trong `Input`. Không dùng `git add .` hoặc `git add -A`. Với bản v1.3.0 hiện tại, stage chính xác các file mã nguồn/tài liệu sau:
+Lưu ý: repository hiện có thể chứa các JPG riêng chưa được Git theo dõi trong `Input`. Không dùng `git add .` hoặc `git add -A`. Danh sách v1.3.0 dưới đây là mẫu stage tường minh; ở phiên bản sau chỉ thêm đúng các file mới đã kiểm tra:
 
 ```powershell
 git add -- package.json package-lock.json CHANGELOG.md README.md

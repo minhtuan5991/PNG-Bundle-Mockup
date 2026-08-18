@@ -2,8 +2,8 @@
 
 > Cập nhật: 2026-08-19
 > Phiên bản mã nguồn hiện tại: `1.3.0`
-> Bản stable hiện có: `v1.2.5`
-> Trạng thái: v1.3.0 đã hoàn tất mã nguồn và automated QA local; chưa tạo tag/GitHub Release. v1.2.5 vẫn là stable public gần nhất.
+> Bản stable hiện có: `v1.3.0`
+> Trạng thái: v1.3.0 đã hoàn tất mã nguồn, automated QA, Windows CI và Release Windows; GitHub Release ID `372536307` là stable/public và `/releases/latest` trỏ đúng v1.3.0.
 
 ## 1. Mục đích tài liệu
 
@@ -569,4 +569,6 @@ Mốc QA local ngày 2026-08-07:
 - Automated suite hiện đạt **116/116** gồm 30 test engine Group Shirt, 11 integration contract v1.3.0 và toàn bộ 75 regression test cũ. `node --check` và `git diff --check` đạt.
 - Build NSIS local từ cây QA hiện tại tạo đủ ba artifact: installer 104.367.149 byte, SHA-256 `503A14125E0BED8E333BA9D6A43006A6E0CD22754B2759D257042CC0B18614D1`; blockmap 109.389 byte, SHA-256 `EE3707FBAFCDD04E99F9A11CEB097D4720942307CEDA83124ACCCB05C21A1018`; `latest.yml` 363 byte, SHA-256 `8EEFF0AB15AFBC0BB46337CF04FD6F59259CED192DB131895D71179C5495C74C`. Metadata version/path/size/SHA-512 khớp installer, `app.asar` mang version 1.3.0 và đủ bốn service Group Shirt; packaged `Input` chỉ có README/PDF mẫu. Installer **NotSigned**.
 - Electron source và packaged smoke local vẫn không khởi tạo được renderer vì GPU process của runtime Electron thoát với `0xC0000135`, kể cả smoke-only đã tắt hardware acceleration; đây là giới hạn môi trường và không được đánh dấu pass.
-- Chưa tạo commit/tag/GitHub Release tại thời điểm ghi mục này. Không stage bốn JPG riêng chưa được theo dõi trong `Input`; clean release build phải dùng source không chứa các file đó.
+- Commit phát hành `2f652dd` và annotated tag `v1.3.0` đã được push atomic. Windows CI run `32167145210` và Release Windows run `32167145143` đều success.
+- GitHub Release ID `372536307` stable/public, không draft/prerelease, có đúng ba asset và là `/releases/latest`. SHA-256 asset CI: installer `E0EC48FD8B8C1FE06DB67C5FD83480A5A006D833C564B95E4DCDBEEAF7EEA293` (104.367.152 byte), blockmap `5FD829B08A98BEC1145E533F7DC361CBB3E2EAADE3483C5047133FD9A7A349E5` (109.447 byte), `latest.yml` `54B14034503F0A5B3581DFDCFEEE834BA3DAA1FC93E48C4F41370CD3DF2CDAED` (363 byte).
+- Bốn JPG riêng chưa được theo dõi trong `Input` không được stage, commit hoặc đóng gói trong installer.

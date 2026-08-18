@@ -1,6 +1,6 @@
 # PNG Bundle Mockup v1.3.0
 
-> Bản nâng cấp lớn bổ sung Mockup Group Shirt. Mã nguồn đã hoàn tất QA local; GitHub Release chỉ được xem là phát hành sau khi tag `v1.3.0` và ba asset Windows xuất hiện công khai.
+> Bản nâng cấp lớn bổ sung Mockup Group Shirt. Tag `v1.3.0`, Windows CI và Release Windows đã hoàn tất; Release ID `372536307` là stable/public với đúng ba asset Windows.
 
 ## Điểm mới
 
@@ -43,10 +43,11 @@ Nền: 1 mkg.wh.jpg
 - `git diff --check`: đạt.
 - Group Shirt engine/service: **30/30** test đạt, gồm parser, transaction rename, region store, planner, crop alpha, xoay, EXIF Orientation, watermark, metadata, cancel và rollback.
 - NSIS build local đạt: installer 104.367.149 byte (SHA-256 `503A14125E0BED8E333BA9D6A43006A6E0CD22754B2759D257042CC0B18614D1`), blockmap 109.389 byte và `latest.yml` 363 byte. Version/path/size/SHA-512 khớp; `app.asar` là v1.3.0 và packaged `Input` chỉ có README/PDF mẫu.
-- Renderer smoke source lẫn packaged chưa thể chạy trên môi trường QA hiện tại vì GPU process của Electron thoát trước khi renderer khởi tạo, kể cả khi smoke-only đã tắt tăng tốc phần cứng; kiểm tra này phải chạy lại trên máy Windows có runtime đồ họa đầy đủ hoặc bằng artifact CI trước khi phát hành stable.
+- Windows CI run `32167145210` và Release Windows run `32167145143` đạt trên commit `2f652dd`. Release stable ID `372536307` có installer 104.367.152 byte, blockmap 109.447 byte và `latest.yml` 363 byte; `/releases/latest` trỏ đúng v1.3.0.
+- Renderer smoke source lẫn packaged chưa thể chạy trên môi trường QA hiện tại vì GPU process của Electron thoát trước khi renderer khởi tạo, kể cả khi smoke-only đã tắt tăng tốc phần cứng; cần chạy lại trên máy Windows/VM có runtime đồ họa đầy đủ để hoàn tất manual QA sau phát hành.
 
 ## Giới hạn phát hành
 
 - Installer chưa có chữ ký Authenticode nên Windows SmartScreen có thể cảnh báo.
 - Installer dùng allowlist chỉ gồm `Input/README.txt` và PDF mẫu `Input/Toystory HLW1.pdf`; các JPG/PDF riêng khác trong `Input` local không được đóng gói. Build release sạch phải xác nhận hai file được phép đúng nội dung đã track.
-- Chưa có checksum artifact CI hoặc Release ID trước khi GitHub Actions chạy từ commit/tag chốt.
+- SHA-256 asset CI: installer `E0EC48FD8B8C1FE06DB67C5FD83480A5A006D833C564B95E4DCDBEEAF7EEA293`, blockmap `5FD829B08A98BEC1145E533F7DC361CBB3E2EAADE3483C5047133FD9A7A349E5`, `latest.yml` `54B14034503F0A5B3581DFDCFEEE834BA3DAA1FC93E48C4F41370CD3DF2CDAED`.
