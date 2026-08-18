@@ -120,6 +120,6 @@ test('installer chọn thư mục, ẩn runtime và uninstall sạch nhưng gi�
     path.normalize(entry.to) === path.normalize('Input'),
   );
   assert.ok(inputPayload);
-  assert.ok(inputPayload.filter.includes('!**/.png-bundle-input-marker'));
-  assert.ok(inputPayload.filter.includes('!**/.png-bundle-input-marker.tmp-*'));
+  assert.deepEqual(inputPayload.filter, ['README.txt', 'Toystory HLW1.pdf']);
+  assert.ok(inputPayload.filter.every((item) => !item.includes('*')));
 });

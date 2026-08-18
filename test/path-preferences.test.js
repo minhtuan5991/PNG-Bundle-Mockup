@@ -26,11 +26,13 @@ async function createFixturePaths(t) {
   const userDataPath = path.join(root, 'User Data');
   const sourceFolder = path.join(root, 'Thiết kế PNG');
   const templateFile = path.join(root, 'Ảnh nền MẪU.JPEG');
+  const groupTemplateFile = path.join(root, '1 mkg.wh.PNG');
   const watermarkFile = path.join(root, 'Watermark TRONG SUỐT.PNG');
   await fs.mkdir(sourceFolder, { recursive: true });
   await fs.writeFile(templateFile, 'template');
+  await fs.writeFile(groupTemplateFile, 'group template');
   await fs.writeFile(watermarkFile, 'watermark');
-  return { root, userDataPath, sourceFolder, templateFile, watermarkFile };
+  return { root, userDataPath, sourceFolder, templateFile, groupTemplateFile, watermarkFile };
 }
 
 test('store mới trả về schema mặc định khi chưa có file', async (t) => {
@@ -41,12 +43,13 @@ test('store mới trả về schema mặc định khi chưa có file', async (t)
   assert.equal(await store.getDefaultPath(PATH_KEYS.SOURCE_FOLDER), undefined);
 });
 
-test('lưu và nạp lại đủ ba đường dẫn trong userData', async (t) => {
+test('lưu và nạp lại đủ bốn đường dẫn trong userData', async (t) => {
   const fixture = await createFixturePaths(t);
   const store = createPathPreferencesStore({ userDataPath: fixture.userDataPath });
 
   await store.remember(PATH_KEYS.SOURCE_FOLDER, fixture.sourceFolder);
   await store.remember(PATH_KEYS.TEMPLATE_FILE, fixture.templateFile);
+  await store.remember(PATH_KEYS.GROUP_TEMPLATE_FILE, fixture.groupTemplateFile);
   await store.remember(PATH_KEYS.WATERMARK_FILE, fixture.watermarkFile);
 
   const reopened = createPathPreferencesStore({ userDataPath: fixture.userDataPath });
@@ -54,10 +57,12 @@ test('lưu và nạp lại đủ ba đường dẫn trong userData', async (t) =
     schemaVersion: SCHEMA_VERSION,
     sourceFolder: path.normalize(fixture.sourceFolder),
     templateFile: path.normalize(fixture.templateFile),
+    groupTemplateFile: path.normalize(fixture.groupTemplateFile),
     watermarkFile: path.normalize(fixture.watermarkFile),
   });
   assert.equal(await reopened.getDefaultPath(PATH_KEYS.SOURCE_FOLDER), path.normalize(fixture.sourceFolder));
   assert.equal(await reopened.getDefaultPath(PATH_KEYS.TEMPLATE_FILE), path.normalize(fixture.templateFile));
+  assert.equal(await reopened.getDefaultPath(PATH_KEYS.GROUP_TEMPLATE_FILE), path.normalize(fixture.groupTemplateFile));
   assert.equal(await reopened.getDefaultPath(PATH_KEYS.WATERMARK_FILE), path.normalize(fixture.watermarkFile));
 });
 
@@ -87,6 +92,7 @@ test('sanitize chỉ giữ key, kiểu dữ liệu và phần mở rộng hợp 
       schemaVersion: SCHEMA_VERSION,
       sourceFolder: 42,
       templateFile: path.join(absoluteRoot, 'template.exe'),
+      groupTemplateFile: path.join(absoluteRoot, 'group-template.exe'),
       watermarkFile: path.join(absoluteRoot, 'watermark.PNG'),
       arbitraryPath: path.join(absoluteRoot, 'secret.txt'),
     }),
@@ -94,6 +100,7 @@ test('sanitize chỉ giữ key, kiểu dữ liệu và phần mở rộng hợp 
       schemaVersion: SCHEMA_VERSION,
       sourceFolder: null,
       templateFile: null,
+      groupTemplateFile: null,
       watermarkFile: path.normalize(path.join(absoluteRoot, 'watermark.PNG')),
     },
   );
@@ -110,6 +117,10 @@ test('validation phân biệt file, thư mục và extension không phân biệt
   assert.equal(
     await validateRememberedPath(PATH_KEYS.TEMPLATE_FILE, fixture.templateFile),
     path.normalize(fixture.templateFile),
+  );
+  assert.equal(
+    await validateRememberedPath(PATH_KEYS.GROUP_TEMPLATE_FILE, fixture.groupTemplateFile),
+    path.normalize(fixture.groupTemplateFile),
   );
   assert.equal(
     await validateRememberedPath(PATH_KEYS.WATERMARK_FILE, fixture.watermarkFile),

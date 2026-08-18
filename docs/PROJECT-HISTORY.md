@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
-> Cập nhật: 2026-08-09
-> Phiên bản mã nguồn hiện tại: `1.2.5`
+> Cập nhật: 2026-08-19
+> Phiên bản mã nguồn hiện tại: `1.3.0`
 > Bản stable hiện có: `v1.2.5`
-> Trạng thái: Release v1.2.5 public/stable đã được build, tải ngược và xác minh đầy đủ.
+> Trạng thái: v1.3.0 đã hoàn tất mã nguồn và automated QA local; chưa tạo tag/GitHub Release. v1.2.5 vẫn là stable public gần nhất.
 
 ## 1. Mục đích tài liệu
 
@@ -21,7 +21,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.2.5` |
+| Phiên bản mã nguồn | `1.3.0` |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
@@ -33,7 +33,7 @@ Các tài liệu liên quan:
 | Thư mục đầu ra | `<thư mục PNG>/Done` |
 | Thư mục tài sản bổ sung | `Input` cạnh EXE; khi phát triển là `<project>/Input` |
 | File lưu đường dẫn | `<app.getPath('userData')>/path-preferences.json` |
-| File lưu vùng in | `<app.getPath('userData')>/single-mockup-regions.json` |
+| File lưu vùng in | `single-mockup-regions.json` và `group-shirt-regions.json` trong `<app.getPath('userData')>` |
 
 Không đổi `appId`, `productName` hoặc tên shortcut theo từng phiên bản. Các giá trị này phải ổn định để NSIS nhận diện đúng bản nâng cấp và để dữ liệu trong `userData` tiếp tục được sử dụng.
 
@@ -550,3 +550,23 @@ Mốc QA local ngày 2026-08-07:
 - Packaged renderer smoke trên chính `win-unpacked` đạt: API/title v1.2.5, nút và thao tác dọn state PNG/source/output hoạt động đúng.
 - Commit release `ed37630` và annotated tag v1.2.5 đã push. Windows CI `31270193124` và Release Windows `31270217854` đều success.
 - Release ID `367263645` public/stable có đúng ba asset và là `/releases/latest`. Tải ngược xác minh: installer 104.343.581 byte, SHA-256 `2EA990EAF0189AD4F304B124D251E63C03BE12C4B4629812AF5413E88ACCF214`; blockmap SHA-256 `5BC30873669A630D7DB41C86728FBD94D61E88AE75C0BAA00272B077C65DC14F`; `latest.yml` SHA-256 `6A7E5ADE5879AC84E1D23F599118E78D869B102A12DA593818B940C6F4DAB70B`, version/path/size/SHA-512 khớp installer remote.
+
+## 20. Bản v1.3.0 — Mockup Group Shirt
+
+- Bước 2 dùng hai native radio cùng tên, mặc định Bundle. Renderer chỉ hiện các phần liên quan đến mode đang chọn; chuyển mode không tự mở popup và không xóa PNG/watermark/thiết lập Bundle.
+- Grammar PNG là `<group> (<ordinal>)[.<tag>...].png`. Parser chỉ đọc tag dấu chấm ở cuối, chấp nhận thứ tự tag linh hoạt, mặc định `wh/f` và chuẩn hóa Unicode/khoảng trắng; rename luôn xuất canonical color rồi side. Ordinal là số nguyên dương theo giá trị số, vì vậy `01` và `1` là cùng logical slot trong một `(group,color,side)`.
+- Grammar nền là `<group> mkg[.wh|.bl].<đuôi ảnh thật>`. `mkg` là marker trong stem; group trước `mkg` khớp chính xác với group trước ngoặc của PNG.
+- Công cụ đổi tên chạy trong main process bằng hai phase qua file tạm cùng thư mục. Toàn batch được preflight collision; lỗi I/O rollback về tên cũ. Renderer cập nhật đồng thời path, URL, tên và selection.
+- `group-shirt-regions.json` là store độc lập: mỗi template có danh sách vùng ordered, `front/back`, tâm/rộng/cao normalized và góc `[-180, 180)`. Store ghi nguyên tử, giữ record template tạm vắng và loại riêng record hỏng; main gắn SHA-256 nội dung template nên record cũ thiếu/sai fingerprint hoặc sai kích thước không được áp dụng nhầm cho ảnh mới cùng tên.
+- Editor cho phép thêm nhiều vùng trước/sau, resize, move, rotate bằng handle riêng; có nhãn/màu/kiểu viền khác nhau. Input số, nút xoay, phím mũi tên và Shift+Arrow là phương án thay thế thao tác kéo.
+- Planner tách nguồn theo exact `(group,color,side)`, giữ thứ tự ordinal và lặp toàn bộ chuỗi nguồn qua từng template variant nhưng không lặp trong cùng một variant/page. Số trang là `max(ceil(front/capacityFront), ceil(back/capacityBack))`; trang cuối partial, không nhân bản PNG để lấp vùng.
+- Nhóm không có PNG mặt sau bỏ qua vùng sau; nguồn thiếu tag màu/mặt chỉ dùng nền áo sáng/vùng trước. Nguồn thiếu template hoặc thiếu vùng của một side đang có PNG là lỗi preflight để không âm thầm bỏ dữ liệu.
+- Pipeline Group Shirt crop alpha thật, fit contain, xoay quanh tâm vùng, ghép watermark cuối, xóa đủ sáu nhóm metadata ở bước cuối và commit collision-safe. JPEG/TIFF được auto-orient trước khi tính vùng/output; khi bỏ chọn xóa metadata, metadata nền được giữ trong khả năng PNG hỗ trợ nhưng orientation cũ không làm sai chiều output. Output dùng `group-shirt_<template-stem>_<page 3 số>.png`, thêm `_tNN` khi stem trùng và revision `_2`, `_3`, ... cho cả batch khi gặp collision. Cancel/lỗi dọn temp và rollback chỉ file do lượt hiện tại tạo.
+- Group Shirt không nhận PDF Download kể cả payload renderer bị sửa. Tạo mockup đơn vẫn dùng logic một lần/Done và chỉ lấy nguồn effective-light (`.wh` hoặc không tag màu).
+- Main cấp capability source/template theo `webContents.id`: preview, generate, rename và lưu vùng chỉ nhận đường dẫn đã đến từ picker/kéo-thả trong đúng renderer session; capability được dọn khi renderer đóng hoặc danh sách nguồn bị xóa.
+- Đường dẫn nền Group Shirt gần nhất được thêm vào `path-preferences.json`; luồng Bundle và ba đường dẫn cũ vẫn tương thích schema 1.
+- `package.json` dùng allowlist installer chỉ gồm `Input/README.txt` và `Input/Toystory HLW1.pdf`; wildcard bị cấm bằng test cấu hình để ảnh/PDF riêng trong `Input` local không lọt vào artifact. Release vẫn phải build từ checkout sạch để nội dung hai file được phép đúng bản đã track.
+- Automated suite hiện đạt **116/116** gồm 30 test engine Group Shirt, 11 integration contract v1.3.0 và toàn bộ 75 regression test cũ. `node --check` và `git diff --check` đạt.
+- Build NSIS local từ cây QA hiện tại tạo đủ ba artifact: installer 104.367.149 byte, SHA-256 `503A14125E0BED8E333BA9D6A43006A6E0CD22754B2759D257042CC0B18614D1`; blockmap 109.389 byte, SHA-256 `EE3707FBAFCDD04E99F9A11CEB097D4720942307CEDA83124ACCCB05C21A1018`; `latest.yml` 363 byte, SHA-256 `8EEFF0AB15AFBC0BB46337CF04FD6F59259CED192DB131895D71179C5495C74C`. Metadata version/path/size/SHA-512 khớp installer, `app.asar` mang version 1.3.0 và đủ bốn service Group Shirt; packaged `Input` chỉ có README/PDF mẫu. Installer **NotSigned**.
+- Electron source và packaged smoke local vẫn không khởi tạo được renderer vì GPU process của runtime Electron thoát với `0xC0000135`, kể cả smoke-only đã tắt hardware acceleration; đây là giới hạn môi trường và không được đánh dấu pass.
+- Chưa tạo commit/tag/GitHub Release tại thời điểm ghi mục này. Không stage bốn JPG riêng chưa được theo dõi trong `Input`; clean release build phải dùng source không chứa các file đó.

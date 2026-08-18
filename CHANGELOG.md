@@ -4,7 +4,36 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
-Chưa có thay đổi sau v1.2.5.
+Chưa có thay đổi sau v1.3.0.
+
+## [1.3.0] - 2026-08-19
+
+### Added
+
+- Tách luồng tạo ảnh thành hai lựa chọn loại trừ: **Mockup Bundle PNG** và **Mockup Group Shirt**.
+- Group Shirt phân tích group, số thứ tự, màu áo `.wh/.bl` và mặt áo `.f/.b`; tag input terminal có thể ở bất kỳ thứ tự nào, tên thiếu tag mặc định áo sáng/mặt trước và công cụ rename luôn ghi thứ tự canonical màu rồi mặt.
+- Chọn nhiều ảnh nền có marker `mkg` và so khớp chính xác phần tên trước `mkg` với group PNG.
+- Thêm công cụ đổi tên hàng loạt PNG trên ổ đĩa theo transaction hai phase, kiểm tra collision và rollback khi lỗi.
+- Thêm trình chỉnh nhiều vùng in mặt trước/sau trên từng nền, hỗ trợ di chuyển, resize, xoay, nhập số, phím mũi tên và lưu lâu dài.
+- Thêm planner/engine Group Shirt: crop alpha thật, trang cuối để trống vùng thiếu nguồn thay vì lặp PNG, hỗ trợ nhiều template variant, watermark lớp trên cùng, xóa metadata cuối và rollback toàn bộ batch.
+- Output Group Shirt dùng tên ổn định `group-shirt_<tên nền>_<trang>.png`, có suffix phân biệt stem trùng và revision collision-safe.
+- Thêm 41 automated tests mới cho naming, rename, planner, region store/fingerprint, compositor/metadata/EXIF Orientation, IPC capability, UI contract và version integration.
+
+### Changed
+
+- Ghi nhớ thêm đường dẫn ảnh nền Group Shirt gần nhất.
+- Group Shirt ẩn và chặn tạo PDF Download; mockup đơn chỉ lấy PNG áo sáng hoặc PNG không gắn tag màu.
+- Watermark và quy tắc xóa/giữ metadata hiện áp dụng nhất quán cho Bundle, Group Shirt và mockup đơn.
+- Nâng version ứng dụng và bộ cài lên `1.3.0`.
+
+### Security
+
+- Preview/generate/đổi tên/lưu vùng Group Shirt chỉ chấp nhận source và template đã được người dùng chọn trong đúng renderer session.
+- Installer dùng allowlist `Input/README.txt` và PDF mẫu đã track; ảnh/PDF riêng trong `Input` local không bị gom vào artifact phát hành.
+
+### Compatibility
+
+- Luồng Bundle, PDF Download, mockup đơn, watermark, metadata, kéo-thả và **Loại bỏ PNG** giữ nguyên hành vi của v1.2.5.
 
 ## [1.2.5] - 2026-08-09
 

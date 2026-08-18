@@ -5,7 +5,7 @@ Tài liệu này dùng khi chủ dự án muốn tự phát hành bản Windows 
 ## 1. Quy tắc phiên bản
 
 - `v1.2.5` đã là Release public và không được ghi đè asset hoặc di chuyển tag.
-- Bản chứa thay đổi sau v1.2.5 phải dùng `1.2.6` hoặc cao hơn.
+- Mã nguồn v1.3.0 là bản Group Shirt đang chuẩn bị phát hành. Sau khi v1.3.0 đã public, mọi thay đổi tiếp theo phải dùng `1.3.1` hoặc cao hơn.
 - Mỗi Release chỉ có đúng ba asset:
   - `PNG-Bundle-Mockup-Setup-X.Y.Z.exe`
   - `PNG-Bundle-Mockup-Setup-X.Y.Z.exe.blockmap`
@@ -20,12 +20,12 @@ Mở PowerShell tại repository:
 Set-Location D:\File2Mockup
 git pull --ff-only
 npm ci
-npm version 1.2.6 --no-git-tag-version
+npm version 1.3.1 --no-git-tag-version
 ```
 
 Sau đó:
 
-1. Tạo `docs/RELEASE-NOTES-1.2.6.md` và ghi rõ thay đổi, kết quả QA cùng giới hạn còn lại.
+1. Tạo `docs/RELEASE-NOTES-1.3.1.md` và ghi rõ thay đổi, kết quả QA cùng giới hạn còn lại.
 2. Cập nhật `CHANGELOG.md`, `README.md`, `docs/PROJECT-HISTORY.md` và `docs/REGRESSION-CHECKLIST.md` nếu cần.
 3. Kiểm tra `package.json`, `package-lock.json` và package root trong lockfile cùng mang version mới.
 
@@ -48,12 +48,21 @@ Get-ChildItem `
   ".\release\latest.yml"
 ```
 
-Lưu ý: repository hiện có thể chứa các JPG riêng chưa được Git theo dõi trong `Input`. Không dùng `git add .` hoặc `git add -A`. Chỉ stage chính xác những file mã nguồn/tài liệu đã kiểm tra, ví dụ:
+Lưu ý: repository hiện có thể chứa các JPG riêng chưa được Git theo dõi trong `Input`. Không dùng `git add .` hoặc `git add -A`. Với bản v1.3.0 hiện tại, stage chính xác các file mã nguồn/tài liệu sau:
 
 ```powershell
 git add -- package.json package-lock.json CHANGELOG.md README.md
-git add -- build/installer.nsh test/packaging-config.test.js
-git add -- docs/RELEASE-NOTES-1.2.5.md docs/PROJECT-HISTORY.md docs/REGRESSION-CHECKLIST.md
+git add -- Input/README.txt
+git add -- src/main.js src/preload.js src/services/path-preferences.js
+git add -- src/renderer/app.js src/renderer/index.html src/renderer/styles.css
+git add -- src/services/group-shirt-filenames.js src/services/group-shirt-planner.js
+git add -- src/services/group-shirt-regions.js src/services/group-shirt-service.js
+git add -- test/group-shirt-filenames.test.js test/group-shirt-planner.test.js
+git add -- test/group-shirt-regions.test.js test/group-shirt-service.test.js
+git add -- test/packaging-config.test.js test/path-preferences.test.js
+git add -- test/renderer-ui.test.js test/v130-integration.test.js
+git add -- docs/MANUAL-GITHUB-UPDATE.md docs/RELEASE-NOTES-1.3.0.md
+git add -- docs/PROJECT-HISTORY.md docs/REGRESSION-CHECKLIST.md
 git status --short
 ```
 

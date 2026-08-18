@@ -68,33 +68,107 @@
 
           <div class="selection-summary">
             <strong id="selectionCount">Đã chọn 0/0 PNG</strong>
-            <button
-              class="mini-button remove-png-button"
-              id="removePngButton"
-              type="button"
-              title="Loại bỏ toàn bộ PNG khỏi danh sách, không xóa file gốc"
-              data-lock
-            >Loại bỏ PNG</button>
+            <span class="selection-actions">
+              <button
+                class="mini-button rename-png-button is-hidden"
+                id="renamePngButton"
+                type="button"
+                title="Gắn ký hiệu màu áo và mặt áo vào tên PNG"
+                data-lock
+              >Đổi tên PNG</button>
+              <button
+                class="mini-button remove-png-button"
+                id="removePngButton"
+                type="button"
+                title="Loại bỏ toàn bộ PNG khỏi danh sách, không xóa file gốc"
+                data-lock
+              >Loại bỏ PNG</button>
+            </span>
           </div>
+          <p class="settings-note is-hidden" id="groupRenameHint">
+            Đổi tên PNG chỉ gắn hoặc thay tag màu/mặt. Nếu phần “Nhóm (số)” sai, hãy sửa tên gốc trong File Explorer rồi nạp lại.
+          </p>
+        </section>
+
+        <section class="panel-card" id="mockupModeSection">
+          <div class="section-heading compact">
+            <span class="step-number">2</span>
+            <div>
+              <h2>Chọn loại mockup</h2>
+              <p>Chỉ sử dụng một chế độ cho mỗi lần tạo.</p>
+            </div>
+          </div>
+
+          <fieldset class="mode-selector">
+            <legend class="visually-hidden">Loại mockup</legend>
+            <label class="mode-option">
+              <input id="mockupModeBundle" name="mockupMode" type="radio" value="bundle" checked data-lock />
+              <span class="mode-indicator" aria-hidden="true"></span>
+              <span class="mode-copy">
+                <strong>Mockup Bundle PNG</strong>
+                <small>Sắp xếp nhiều PNG vào một hoặc nhiều ảnh bundle.</small>
+              </span>
+            </label>
+            <label class="mode-option">
+              <input id="mockupModeGroup" name="mockupMode" type="radio" value="group-shirt" data-lock />
+              <span class="mode-indicator" aria-hidden="true"></span>
+              <span class="mode-copy">
+                <strong>Mockup Group Shirt</strong>
+                <small>Ghép theo nhóm, màu áo và mặt trước / mặt sau.</small>
+              </span>
+            </label>
+          </fieldset>
         </section>
 
         <section class="panel-card">
           <div class="section-heading compact">
-            <span class="step-number">2</span>
+            <span class="step-number">3</span>
             <div>
               <h2>Chọn ảnh nền mẫu</h2>
-              <p>PNG, JPG, WEBP hoặc TIFF.</p>
+              <p id="templateSectionHelp">PNG, JPG, WEBP hoặc TIFF.</p>
             </div>
           </div>
 
-          <button class="template-picker" id="chooseTemplateButton" data-lock>
-            <span class="template-thumb empty" id="templateThumb"><span>＋</span></span>
-            <span class="template-copy">
-              <strong id="templateName">Chọn ảnh nền mẫu</strong>
-              <small id="templateMeta">Kết quả sẽ giữ nguyên kích thước nền</small>
-            </span>
-            <span class="chevron">›</span>
-          </button>
+          <div id="bundleTemplatePanel">
+            <button class="template-picker" id="chooseTemplateButton" data-lock>
+              <span class="template-thumb empty" id="templateThumb"><span>＋</span></span>
+              <span class="template-copy">
+                <strong id="templateName">Chọn ảnh nền mẫu</strong>
+                <small id="templateMeta">Kết quả sẽ giữ nguyên kích thước nền</small>
+              </span>
+              <span class="chevron">›</span>
+            </button>
+          </div>
+
+          <div class="group-template-panel is-hidden" id="groupTemplatePanel">
+            <button class="template-picker" id="chooseGroupTemplatesButton" type="button" data-lock>
+              <span class="template-thumb empty" aria-hidden="true"><span>＋</span></span>
+              <span class="template-copy">
+                <strong>Chọn nhiều ảnh nền Group Shirt</strong>
+                <small id="groupTemplateSummary">Tên ảnh cần có marker mkg; .wh cho áo sáng, .bl cho áo tối.</small>
+              </span>
+              <span class="chevron" aria-hidden="true">›</span>
+            </button>
+            <div class="group-template-list" id="groupTemplateList" role="list" aria-live="polite">
+              <div class="group-template-empty">Chưa chọn ảnh nền Group Shirt.</div>
+            </div>
+            <div class="group-region-editor-control" id="groupRegionEditorControl">
+              <label class="check-option compact-option">
+                <input id="editGroupMockupRegions" type="checkbox" data-lock />
+                <span class="option-checkmark" aria-hidden="true"></span>
+                <span class="option-copy">
+                  <strong>Chỉnh vùng in Group Shirt</strong>
+                  <small>Thiết lập nhiều vùng mặt trước và mặt sau trên từng ảnh.</small>
+                </span>
+              </label>
+              <button class="button button-success" id="saveGroupMockupRegions" type="button" disabled data-lock>
+                Lưu vùng in
+              </button>
+            </div>
+            <p class="settings-note" id="groupRegionStatus" aria-live="polite">
+              Vùng in được lưu theo từng ảnh nền để sử dụng cho các lần sau.
+            </p>
+          </div>
 
           <div class="output-options">
             <label class="check-option">
@@ -136,20 +210,22 @@
               <button class="mini-button" id="openInputFolderButton" type="button">Mở Input</button>
             </div>
 
-            <label class="check-option">
-              <input id="createPdfDownload" type="checkbox" data-lock />
-              <span class="option-checkmark" aria-hidden="true"></span>
-              <span class="option-copy">
-                <strong>Tạo PDF Download</strong>
-                <small>Thay link trong PDF mẫu và lưu cùng thư mục Done.</small>
-              </span>
-            </label>
-            <div class="pdf-download-fields is-hidden" id="pdfDownloadFields">
-              <label class="field">
-                <span>Link tải sẽ gắn vào button và link hiển thị</span>
-                <input id="downloadUrl" type="url" inputmode="url" maxlength="2048" placeholder="https://drive.google.com/…" data-lock />
+            <div id="pdfOptionBlock">
+              <label class="check-option">
+                <input id="createPdfDownload" type="checkbox" data-lock />
+                <span class="option-checkmark" aria-hidden="true"></span>
+                <span class="option-copy">
+                  <strong>Tạo PDF Download</strong>
+                  <small>Thay link trong PDF mẫu và lưu cùng thư mục Done.</small>
+                </span>
               </label>
-              <small id="pdfTemplateSummary">Chưa tìm thấy PDF mẫu trong Input.</small>
+              <div class="pdf-download-fields is-hidden" id="pdfDownloadFields">
+                <label class="field">
+                  <span>Link tải sẽ gắn vào button và link hiển thị</span>
+                  <input id="downloadUrl" type="url" inputmode="url" maxlength="2048" placeholder="https://drive.google.com/…" data-lock />
+                </label>
+                <small id="pdfTemplateSummary">Chưa tìm thấy PDF mẫu trong Input.</small>
+              </div>
             </div>
 
             <label class="check-option">
@@ -168,63 +244,75 @@
 
         <section class="panel-card settings-card">
           <div class="section-heading compact">
-            <span class="step-number">3</span>
+            <span class="step-number">4</span>
             <div>
-              <h2>Thiết lập bố cục</h2>
-              <p>App tự tìm số hàng và cột phù hợp nhất.</p>
+              <h2 id="settingsSectionTitle">Thiết lập bố cục</h2>
+              <p id="settingsSectionHelp">App tự tìm số hàng và cột phù hợp nhất.</p>
             </div>
           </div>
 
-          <div class="field-grid">
-            <label class="field">
-              <span>Số ảnh mockup</span>
-              <input id="mockupCount" type="number" min="1" step="1" value="1" data-lock />
-            </label>
-            <label class="field">
-              <span>Khoảng cách PNG</span>
-              <div class="input-with-unit">
-                <input id="gap" type="number" min="0" max="500" step="1" value="20" data-lock />
-                <span>px</span>
-              </div>
-            </label>
+          <div id="bundleSettingsPanel">
+            <div class="field-grid">
+              <label class="field">
+                <span>Số ảnh mockup</span>
+                <input id="mockupCount" type="number" min="1" step="1" value="1" data-lock />
+              </label>
+              <label class="field">
+                <span>Khoảng cách PNG</span>
+                <div class="input-with-unit">
+                  <input id="gap" type="number" min="0" max="500" step="1" value="20" data-lock />
+                  <span>px</span>
+                </div>
+              </label>
+            </div>
+
+            <div class="distribution" id="distribution">
+              <span>Chưa có PNG để chia</span>
+            </div>
           </div>
 
-          <div class="distribution" id="distribution">
-            <span>Chưa có PNG để chia</span>
+          <div class="group-settings-panel is-hidden" id="groupSettingsPanel">
+            <div class="group-readiness-summary" id="groupReadinessSummary" role="status" aria-live="polite">
+              Chọn PNG và ảnh nền Group Shirt để kiểm tra số nhóm có thể tạo.
+            </div>
           </div>
 
           <details class="advanced-settings" id="advancedSettings">
             <summary>Thiết lập nâng cao</summary>
-            <div class="field-grid advanced-grid">
-              <label class="field">
-                <span>Lề trên</span>
-                <div class="input-with-unit">
-                  <input id="topMargin" type="number" min="0" step="1" value="195" data-lock />
-                  <span>px</span>
-                </div>
-              </label>
-              <label class="field">
-                <span>Lề dưới</span>
-                <div class="input-with-unit">
-                  <input id="bottomMargin" type="number" min="0" step="1" value="195" data-lock />
-                  <span>px</span>
-                </div>
-              </label>
-              <label class="field">
-                <span>Lề trái / phải</span>
-                <div class="input-with-unit">
-                  <input id="sideMargin" type="number" min="0" step="1" value="24" data-lock />
-                  <span>px</span>
-                </div>
-              </label>
-              <label class="field">
-                <span>Ngưỡng alpha</span>
-                <input id="alphaThreshold" type="number" min="0" max="254" step="1" value="0" data-lock />
-              </label>
+            <div id="bundleAdvancedSettingsPanel">
+              <div class="field-grid advanced-grid" id="bundleMarginSettingsPanel">
+                <label class="field">
+                  <span>Lề trên</span>
+                  <div class="input-with-unit">
+                    <input id="topMargin" type="number" min="0" step="1" value="195" data-lock />
+                    <span>px</span>
+                  </div>
+                </label>
+                <label class="field">
+                  <span>Lề dưới</span>
+                  <div class="input-with-unit">
+                    <input id="bottomMargin" type="number" min="0" step="1" value="195" data-lock />
+                    <span>px</span>
+                  </div>
+                </label>
+                <label class="field">
+                  <span>Lề trái / phải</span>
+                  <div class="input-with-unit">
+                    <input id="sideMargin" type="number" min="0" step="1" value="24" data-lock />
+                    <span>px</span>
+                  </div>
+                </label>
+              </div>
+              <div class="field-grid advanced-grid">
+                <label class="field">
+                  <span>Ngưỡng alpha</span>
+                  <input id="alphaThreshold" type="number" min="0" max="254" step="1" value="0" data-lock />
+                </label>
+              </div>
+              <p class="settings-note">
+                Alpha 0 giữ mọi pixel nhìn thấy. Tăng nhẹ nếu file có pixel mờ rác ở ngoài thiết kế.
+              </p>
             </div>
-            <p class="settings-note">
-              Alpha 0 giữ mọi pixel nhìn thấy. Tăng nhẹ nếu file có pixel mờ rác ở ngoài thiết kế.
-            </p>
             <div class="region-editor-control">
               <label class="check-option compact-option">
                 <input id="editSingleMockupRegions" type="checkbox" data-lock />
@@ -275,33 +363,86 @@
           </div>
         </div>
 
-        <div class="preview-stage" id="previewStage">
-          <div class="preview-placeholder" id="previewPlaceholder">
-            <div class="placeholder-art">
-              <span></span><span></span><span></span><span></span><span></span><span></span>
+        <div class="preview-editor-area">
+          <div class="group-region-editor-dock is-hidden" id="groupRegionTools">
+            <div class="group-region-actions" role="toolbar" aria-label="Công cụ vùng in Group Shirt">
+              <button class="mini-button front-region-button" id="addFrontRegionButton" type="button" data-lock>
+                ＋ Vùng in mặt trước
+              </button>
+              <button class="mini-button back-region-button" id="addBackRegionButton" type="button" data-lock>
+                ＋ Vùng in mặt sau
+              </button>
+              <button class="mini-button delete-region-button" id="deleteGroupRegionButton" type="button" disabled data-lock>
+                Xóa vùng đang chọn
+              </button>
             </div>
-            <h3>Chọn ảnh nền để bắt đầu</h3>
-            <p>Vùng bố trí hợp lệ và kết quả mockup sẽ hiển thị tại đây.</p>
+
+            <div class="group-region-inspector" id="groupRegionInspector" aria-labelledby="groupRegionInspectorTitle">
+              <div class="group-region-inspector-heading">
+                <strong id="groupRegionInspectorTitle">Vùng đang chọn</strong>
+                <span id="groupRegionSelectionStatus" role="status" aria-live="polite">Chưa chọn vùng in</span>
+              </div>
+              <div class="group-region-fields">
+                <label class="field compact-field">
+                  <span>Tâm X (%)</span>
+                  <input id="groupRegionX" type="number" min="0" max="100" step="0.1" disabled data-lock />
+                </label>
+                <label class="field compact-field">
+                  <span>Tâm Y (%)</span>
+                  <input id="groupRegionY" type="number" min="0" max="100" step="0.1" disabled data-lock />
+                </label>
+                <label class="field compact-field">
+                  <span>Rộng (%)</span>
+                  <input id="groupRegionWidth" type="number" min="0.1" max="100" step="0.1" disabled data-lock />
+                </label>
+                <label class="field compact-field">
+                  <span>Cao (%)</span>
+                  <input id="groupRegionHeight" type="number" min="0.1" max="100" step="0.1" disabled data-lock />
+                </label>
+                <label class="field compact-field rotation-field">
+                  <span>Góc xoay (°)</span>
+                  <input id="groupRegionRotation" type="number" min="-180" max="180" step="1" disabled data-lock />
+                </label>
+                <div class="rotation-buttons" aria-label="Xoay vùng in bằng nút">
+                  <button class="mini-button" id="rotateGroupRegionLeft" type="button" aria-label="Xoay vùng in sang trái 15 độ" disabled data-lock>↶ 15°</button>
+                  <button class="mini-button" id="rotateGroupRegionRight" type="button" aria-label="Xoay vùng in sang phải 15 độ" disabled data-lock>↷ 15°</button>
+                </div>
+              </div>
+              <small id="groupRegionInspectorHelp">
+                Kéo nút tròn ↻ riêng phía trên vùng để xoay tự do. Có thể nhập số hoặc dùng phím mũi tên để di chuyển; giữ Shift để di chuyển nhanh.
+              </small>
+            </div>
           </div>
 
-          <div class="image-frame is-hidden" id="imageFrame">
-            <img id="previewImage" alt="Xem trước mockup" />
-            <div class="safe-zone is-hidden" id="safeZone">
-              <span>Vùng sắp xếp PNG</span>
+          <div class="preview-stage" id="previewStage">
+            <div class="preview-placeholder" id="previewPlaceholder">
+              <div class="placeholder-art">
+                <span></span><span></span><span></span><span></span><span></span><span></span>
+              </div>
+              <h3>Chọn ảnh nền để bắt đầu</h3>
+              <p>Vùng bố trí hợp lệ và kết quả mockup sẽ hiển thị tại đây.</p>
             </div>
-            <div class="print-region is-hidden" id="printRegion" role="group" aria-label="Vùng in mockup đơn tỷ lệ 42 trên 48">
-              <span>Vùng in 42×48</span>
-              <i class="region-handle handle-nw" data-handle="nw"></i>
-              <i class="region-handle handle-ne" data-handle="ne"></i>
-              <i class="region-handle handle-sw" data-handle="sw"></i>
-              <i class="region-handle handle-se" data-handle="se"></i>
-            </div>
-          </div>
 
-          <div class="working-overlay is-hidden" id="workingOverlay">
-            <div class="spinner"></div>
-            <strong id="workingTitle">Đang xử lý…</strong>
-            <span id="workingMessage">Vui lòng đợi</span>
+            <div class="image-frame is-hidden" id="imageFrame">
+              <img id="previewImage" alt="Xem trước mockup" />
+              <div class="safe-zone is-hidden" id="safeZone">
+                <span>Vùng sắp xếp PNG</span>
+              </div>
+              <div class="print-region is-hidden" id="printRegion" role="group" aria-label="Vùng in mockup đơn tỷ lệ 42 trên 48">
+                <span>Vùng in 42×48</span>
+                <i class="region-handle handle-nw" data-handle="nw"></i>
+                <i class="region-handle handle-ne" data-handle="ne"></i>
+                <i class="region-handle handle-sw" data-handle="sw"></i>
+                <i class="region-handle handle-se" data-handle="se"></i>
+              </div>
+              <div class="group-region-layer is-hidden" id="regionLayer" role="group" aria-label="Các vùng in Group Shirt"></div>
+            </div>
+
+            <div class="working-overlay is-hidden" id="workingOverlay">
+              <div class="spinner"></div>
+              <strong id="workingTitle">Đang xử lý…</strong>
+              <span id="workingMessage">Vui lòng đợi</span>
+            </div>
           </div>
         </div>
 
@@ -363,6 +504,87 @@
           <div class="source-picker-actions">
             <button class="button button-secondary" id="sourcePickerCancel">Hủy</button>
             <button class="button button-primary" id="sourcePickerConfirm">Nạp 0 PNG</button>
+          </div>
+        </footer>
+      </div>
+    </dialog>
+
+    <dialog class="rename-png-dialog" id="renamePngDialog" aria-labelledby="renamePngTitle" aria-describedby="renamePngDescription">
+      <div class="rename-png-shell">
+        <header class="source-picker-header">
+          <div>
+            <span class="eyebrow">ĐẶT TÊN GROUP SHIRT</span>
+            <h2 id="renamePngTitle">Gắn ký hiệu vào tên PNG</h2>
+            <p id="renamePngDescription">Công cụ chỉ gắn hoặc thay tag màu/mặt. Phần “Nhóm (số)” phải được sửa thủ công trong File Explorer trước khi nạp lại.</p>
+          </div>
+          <button class="dialog-close" id="renamePngClose" type="button" aria-label="Đóng hộp đổi tên">×</button>
+        </header>
+
+        <div class="source-picker-tools rename-png-tools">
+          <label class="search-box source-picker-search">
+            <span aria-hidden="true">⌕</span>
+            <input id="renamePngSearch" type="search" placeholder="Tìm theo tên file…" />
+          </label>
+          <button class="mini-button" id="renamePngSelectAll" type="button">Chọn tất cả đang hiện</button>
+          <button class="mini-button" id="renamePngSelectNone" type="button">Bỏ chọn đang hiện</button>
+        </div>
+
+        <div class="rename-png-content">
+          <section class="rename-png-gallery" aria-label="PNG sẽ đổi tên">
+            <div class="rename-png-grid" id="renamePngGrid" role="listbox" aria-multiselectable="true"></div>
+          </section>
+
+          <aside class="rename-png-options">
+            <fieldset class="rename-tag-group">
+              <legend>Màu áo</legend>
+              <label class="rename-tag-option">
+                <input id="renameColorNone" name="renameColor" type="radio" value="" checked />
+                <span>Giữ nguyên tag màu</span>
+              </label>
+              <label class="rename-tag-option">
+                <input id="renameColorLight" name="renameColor" type="radio" value="wh" />
+                <span>Áo sáng màu <b>.wh</b></span>
+              </label>
+              <label class="rename-tag-option">
+                <input id="renameColorDark" name="renameColor" type="radio" value="bl" />
+                <span>Áo tối màu <b>.bl</b></span>
+              </label>
+            </fieldset>
+
+            <fieldset class="rename-tag-group">
+              <legend>Mặt áo</legend>
+              <label class="rename-tag-option">
+                <input id="renameSideNone" name="renameSide" type="radio" value="" checked />
+                <span>Giữ nguyên tag mặt áo</span>
+              </label>
+              <label class="rename-tag-option">
+                <input id="renameSideFront" name="renameSide" type="radio" value="f" />
+                <span>Mặt trước <b>.f</b></span>
+              </label>
+              <label class="rename-tag-option">
+                <input id="renameSideBack" name="renameSide" type="radio" value="b" />
+                <span>Mặt sau <b>.b</b></span>
+              </label>
+            </fieldset>
+
+            <div class="rename-preview-card">
+              <strong>Xem trước tên mới</strong>
+              <div class="rename-png-preview" id="renamePngPreview" aria-live="polite">
+                Chọn ít nhất một PNG để xem trước.
+              </div>
+            </div>
+            <p class="rename-png-error" id="renamePngError" role="alert"></p>
+          </aside>
+        </div>
+
+        <footer class="source-picker-footer">
+          <div>
+            <strong id="renamePngCount">Đã chọn 0 PNG để đổi tên</strong>
+            <span>App kiểm tra tên trùng trước khi thay đổi bất kỳ file nào.</span>
+          </div>
+          <div class="source-picker-actions">
+            <button class="button button-secondary" id="renamePngCancel" type="button">Hủy</button>
+            <button class="button button-primary" id="renamePngConfirm" type="button" disabled>Áp dụng và đổi tên</button>
           </div>
         </footer>
       </div>

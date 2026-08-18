@@ -13,12 +13,21 @@ const elements = {
   selectAllButton: document.querySelector('#selectAllButton'),
   selectNoneButton: document.querySelector('#selectNoneButton'),
   removePngButton: document.querySelector('#removePngButton'),
+  renamePngButton: document.querySelector('#renamePngButton'),
+  groupRenameHint: document.querySelector('#groupRenameHint'),
   fileList: document.querySelector('#fileList'),
   selectionCount: document.querySelector('#selectionCount'),
+  mockupModeBundle: document.querySelector('#mockupModeBundle'),
+  mockupModeGroup: document.querySelector('#mockupModeGroup'),
+  bundleTemplatePanel: document.querySelector('#bundleTemplatePanel'),
+  groupTemplatePanel: document.querySelector('#groupTemplatePanel'),
   chooseTemplateButton: document.querySelector('#chooseTemplateButton'),
   templateThumb: document.querySelector('#templateThumb'),
   templateName: document.querySelector('#templateName'),
   templateMeta: document.querySelector('#templateMeta'),
+  chooseGroupTemplatesButton: document.querySelector('#chooseGroupTemplatesButton'),
+  groupTemplateSummary: document.querySelector('#groupTemplateSummary'),
+  groupTemplateList: document.querySelector('#groupTemplateList'),
   removeMetadata: document.querySelector('#removeMetadata'),
   metadataGroups: document.querySelector('#metadataGroups'),
   useWatermark: document.querySelector('#useWatermark'),
@@ -29,6 +38,7 @@ const elements = {
   inputAssetSummary: document.querySelector('#inputAssetSummary'),
   openInputFolderButton: document.querySelector('#openInputFolderButton'),
   createPdfDownload: document.querySelector('#createPdfDownload'),
+  pdfOptionBlock: document.querySelector('#pdfOptionBlock'),
   pdfDownloadFields: document.querySelector('#pdfDownloadFields'),
   downloadUrl: document.querySelector('#downloadUrl'),
   pdfTemplateSummary: document.querySelector('#pdfTemplateSummary'),
@@ -37,6 +47,26 @@ const elements = {
   editSingleMockupRegions: document.querySelector('#editSingleMockupRegions'),
   saveSingleMockupRegions: document.querySelector('#saveSingleMockupRegions'),
   singleRegionStatus: document.querySelector('#singleRegionStatus'),
+  bundleSettingsPanel: document.querySelector('#bundleSettingsPanel'),
+  bundleMarginSettingsPanel: document.querySelector('#bundleMarginSettingsPanel'),
+  groupSettingsPanel: document.querySelector('#groupSettingsPanel'),
+  groupReadinessSummary: document.querySelector('#groupReadinessSummary'),
+  editGroupMockupRegions: document.querySelector('#editGroupMockupRegions'),
+  saveGroupMockupRegions: document.querySelector('#saveGroupMockupRegions'),
+  groupRegionTools: document.querySelector('#groupRegionTools'),
+  addFrontRegionButton: document.querySelector('#addFrontRegionButton'),
+  addBackRegionButton: document.querySelector('#addBackRegionButton'),
+  deleteGroupRegionButton: document.querySelector('#deleteGroupRegionButton'),
+  groupRegionStatus: document.querySelector('#groupRegionStatus'),
+  groupRegionInspector: document.querySelector('#groupRegionInspector'),
+  groupRegionSelectionStatus: document.querySelector('#groupRegionSelectionStatus'),
+  groupRegionX: document.querySelector('#groupRegionX'),
+  groupRegionY: document.querySelector('#groupRegionY'),
+  groupRegionWidth: document.querySelector('#groupRegionWidth'),
+  groupRegionHeight: document.querySelector('#groupRegionHeight'),
+  groupRegionRotation: document.querySelector('#groupRegionRotation'),
+  rotateGroupRegionLeft: document.querySelector('#rotateGroupRegionLeft'),
+  rotateGroupRegionRight: document.querySelector('#rotateGroupRegionRight'),
   mockupCount: document.querySelector('#mockupCount'),
   gap: document.querySelector('#gap'),
   topMargin: document.querySelector('#topMargin'),
@@ -60,6 +90,7 @@ const elements = {
   previewImage: document.querySelector('#previewImage'),
   safeZone: document.querySelector('#safeZone'),
   printRegion: document.querySelector('#printRegion'),
+  regionLayer: document.querySelector('#regionLayer'),
   workingOverlay: document.querySelector('#workingOverlay'),
   workingTitle: document.querySelector('#workingTitle'),
   workingMessage: document.querySelector('#workingMessage'),
@@ -80,6 +111,23 @@ const elements = {
   sourcePickerCount: document.querySelector('#sourcePickerCount'),
   sourcePickerCancel: document.querySelector('#sourcePickerCancel'),
   sourcePickerConfirm: document.querySelector('#sourcePickerConfirm'),
+  renamePngDialog: document.querySelector('#renamePngDialog'),
+  renamePngClose: document.querySelector('#renamePngClose'),
+  renamePngSearch: document.querySelector('#renamePngSearch'),
+  renamePngSelectAll: document.querySelector('#renamePngSelectAll'),
+  renamePngSelectNone: document.querySelector('#renamePngSelectNone'),
+  renamePngGrid: document.querySelector('#renamePngGrid'),
+  renamePngCount: document.querySelector('#renamePngCount'),
+  renameColorNone: document.querySelector('#renameColorNone'),
+  renameColorLight: document.querySelector('#renameColorLight'),
+  renameColorDark: document.querySelector('#renameColorDark'),
+  renameSideNone: document.querySelector('#renameSideNone'),
+  renameSideFront: document.querySelector('#renameSideFront'),
+  renameSideBack: document.querySelector('#renameSideBack'),
+  renamePngPreview: document.querySelector('#renamePngPreview'),
+  renamePngError: document.querySelector('#renamePngError'),
+  renamePngCancel: document.querySelector('#renamePngCancel'),
+  renamePngConfirm: document.querySelector('#renamePngConfirm'),
   resultDialog: document.querySelector('#resultDialog'),
   dialogTitle: document.querySelector('#dialogTitle'),
   dialogMessage: document.querySelector('#dialogMessage'),
@@ -113,9 +161,12 @@ const state = {
   sourceDirectories: new Set(),
   files: [],
   selected: new Set(),
+  mockupMode: 'bundle',
   template: null,
+  groupTemplates: [],
   watermark: null,
   sourcePicker: null,
+  renamePicker: null,
   folderScanning: false,
   dropScanning: false,
   busy: false,
@@ -159,7 +210,140 @@ function normalizePath(filePath) {
 }
 
 function isTemplateFile(file) {
-  return Boolean(state.template && normalizePath(file.path) === normalizePath(state.template.path));
+  const fileKey = normalizePath(file.path);
+  return Boolean(
+    (state.template && fileKey === normalizePath(state.template.path)) ||
+    state.groupTemplates.some((template) => fileKey === normalizePath(template.path))
+  );
+}
+
+function normalizeGroupKey(value) {
+  return String(value || '').normalize('NFC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-US');
+}
+
+function parseGroupSourceName(fileName) {
+  const name = String(fileName || '');
+  if (!/\.png$/i.test(name)) {
+    return { valid: false, error: 'Chỉ hỗ trợ PNG.' };
+  }
+  let baseStem = name.replace(/\.png$/i, '').trimEnd();
+  const tags = [];
+  while (true) {
+    const markerMatch = baseStem.match(/\.([a-z]{1,3})\s*$/iu);
+    if (!markerMatch || !/^(wh|bl|f|b)$/i.test(markerMatch[1])) break;
+    const marker = markerMatch[1].toLocaleLowerCase('en-US');
+    if (tags.includes(marker)) {
+      return { valid: false, error: `Tên đang lặp tag .${marker}.` };
+    }
+    tags.unshift(marker);
+    baseStem = baseStem.slice(0, markerMatch.index).trimEnd();
+  }
+  const colors = tags.filter((tag) => tag === 'wh' || tag === 'bl');
+  const sides = tags.filter((tag) => tag === 'f' || tag === 'b');
+  if (colors.length > 1 || sides.length > 1) {
+    return { valid: false, error: 'Tên có tag màu hoặc mặt áo xung đột.' };
+  }
+  const match = baseStem.match(/^(.+?)\s*\(\s*([1-9]\d*)\s*\)\s*$/u);
+  if (!match || !Number.isSafeInteger(Number(match[2]))) {
+    return { valid: false, error: 'Tên cần có dạng Nhóm (số).png.' };
+  }
+  return {
+    valid: true,
+    base: baseStem,
+    baseStem,
+    tags,
+    displayGroup: match[1].trim(),
+    groupKey: normalizeGroupKey(match[1]),
+    ordinal: Number(match[2]),
+    explicitColor: colors[0] || null,
+    explicitSide: sides[0] || null,
+    color: colors[0] || 'wh',
+    side: sides[0] || 'f',
+  };
+}
+
+function groupColorKey(groupKey, color) {
+  return `${groupKey}\u0000${color}`;
+}
+
+function groupSourceDirectory(file) {
+  return String(file?.directory || state.sourceDirectory || '').trim();
+}
+
+function analyzeGroupShirtSetup() {
+  const descriptors = groupSourceDescriptors();
+  const invalid = descriptors.filter((item) => !item.parsed.valid);
+  const sourceGroups = new Map();
+  const logicalSlots = new Map();
+  const logicalDuplicates = [];
+
+  for (const descriptor of descriptors.filter((item) => item.parsed.valid)) {
+    const { parsed } = descriptor;
+    const key = groupColorKey(parsed.groupKey, parsed.color);
+    if (!sourceGroups.has(key)) {
+      sourceGroups.set(key, {
+        key,
+        displayGroup: parsed.displayGroup,
+        groupKey: parsed.groupKey,
+        color: parsed.color,
+        front: [],
+        back: [],
+      });
+    }
+    sourceGroups.get(key)[parsed.side === 'b' ? 'back' : 'front'].push(descriptor);
+    const slot = `${key}\u0000${parsed.side}\u0000${parsed.ordinal}`;
+    if (logicalSlots.has(slot)) {
+      logicalDuplicates.push({ first: logicalSlots.get(slot), duplicate: descriptor });
+    } else {
+      logicalSlots.set(slot, descriptor);
+    }
+  }
+
+  const templatesByGroupColor = new Map();
+  for (const template of state.groupTemplates) {
+    const key = groupColorKey(template.groupKey, template.color || 'wh');
+    if (!templatesByGroupColor.has(key)) templatesByGroupColor.set(key, []);
+    templatesByGroupColor.get(key).push(template);
+  }
+  const missingTemplateGroups = [...sourceGroups.values()].filter(
+    (group) => !templatesByGroupColor.has(group.key),
+  );
+  const matchedTemplates = [];
+  const unusedTemplates = [];
+  for (const template of state.groupTemplates) {
+    const key = groupColorKey(template.groupKey, template.color || 'wh');
+    if (sourceGroups.has(key)) matchedTemplates.push(template);
+    else unusedTemplates.push(template);
+  }
+  const regionIssues = [];
+  for (const template of matchedTemplates) {
+    const key = groupColorKey(template.groupKey, template.color || 'wh');
+    const group = sourceGroups.get(key);
+    const regions = Array.isArray(template.regions) ? template.regions : [];
+    const frontCount = regions.filter((region) => region.side === 'front').length;
+    const backCount = regions.filter((region) => region.side === 'back').length;
+    if (group.front.length > 0 && frontCount === 0) {
+      regionIssues.push({ template, side: 'front', group });
+    }
+    if (group.back.length > 0 && backCount === 0) {
+      regionIssues.push({ template, side: 'back', group });
+    }
+  }
+
+  return {
+    descriptors,
+    invalid,
+    sourceGroups,
+    logicalDuplicates,
+    missingTemplateGroups,
+    matchedTemplates,
+    unusedTemplates,
+    regionIssues,
+  };
+}
+
+function groupSourceDescriptors() {
+  return selectedFiles().map((file) => ({ file, parsed: parseGroupSourceName(file.name) }));
 }
 
 function isWatermarkFile(file) {
@@ -264,7 +448,10 @@ function renderInputAssets() {
         : `Còn ${singleCount - configuredCount} ảnh chưa có vùng in.`;
   }
 
-  elements.pdfDownloadFields.classList.toggle('is-hidden', !elements.createPdfDownload.checked);
+  elements.pdfDownloadFields.classList.toggle(
+    'is-hidden',
+    state.mockupMode === 'group-shirt' || !elements.createPdfDownload.checked,
+  );
   updateControls();
 }
 
@@ -597,6 +784,15 @@ function renderFileList() {
       ? 'Không đọc được file'
       : `${file.width} × ${file.height}px · ${formatBytes(file.size)}`;
     copy.append(name, meta);
+    if (state.mockupMode === 'group-shirt' && !file.error && !template && !watermark) {
+      const parsed = parseGroupSourceName(file.name);
+      const tags = document.createElement('span');
+      tags.className = `group-file-tags${parsed.valid ? '' : ' is-invalid'}`;
+      tags.textContent = parsed.valid
+        ? `Nhóm ${parsed.displayGroup} · ${parsed.color === 'wh' ? 'áo sáng' : 'áo tối'} · ${parsed.side === 'f' ? 'mặt trước' : 'mặt sau'}`
+        : parsed.error;
+      copy.append(tags);
+    }
 
     const badge = document.createElement('span');
     badge.className = `file-badge${file.error ? ' error' : ''}`;
@@ -720,6 +916,162 @@ function closeSourcePicker() {
   if (elements.sourcePickerDialog.open) elements.sourcePickerDialog.close();
 }
 
+function renameSelectionFiles() {
+  if (!state.renamePicker) return [];
+  const query = elements.renamePngSearch.value.trim().toLocaleLowerCase();
+  return selectedFiles().filter((file) => !query || file.name.toLocaleLowerCase().includes(query));
+}
+
+function selectedRenameCategory() {
+  const color = elements.renameColorLight.checked
+    ? 'wh'
+    : elements.renameColorDark.checked ? 'bl' : null;
+  const side = elements.renameSideFront.checked
+    ? 'f'
+    : elements.renameSideBack.checked ? 'b' : null;
+  return { color, side };
+}
+
+function rewriteGroupPngName(fileName, color, side) {
+  const parsed = parseGroupSourceName(fileName);
+  if (!parsed.valid) return fileName;
+  const currentColor = parsed.explicitColor;
+  const currentSide = parsed.explicitSide;
+  const nextColor = color || currentColor;
+  const nextSide = side || currentSide;
+  return `${parsed.baseStem}${nextColor ? `.${nextColor}` : ''}${nextSide ? `.${nextSide}` : ''}.png`;
+}
+
+function renderRenamePngDialog() {
+  if (!state.renamePicker) return;
+  const saving = Boolean(state.renamePicker.saving);
+  const visible = renameSelectionFiles();
+  const { color, side } = selectedRenameCategory();
+  elements.renamePngGrid.textContent = '';
+  for (const file of visible) {
+    const checked = state.renamePicker.selected.has(file.path);
+    const tile = document.createElement('button');
+    tile.type = 'button';
+    tile.className = `rename-png-tile${checked ? ' is-selected' : ''}`;
+    tile.disabled = saving;
+    tile.setAttribute('aria-pressed', String(checked));
+    const image = document.createElement('img');
+    image.src = file.url;
+    image.alt = '';
+    const copy = document.createElement('span');
+    const name = document.createElement('strong');
+    name.textContent = file.name;
+    const next = document.createElement('small');
+    const parsed = parseGroupSourceName(file.name);
+    next.textContent = parsed.valid
+      ? rewriteGroupPngName(file.name, color, side)
+      : `Không thể đổi: ${parsed.error}`;
+    copy.append(name, next);
+    tile.append(image, copy);
+    tile.addEventListener('click', () => {
+      if (state.renamePicker?.saving) return;
+      state.renamePicker.error = '';
+      if (state.renamePicker.selected.has(file.path)) state.renamePicker.selected.delete(file.path);
+      else state.renamePicker.selected.add(file.path);
+      renderRenamePngDialog();
+    });
+    elements.renamePngGrid.append(tile);
+  }
+  const selectedFilesForRename = selectedFiles().filter((file) => state.renamePicker.selected.has(file.path));
+  elements.renamePngCount.textContent = `Đã chọn ${selectedFilesForRename.length}/${selectedFiles().length} PNG để đổi tên`;
+  elements.renamePngPreview.textContent = selectedFilesForRename.length === 0
+    ? 'Chọn ít nhất một PNG.'
+    : `Sẽ ${color ? `gắn .${color}` : 'giữ nguyên tag màu'} và ${side ? `gắn .${side}` : 'giữ nguyên tag mặt áo'} cho ${selectedFilesForRename.length} file.`;
+  const invalid = selectedFilesForRename.find((file) => !parseGroupSourceName(file.name).valid);
+  const targetNames = selectedFilesForRename.map((file) => rewriteGroupPngName(file.name, color, side).toLocaleLowerCase());
+  const duplicate = targetNames.find((name, index) => targetNames.indexOf(name) !== index);
+  const validationError = invalid
+    ? `${invalid.name}: ${parseGroupSourceName(invalid.name).error}`
+    : duplicate ? `Tên đích bị trùng: ${duplicate}` : '';
+  elements.renamePngError.textContent = state.renamePicker.error || validationError;
+  elements.renamePngConfirm.textContent = saving ? 'Đang đổi tên…' : 'Áp dụng và đổi tên';
+  elements.renamePngConfirm.disabled =
+    saving || selectedFilesForRename.length === 0 || Boolean(validationError) || (!color && !side);
+  elements.renamePngSelectAll.disabled = saving || visible.length === 0;
+  elements.renamePngSelectNone.disabled = saving || state.renamePicker.selected.size === 0;
+  elements.renamePngSearch.disabled = saving;
+  elements.renamePngCancel.disabled = saving;
+  elements.renamePngClose.disabled = saving;
+  for (const input of [
+    elements.renameColorNone,
+    elements.renameColorLight,
+    elements.renameColorDark,
+    elements.renameSideNone,
+    elements.renameSideFront,
+    elements.renameSideBack,
+  ]) input.disabled = saving;
+}
+
+function openRenamePngDialog() {
+  if (state.mockupMode !== 'group-shirt' || state.busy || state.regionEditor) return;
+  const files = selectedFiles();
+  if (files.length === 0) {
+    showError(new Error('Hãy chọn PNG trước khi đổi tên.'));
+    return;
+  }
+  state.renamePicker = {
+    selected: new Set(files.map((file) => file.path)),
+    saving: false,
+    error: '',
+  };
+  elements.renamePngSearch.value = '';
+  elements.renameColorNone.checked = true;
+  elements.renameSideNone.checked = true;
+  renderRenamePngDialog();
+  elements.renamePngDialog.showModal();
+}
+
+function closeRenamePngDialog() {
+  if (state.renamePicker?.saving) return;
+  if (elements.renamePngDialog.open) elements.renamePngDialog.close();
+}
+
+async function applyRenamePngFiles() {
+  if (!state.renamePicker || state.renamePicker.saving) return;
+  const picker = state.renamePicker;
+  const filePaths = selectedFiles()
+    .filter((file) => picker.selected.has(file.path))
+    .map((file) => file.path);
+  const { color, side } = selectedRenameCategory();
+  if (filePaths.length === 0) return;
+  if (!color && !side) {
+    showError(new Error('Hãy chọn ít nhất một tag màu áo hoặc mặt áo cần gắn.'));
+    return;
+  }
+  if (!window.confirm(`Đổi tên thật ${filePaths.length} file PNG trên máy? App sẽ kiểm tra trùng tên trước khi thay đổi.`)) return;
+  picker.saving = true;
+  picker.error = '';
+  renderRenamePngDialog();
+  try {
+    const result = unwrap(await api.renameGroupShirtPngFiles({ filePaths, color, side }));
+    const mappings = new Map((result.mappings || []).map((item) => [normalizePath(item.oldPath), item.file]));
+    state.files = state.files.map((file) => mappings.get(normalizePath(file.path)) || file);
+    state.selected = new Set([...state.selected].map((filePath) => {
+      const renamed = mappings.get(normalizePath(filePath));
+      return renamed ? renamed.path : filePath;
+    }));
+    picker.saving = false;
+    closeRenamePngDialog();
+    renderFileList();
+    updateSelectionState();
+    renderGroupReadiness();
+    showToast(`Đã đổi tên ${mappings.size} file PNG.`, 'success');
+  } catch (error) {
+    if (state.renamePicker === picker) picker.error = error.message;
+    showError(error);
+  } finally {
+    if (state.renamePicker === picker) {
+      picker.saving = false;
+      renderRenamePngDialog();
+    }
+  }
+}
+
 function commitSourcePicker() {
   if (!state.sourcePicker) return;
   const pending = state.sourcePicker;
@@ -730,8 +1082,11 @@ function commitSourcePicker() {
 
   state.sourceDirectory = pending.folderPath;
   state.sourceDirectories = new Set([pending.folderPath]);
-  state.files = chosenFiles;
-  state.selected = new Set(chosenFiles.map((file) => file.path));
+  state.files = chosenFiles.map((file) => ({
+    ...file,
+    directory: file.directory || pending.folderPath,
+  }));
+  state.selected = new Set(state.files.map((file) => file.path));
   state.output = null;
   elements.openOutputButton.classList.add('is-hidden');
   elements.sourcePath.textContent = pending.folderPath;
@@ -741,7 +1096,7 @@ function commitSourcePicker() {
   closeSourcePicker();
   renderFileList();
   updateSelectionState();
-  if (state.template) showTemplatePreview();
+  restorePreviewAfterRegionEditor(null);
   showToast(`Đã nạp ${chosenFiles.length} PNG đã chọn.`, 'success', 3400);
 }
 
@@ -817,7 +1172,7 @@ function mergeDroppedFiles(result) {
   renderSourcePathSummary();
   renderFileList();
   updateSelectionState();
-  if (state.template) showTemplatePreview();
+  restorePreviewAfterRegionEditor(null);
 
   return {
     additions,
@@ -842,6 +1197,7 @@ function clearPngFiles() {
   state.sourcePicker = null;
   state.output = null;
   state.previewLayout = null;
+  api.clearSourceAuthorization().catch(() => {});
   elements.fileSearch.value = '';
   elements.openOutputButton.classList.add('is-hidden');
   setFileDropState();
@@ -945,7 +1301,7 @@ function settingsForOverlay() {
   }
 }
 
-function validateReady({ includeAdditionalOutputs = false } = {}) {
+function validateBundleReady({ includeAdditionalOutputs = false } = {}) {
   const files = selectedFiles();
   if (!state.sourceDirectory) throw new Error('Hãy chọn thư mục chứa PNG.');
   if (files.length === 0) throw new Error('Hãy chọn ít nhất một file PNG hợp lệ.');
@@ -966,6 +1322,7 @@ function validateReady({ includeAdditionalOutputs = false } = {}) {
     throw new Error('Hãy chọn file watermark PNG nền trong suốt.');
   }
   const payload = {
+    mode: 'bundle',
     sourcePaths: files.map((file) => file.path),
     templatePath: state.template.path,
     sourceDirectory: state.sourceDirectory,
@@ -976,6 +1333,76 @@ function validateReady({ includeAdditionalOutputs = false } = {}) {
   };
   if (includeAdditionalOutputs) Object.assign(payload, readAdditionalGenerationOptions());
   return payload;
+}
+
+function validateGroupReady({ includeAdditionalOutputs = false } = {}) {
+  const files = selectedFiles();
+  if (!state.sourceDirectory) throw new Error('Hãy chọn thư mục chứa PNG.');
+  if (files.length === 0) throw new Error('Hãy chọn ít nhất một file PNG hợp lệ.');
+  const directoryEntries = files.map((file) => ({
+    file,
+    directory: groupSourceDirectory(file),
+  }));
+  const missingDirectory = directoryEntries.find((item) => !item.directory);
+  if (missingDirectory) {
+    throw new Error(`Không xác định được thư mục của ${missingDirectory.file.name}. Hãy nạp lại PNG.`);
+  }
+  const directories = new Set(directoryEntries.map((item) => normalizePath(item.directory)));
+  if (directories.size !== 1) {
+    throw new Error('Mockup Group Shirt yêu cầu các PNG nằm trong cùng một thư mục để tạo một thư mục Done rõ ràng.');
+  }
+  const selectedSourceDirectory = directoryEntries[0].directory;
+  const analysis = analyzeGroupShirtSetup();
+  if (analysis.invalid.length > 0) {
+    throw new Error(`Tên PNG chưa hợp lệ: ${analysis.invalid.slice(0, 3).map((item) => item.file.name).join(', ')}. Dùng dạng “Nhóm (số).wh.f.png” và không lặp tag.`);
+  }
+  if (analysis.logicalDuplicates.length > 0) {
+    const duplicate = analysis.logicalDuplicates[0].duplicate;
+    throw new Error(
+      `Nhóm “${duplicate.parsed.displayGroup}” có nhiều PNG trùng màu, mặt và số thứ tự ${duplicate.parsed.ordinal}.`,
+    );
+  }
+  if (state.groupTemplates.length === 0) {
+    throw new Error('Hãy chọn ít nhất một ảnh nền có marker mkg cho Mockup Group Shirt.');
+  }
+  if (analysis.missingTemplateGroups.length > 0) {
+    throw new Error(
+      `Không có ảnh nền phù hợp cho: ${analysis.missingTemplateGroups.slice(0, 3)
+        .map((group) => `${group.displayGroup}.${group.color}`).join(', ')}.`,
+    );
+  }
+  if (analysis.regionIssues.length > 0) {
+    const issue = analysis.regionIssues[0];
+    throw new Error(
+      `Ảnh nền “${issue.template.name}” chưa có vùng in mặt ${issue.side === 'front' ? 'trước' : 'sau'} cho nhóm ${issue.group.displayGroup}.${issue.group.color}.`,
+    );
+  }
+  if (elements.useWatermark.checked && !state.watermark) {
+    throw new Error('Hãy chọn file watermark PNG nền trong suốt.');
+  }
+  const settings = {
+    alphaThreshold: readInteger(elements.alphaThreshold, 'Ngưỡng alpha', 0, 254),
+  };
+  const payload = {
+    mode: 'group-shirt',
+    sourcePaths: files.map((file) => file.path),
+    sourceDirectory: selectedSourceDirectory,
+    templatePaths: state.groupTemplates.map((template) => template.path),
+    settings,
+    removeMetadata: elements.removeMetadata.checked,
+    watermarkPath: elements.useWatermark.checked ? state.watermark.path : null,
+    createPdfDownload: false,
+  };
+  if (includeAdditionalOutputs) {
+    payload.createSingleMockups = elements.createSingleMockups.checked;
+  }
+  return payload;
+}
+
+function validateReady(options = {}) {
+  return state.mockupMode === 'group-shirt'
+    ? validateGroupReady(options)
+    : validateBundleReady(options);
 }
 
 function updateDistribution() {
@@ -1015,6 +1442,7 @@ function updateSelectionState() {
   elements.selectionCount.textContent = `Đã chọn ${selected}/${valid} PNG`;
   elements.statSelected.textContent = String(selected);
   updateDistribution();
+  if (state.mockupMode === 'group-shirt') renderGroupReadiness();
   updateControls();
 }
 
@@ -1028,9 +1456,18 @@ function updateControls() {
   if (state.busy) return;
   const scanning = state.folderScanning || state.dropScanning;
   const hasFiles = selectedFiles().length > 0;
-  const ready = Boolean(state.sourceDirectory && state.template && hasFiles);
+  const groupMode = state.mockupMode === 'group-shirt';
+  const editorSaving = state.inputAssetsSaving;
+  const ready = Boolean(
+    state.sourceDirectory && hasFiles &&
+    (groupMode ? state.groupTemplates.length > 0 : state.template),
+  );
   elements.chooseFolderButton.disabled = scanning || editorActive;
+  elements.mockupModeBundle.disabled = editorSaving;
+  elements.mockupModeGroup.disabled = editorSaving;
   elements.chooseTemplateButton.disabled = editorActive;
+  elements.chooseGroupTemplatesButton.disabled = editorActive || scanning;
+  elements.renamePngButton.disabled = scanning || !hasFiles || editorActive;
   elements.watermarkFile.disabled = editorActive;
   elements.useWatermark.disabled = editorActive;
   elements.previewButton.disabled = scanning || !ready || editorActive;
@@ -1040,16 +1477,30 @@ function updateControls() {
   elements.selectNoneButton.disabled = scanning || state.selected.size === 0;
   elements.removePngButton.disabled = scanning || state.files.length === 0 || editorActive;
   elements.createPdfDownload.disabled =
-    state.inputAssetsLoading || editorActive;
+    groupMode || state.inputAssetsLoading || editorActive;
   elements.downloadUrl.disabled =
     state.inputAssetsLoading || !elements.createPdfDownload.checked || editorActive;
   elements.createSingleMockups.disabled =
     state.inputAssetsLoading || editorActive;
   elements.editSingleMockupRegions.disabled =
-    state.inputAssetsLoading || state.inputAssetsSaving;
-  elements.saveSingleMockupRegions.disabled = !editorActive || state.inputAssetsSaving;
+    state.inputAssetsLoading || state.inputAssetsSaving || (editorActive && state.regionEditor?.kind !== 'single');
+  elements.saveSingleMockupRegions.disabled =
+    state.regionEditor?.kind !== 'single' || state.inputAssetsSaving;
+  elements.editGroupMockupRegions.disabled =
+    !groupMode || state.groupTemplates.length === 0 || state.inputAssetsSaving ||
+    (editorActive && state.regionEditor?.kind !== 'group');
+  elements.saveGroupMockupRegions.disabled =
+    state.regionEditor?.kind !== 'group' || state.inputAssetsSaving;
+  elements.addFrontRegionButton.disabled =
+    state.regionEditor?.kind !== 'group' || editorSaving;
+  elements.addBackRegionButton.disabled =
+    state.regionEditor?.kind !== 'group' || editorSaving;
+  for (const row of elements.groupTemplateList.querySelectorAll('.group-template-row')) {
+    row.disabled = state.busy || editorSaving;
+  }
+  if (state.regionEditor?.kind === 'group') syncGroupRegionInspector();
   const count = Math.max(1, Number(elements.mockupCount.value) || 1);
-  elements.generateButton.textContent = `Tạo ${count} mockup`;
+  elements.generateButton.textContent = groupMode ? 'Tạo Mockup Group Shirt' : `Tạo ${count} mockup`;
 }
 
 function renderTemplateSummary() {
@@ -1074,6 +1525,176 @@ function renderTemplateSummary() {
   elements.templateName.textContent = state.template.name;
   elements.templateMeta.textContent = `${state.template.width} × ${state.template.height}px · ${formatBytes(state.template.size)}`;
   elements.statTemplate.textContent = `${state.template.width} × ${state.template.height}px`;
+}
+
+function renderGroupTemplateSummary() {
+  if (!elements.groupTemplateSummary || !elements.groupTemplateList) return;
+  const templates = state.groupTemplates;
+  elements.groupTemplateSummary.textContent = templates.length === 0
+    ? 'Chưa chọn ảnh nền có marker mkg.'
+    : `${templates.length} ảnh nền Group Shirt đã chọn.`;
+  elements.groupTemplateList.textContent = '';
+  for (const [index, template] of templates.entries()) {
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'group-template-row';
+    row.disabled = state.busy || state.inputAssetsSaving;
+    row.title = template.path;
+    const image = document.createElement('img');
+    image.src = template.url;
+    image.alt = '';
+    const copy = document.createElement('span');
+    const name = document.createElement('strong');
+    name.textContent = template.name;
+    const regions = Array.isArray(template.regions) ? template.regions : [];
+    const frontCount = regions.filter((region) => region.side === 'front').length;
+    const backCount = regions.filter((region) => region.side === 'back').length;
+    const meta = document.createElement('small');
+    meta.textContent = `Nhóm ${template.displayGroup || template.groupKey} · ${template.color === 'bl' ? 'áo tối' : 'áo sáng'} · ${frontCount} trước / ${backCount} sau`;
+    copy.append(name, meta);
+    row.append(image, copy);
+    row.addEventListener('click', () => {
+      if (state.busy || state.inputAssetsSaving) return;
+      if (state.regionEditor?.kind === 'group') {
+        showGroupRegionEditorPage(index);
+      } else if (!state.regionEditor) {
+        showGroupTemplatePreview(index);
+      }
+    });
+    elements.groupTemplateList.append(row);
+  }
+  renderGroupReadiness();
+}
+
+function renderGroupReadiness() {
+  if (!elements.groupReadinessSummary) return;
+  const analysis = analyzeGroupShirtSetup();
+  const regionCount = analysis.matchedTemplates.reduce(
+    (total, template) => total + (Array.isArray(template.regions) ? template.regions.length : 0),
+    0,
+  );
+  const diagnosticsClean =
+    analysis.descriptors.length > 0 &&
+    analysis.invalid.length === 0 &&
+    analysis.logicalDuplicates.length === 0 &&
+    state.groupTemplates.length > 0 &&
+    analysis.missingTemplateGroups.length === 0 &&
+    analysis.regionIssues.length === 0;
+  elements.groupReadinessSummary.classList.toggle(
+    'is-ready',
+    diagnosticsClean && analysis.unusedTemplates.length === 0,
+  );
+  elements.groupReadinessSummary.classList.toggle(
+    'is-warning',
+    analysis.descriptors.length > 0 &&
+      (!diagnosticsClean || analysis.unusedTemplates.length > 0),
+  );
+  if (analysis.descriptors.length === 0) {
+    elements.groupReadinessSummary.textContent = 'Chọn PNG để kiểm tra nhóm áo.';
+  } else if (analysis.invalid.length > 0) {
+    elements.groupReadinessSummary.textContent =
+      `${analysis.invalid.length} PNG sai tên hoặc tag. Hãy sửa phần tên gốc về “Nhóm (số)” trong File Explorer; Đổi tên PNG chỉ gắn hoặc thay tag màu/mặt.`;
+  } else if (analysis.logicalDuplicates.length > 0) {
+    const item = analysis.logicalDuplicates[0].duplicate.parsed;
+    elements.groupReadinessSummary.textContent =
+      `Trùng PNG logic: ${item.displayGroup}.${item.color}.${item.side}, số thứ tự ${item.ordinal}.`;
+  } else if (state.groupTemplates.length === 0) {
+    elements.groupReadinessSummary.textContent =
+      `${analysis.sourceGroups.size} nhóm–màu PNG · chưa chọn ảnh nền mkg.`;
+  } else if (analysis.missingTemplateGroups.length > 0) {
+    elements.groupReadinessSummary.textContent =
+      `Thiếu ảnh nền cho ${analysis.missingTemplateGroups.map((group) => `${group.displayGroup}.${group.color}`).join(', ')}.`;
+  } else if (analysis.regionIssues.length > 0) {
+    const issue = analysis.regionIssues[0];
+    elements.groupReadinessSummary.textContent =
+      `${issue.template.name} thiếu vùng mặt ${issue.side === 'front' ? 'trước' : 'sau'} cho ${issue.group.displayGroup}.${issue.group.color}.`;
+  } else {
+    const unusedWarning = analysis.unusedTemplates.length > 0
+      ? ` · cảnh báo: ${analysis.unusedTemplates.length} nền không khớp sẽ được bỏ qua`
+      : '';
+    elements.groupReadinessSummary.textContent =
+      `${analysis.descriptors.length} PNG · ${analysis.sourceGroups.size} nhóm–màu · ` +
+      `${analysis.matchedTemplates.length} nền khớp · ${regionCount} vùng in${unusedWarning}.`;
+  }
+}
+
+function closeActiveRegionEditorForModeChange() {
+  if (state.inputAssetsSaving) return false;
+  if (!state.regionEditor) return true;
+  if (
+    state.regionEditor.dirty &&
+    !window.confirm('Vùng in có thay đổi chưa được lưu. Bạn có chắc muốn chuyển chế độ và bỏ thay đổi?')
+  ) return false;
+  if (state.regionEditor.kind === 'group') exitGroupRegionEditor();
+  else exitRegionEditor();
+  return true;
+}
+
+function setMockupMode(mode, { initial = false } = {}) {
+  const nextMode = mode === 'group-shirt' ? 'group-shirt' : 'bundle';
+  if (!initial && nextMode === state.mockupMode) return true;
+  if (!initial && state.inputAssetsSaving) {
+    elements.mockupModeBundle.checked = state.mockupMode === 'bundle';
+    elements.mockupModeGroup.checked = state.mockupMode === 'group-shirt';
+    return false;
+  }
+  if (!initial && !closeActiveRegionEditorForModeChange()) {
+    elements.mockupModeBundle.checked = state.mockupMode === 'bundle';
+    elements.mockupModeGroup.checked = state.mockupMode === 'group-shirt';
+    return false;
+  }
+  state.mockupMode = nextMode;
+  const isGroup = nextMode === 'group-shirt';
+  elements.mockupModeBundle.checked = !isGroup;
+  elements.mockupModeGroup.checked = isGroup;
+  elements.bundleTemplatePanel.classList.toggle('is-hidden', isGroup);
+  elements.groupTemplatePanel.classList.toggle('is-hidden', !isGroup);
+  elements.bundleSettingsPanel.classList.toggle('is-hidden', isGroup);
+  elements.bundleMarginSettingsPanel.classList.toggle('is-hidden', isGroup);
+  elements.groupSettingsPanel.classList.toggle('is-hidden', !isGroup);
+  elements.pdfOptionBlock.classList.toggle('is-hidden', isGroup);
+  elements.renamePngButton.classList.toggle('is-hidden', !isGroup);
+  elements.groupRenameHint.classList.toggle('is-hidden', !isGroup);
+  elements.pdfDownloadFields.classList.toggle(
+    'is-hidden',
+    isGroup || !elements.createPdfDownload.checked,
+  );
+  state.output = null;
+  elements.openOutputButton.classList.add('is-hidden');
+  renderFileList();
+  renderGroupReadiness();
+  if (isGroup && state.groupTemplates.length > 0) showGroupTemplatePreview(0);
+  else if (!isGroup && state.template) showTemplatePreview();
+  else restorePreviewAfterRegionEditor(null);
+  updateControls();
+  return true;
+}
+
+async function selectGroupTemplates() {
+  if (state.regionEditor || state.busy) return;
+  try {
+    const result = unwrap(await api.selectGroupShirtTemplates());
+    if (result.cancelled) return;
+    state.groupTemplates = result.templates;
+    if (state.watermark && state.groupTemplates.some(
+      (template) => normalizePath(template.path) === normalizePath(state.watermark.path),
+    )) {
+      state.watermark = null;
+      elements.useWatermark.checked = false;
+      renderWatermarkSummary();
+    }
+    for (const template of state.groupTemplates) {
+      for (const selectedPath of [...state.selected]) {
+        if (normalizePath(selectedPath) === normalizePath(template.path)) state.selected.delete(selectedPath);
+      }
+    }
+    renderGroupTemplateSummary();
+    renderFileList();
+    updateSelectionState();
+    showGroupTemplatePreview(0);
+  } catch (error) {
+    showError(error);
+  }
 }
 
 function renderWatermarkSummary() {
@@ -1184,7 +1805,10 @@ function showRegionEditorPage(pageIndex) {
 }
 
 function restorePreviewAfterRegionEditor(previousView) {
-  if (previousView?.display) {
+  if (
+    previousView?.display &&
+    (!previousView.mockupMode || previousView.mockupMode === state.mockupMode)
+  ) {
     state.pageIndex = previousView.pageIndex;
     state.pageCount = previousView.pageCount;
     showImage({
@@ -1197,7 +1821,11 @@ function restorePreviewAfterRegionEditor(previousView) {
     elements.statTemplate.textContent = previousView.statTemplate;
     return;
   }
-  if (state.template) {
+  if (state.mockupMode === 'group-shirt' && state.groupTemplates.length > 0) {
+    showGroupTemplatePreview(0);
+    return;
+  }
+  if (state.mockupMode === 'bundle' && state.template) {
     showTemplatePreview();
     return;
   }
@@ -1211,6 +1839,7 @@ function restorePreviewAfterRegionEditor(previousView) {
   elements.statTemplate.textContent = '—';
   elements.safeZone.classList.add('is-hidden');
   elements.printRegion.classList.add('is-hidden');
+  elements.regionLayer?.classList.add('is-hidden');
   updatePageNavigation();
 }
 
@@ -1258,6 +1887,7 @@ async function enterRegionEditor() {
     return;
   }
   state.regionEditor = {
+    kind: 'single',
     entries: templates.map((template) => ({
       template,
       region: validPrintRegion(template.region, template)
@@ -1267,6 +1897,7 @@ async function enterRegionEditor() {
     dirty: templates.some((template) => !validPrintRegion(template.region, template)),
     drag: null,
     previousView: {
+      mockupMode: state.mockupMode,
       display: state.display ? { ...state.display } : null,
       viewMode: state.viewMode,
       pageIndex: state.pageIndex,
@@ -1407,9 +2038,437 @@ function endPrintRegionDrag(event) {
   }
 }
 
+function cloneGroupRegion(region) {
+  return {
+    id: String(region.id),
+    side: region.side === 'back' ? 'back' : 'front',
+    centerX: Number(region.centerX),
+    centerY: Number(region.centerY),
+    width: Number(region.width),
+    height: Number(region.height),
+    rotation: Number(region.rotation) || 0,
+  };
+}
+
+function defaultGroupRegion(template, side, index = 0) {
+  const pixelHeight = Math.max(24, Math.min(template.height * 0.42, template.width * 0.42 * 8 / 7));
+  const pixelWidth = pixelHeight * 7 / 8;
+  const offset = ((index % 5) - 2) * Math.min(0.06, pixelWidth / template.width / 3);
+  return {
+    id: `region-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    side,
+    centerX: Math.max(pixelWidth / template.width / 2, Math.min(1 - pixelWidth / template.width / 2, 0.5 + offset)),
+    centerY: 0.5,
+    width: pixelWidth / template.width,
+    height: pixelHeight / template.height,
+    rotation: 0,
+  };
+}
+
+function currentGroupRegionEntry() {
+  return state.regionEditor?.kind === 'group'
+    ? state.regionEditor.entries[state.pageIndex]
+    : null;
+}
+
+function currentGroupRegion() {
+  const entry = currentGroupRegionEntry();
+  return entry?.regions.find((region) => region.id === state.regionEditor.activeRegionId) || null;
+}
+
+function rotatedRegionExtents(region, template) {
+  const radians = (Number(region.rotation) || 0) * Math.PI / 180;
+  const widthPixels = region.width * template.width;
+  const heightPixels = region.height * template.height;
+  return {
+    x: (Math.abs(Math.cos(radians)) * widthPixels + Math.abs(Math.sin(radians)) * heightPixels) / template.width,
+    y: (Math.abs(Math.sin(radians)) * widthPixels + Math.abs(Math.cos(radians)) * heightPixels) / template.height,
+  };
+}
+
+function constrainGroupRegion(region, template) {
+  const next = cloneGroupRegion(region);
+  const minimumWidth = Math.min(1, 1 / template.width);
+  const minimumHeight = Math.min(1, 1 / template.height);
+  next.width = Math.max(minimumWidth, Math.min(1, next.width));
+  next.height = Math.max(minimumHeight, Math.min(1, next.height));
+  next.rotation = ((next.rotation % 360) + 540) % 360 - 180;
+  let extents = rotatedRegionExtents(next, template);
+  if (extents.x > 1 || extents.y > 1) {
+    const scale = Math.min(1 / extents.x, 1 / extents.y) * 0.999;
+    next.width *= scale;
+    next.height *= scale;
+    extents = rotatedRegionExtents(next, template);
+  }
+  next.centerX = Math.max(extents.x / 2, Math.min(1 - extents.x / 2, next.centerX));
+  next.centerY = Math.max(extents.y / 2, Math.min(1 - extents.y / 2, next.centerY));
+  return next;
+}
+
+function markGroupEditorDirty(message = null) {
+  if (state.regionEditor?.kind !== 'group') return;
+  const wasDirty = state.regionEditor.dirty;
+  state.regionEditor.dirty = true;
+  if (!wasDirty) syncEditorWindowState();
+  setGroupRegionStatus(message || 'Có thay đổi chưa lưu.');
+}
+
+function setGroupRegionStatus(message = null) {
+  const entry = currentGroupRegionEntry();
+  if (!entry || !elements.groupRegionStatus) return;
+  const front = entry.regions.filter((region) => region.side === 'front').length;
+  const back = entry.regions.filter((region) => region.side === 'back').length;
+  elements.groupRegionStatus.textContent = message ||
+    `Ảnh ${state.pageIndex + 1}/${state.regionEditor.entries.length}: ${entry.template.name} · ${front} vùng trước, ${back} vùng sau.`;
+}
+
+function syncGroupRegionInspector() {
+  const entry = currentGroupRegionEntry();
+  const region = currentGroupRegion();
+  const disabled = state.inputAssetsSaving || !entry || !region;
+  for (const input of [
+    elements.groupRegionX,
+    elements.groupRegionY,
+    elements.groupRegionWidth,
+    elements.groupRegionHeight,
+    elements.groupRegionRotation,
+  ]) input.disabled = disabled;
+  elements.deleteGroupRegionButton.disabled = disabled;
+  elements.rotateGroupRegionLeft.disabled = disabled;
+  elements.rotateGroupRegionRight.disabled = disabled;
+  if (disabled) {
+    elements.groupRegionSelectionStatus.textContent = 'Chưa chọn vùng in';
+    for (const input of [
+      elements.groupRegionX,
+      elements.groupRegionY,
+      elements.groupRegionWidth,
+      elements.groupRegionHeight,
+      elements.groupRegionRotation,
+    ]) input.value = '';
+    return;
+  }
+  elements.groupRegionSelectionStatus.textContent =
+    `Đang chọn vùng mặt ${region.side === 'front' ? 'trước' : 'sau'}`;
+  elements.groupRegionX.value = (region.centerX * 100).toFixed(2);
+  elements.groupRegionY.value = (region.centerY * 100).toFixed(2);
+  elements.groupRegionWidth.value = (region.width * 100).toFixed(2);
+  elements.groupRegionHeight.value = (region.height * 100).toFixed(2);
+  elements.groupRegionRotation.value = Number(region.rotation).toFixed(1);
+}
+
+function renderGroupRegions() {
+  if (!elements.regionLayer) return;
+  elements.regionLayer.textContent = '';
+  const entry = currentGroupRegionEntry();
+  const visible = state.viewMode === 'group-region' && Boolean(entry);
+  elements.regionLayer.classList.toggle('is-hidden', !visible);
+  if (!visible) {
+    syncGroupRegionInspector();
+    return;
+  }
+  const sideIndexes = { front: 0, back: 0 };
+  for (const region of entry.regions) {
+    sideIndexes[region.side] += 1;
+    const node = document.createElement('div');
+    node.className = `group-print-region${region.id === state.regionEditor.activeRegionId ? ' is-active' : ''}`;
+    node.dataset.regionId = region.id;
+    node.dataset.side = region.side;
+    node.tabIndex = 0;
+    node.setAttribute('role', 'button');
+    node.setAttribute('aria-label', `Vùng in mặt ${region.side === 'front' ? 'trước' : 'sau'} ${sideIndexes[region.side]}`);
+    node.style.left = `${(region.centerX - region.width / 2) * 100}%`;
+    node.style.top = `${(region.centerY - region.height / 2) * 100}%`;
+    node.style.width = `${region.width * 100}%`;
+    node.style.height = `${region.height * 100}%`;
+    node.style.transform = `rotate(${region.rotation}deg)`;
+    const label = document.createElement('span');
+    label.className = 'group-region-label';
+    label.textContent = `${region.side === 'front' ? 'Trước' : 'Sau'} ${sideIndexes[region.side]}`;
+    node.append(label);
+    for (const handle of ['nw', 'ne', 'sw', 'se']) {
+      const resize = document.createElement('i');
+      resize.className = `region-handle handle-${handle}`;
+      resize.dataset.groupHandle = handle;
+      resize.setAttribute('aria-hidden', 'true');
+      node.append(resize);
+    }
+    const rotate = document.createElement('i');
+    rotate.className = 'group-rotation-handle';
+    rotate.dataset.groupRotate = 'true';
+    rotate.setAttribute('aria-hidden', 'true');
+    node.append(rotate);
+    elements.regionLayer.append(node);
+  }
+  syncGroupRegionInspector();
+}
+
+function updateGroupRegionElement(region) {
+  const node = [...elements.regionLayer.querySelectorAll('[data-region-id]')]
+    .find((candidate) => candidate.dataset.regionId === region.id);
+  if (!node) return;
+  node.style.left = `${(region.centerX - region.width / 2) * 100}%`;
+  node.style.top = `${(region.centerY - region.height / 2) * 100}%`;
+  node.style.width = `${region.width * 100}%`;
+  node.style.height = `${region.height * 100}%`;
+  node.style.transform = `rotate(${region.rotation}deg)`;
+  syncGroupRegionInspector();
+}
+
+function showGroupRegionEditorPage(pageIndex) {
+  if (state.regionEditor?.kind !== 'group') return;
+  state.pageIndex = Math.max(0, Math.min(state.regionEditor.entries.length - 1, pageIndex));
+  state.pageCount = state.regionEditor.entries.length;
+  const entry = currentGroupRegionEntry();
+  state.regionEditor.activeRegionId = entry.regions[0]?.id || null;
+  showImage({
+    url: entry.template.url,
+    width: entry.template.width,
+    height: entry.template.height,
+    mode: 'group-region',
+    title: `Chỉnh vùng Group Shirt ${state.pageIndex + 1}/${state.pageCount} · ${entry.template.name}`,
+  });
+  elements.statTemplate.textContent = `${entry.template.width} × ${entry.template.height}px`;
+  elements.statLayout.textContent = 'Vùng trước / sau';
+  renderGroupRegions();
+  setGroupRegionStatus();
+  updateControls();
+}
+
+function enterGroupRegionEditor() {
+  if (state.busy || state.inputAssetsSaving || state.groupTemplates.length === 0) {
+    elements.editGroupMockupRegions.checked = false;
+    return;
+  }
+  state.regionEditor = {
+    kind: 'group',
+    entries: state.groupTemplates.map((template) => ({
+      template,
+      regions: (Array.isArray(template.regions) ? template.regions : [])
+        .map(cloneGroupRegion)
+        .map((region) => constrainGroupRegion(region, template)),
+    })),
+    activeRegionId: null,
+    dirty: false,
+    drag: null,
+    previousView: {
+      mockupMode: state.mockupMode,
+      display: state.display ? { ...state.display } : null,
+      viewMode: state.viewMode,
+      pageIndex: state.pageIndex,
+      pageCount: state.pageCount,
+      layout: state.previewLayout,
+      title: elements.previewTitle.textContent,
+      statLayout: elements.statLayout.textContent,
+      statTemplate: elements.statTemplate.textContent,
+    },
+  };
+  syncEditorWindowState();
+  elements.groupRegionTools.classList.remove('is-hidden');
+  elements.groupRegionInspector.classList.remove('is-hidden');
+  showGroupRegionEditorPage(0);
+}
+
+function exitGroupRegionEditor({ notifyUnsaved = false } = {}) {
+  if (state.regionEditor?.kind !== 'group' || state.inputAssetsSaving) return;
+  const previousView = state.regionEditor.previousView;
+  const dirty = state.regionEditor.dirty;
+  if (
+    notifyUnsaved && dirty &&
+    !window.confirm('Vùng Group Shirt có thay đổi chưa lưu. Bạn có chắc muốn bỏ thay đổi?')
+  ) {
+    elements.editGroupMockupRegions.checked = true;
+    return;
+  }
+  state.regionEditor = null;
+  syncEditorWindowState();
+  elements.editGroupMockupRegions.checked = false;
+  elements.groupRegionTools.classList.add('is-hidden');
+  elements.groupRegionInspector.classList.add('is-hidden');
+  elements.regionLayer.textContent = '';
+  elements.regionLayer.classList.add('is-hidden');
+  restorePreviewAfterRegionEditor(previousView);
+  renderGroupTemplateSummary();
+  updateControls();
+}
+
+function addGroupRegion(side) {
+  if (state.inputAssetsSaving) return;
+  const entry = currentGroupRegionEntry();
+  if (!entry) return;
+  const region = defaultGroupRegion(entry.template, side, entry.regions.length);
+  entry.regions.push(region);
+  state.regionEditor.activeRegionId = region.id;
+  markGroupEditorDirty();
+  renderGroupRegions();
+  setGroupRegionStatus();
+}
+
+function deleteActiveGroupRegion() {
+  if (state.inputAssetsSaving) return;
+  const entry = currentGroupRegionEntry();
+  const region = currentGroupRegion();
+  if (!entry || !region) return;
+  entry.regions = entry.regions.filter((item) => item.id !== region.id);
+  state.regionEditor.activeRegionId = entry.regions[0]?.id || null;
+  markGroupEditorDirty();
+  renderGroupRegions();
+}
+
+function selectGroupRegion(regionId) {
+  if (state.inputAssetsSaving) return;
+  const entry = currentGroupRegionEntry();
+  if (!entry?.regions.some((region) => region.id === regionId)) return;
+  state.regionEditor.activeRegionId = regionId;
+  for (const node of elements.regionLayer.querySelectorAll('[data-region-id]')) {
+    node.classList.toggle('is-active', node.dataset.regionId === regionId);
+  }
+  syncGroupRegionInspector();
+}
+
+function beginGroupRegionDrag(event) {
+  if (
+    state.regionEditor?.kind !== 'group' || state.inputAssetsSaving || event.button !== 0
+  ) return;
+  const node = event.target.closest('[data-region-id]');
+  if (!node) return;
+  selectGroupRegion(node.dataset.regionId);
+  const region = currentGroupRegion();
+  const entry = currentGroupRegionEntry();
+  const frame = elements.imageFrame.getBoundingClientRect();
+  if (!region || !entry || frame.width <= 0 || frame.height <= 0) return;
+  const mode = event.target.dataset.groupRotate
+    ? 'rotate'
+    : event.target.dataset.groupHandle ? 'resize' : 'move';
+  state.regionEditor.drag = {
+    pointerId: event.pointerId,
+    mode,
+    frame,
+    startX: event.clientX,
+    startY: event.clientY,
+    start: cloneGroupRegion(region),
+  };
+  node.setPointerCapture(event.pointerId);
+  node.classList.add('is-dragging');
+  event.preventDefault();
+}
+
+function moveGroupRegionDrag(event) {
+  if (state.inputAssetsSaving) return;
+  const editor = state.regionEditor;
+  const drag = editor?.kind === 'group' ? editor.drag : null;
+  const entry = currentGroupRegionEntry();
+  const region = currentGroupRegion();
+  if (!drag || !entry || !region || drag.pointerId !== event.pointerId) return;
+  const { frame, start } = drag;
+  let next = cloneGroupRegion(start);
+  if (drag.mode === 'move') {
+    next.centerX += (event.clientX - drag.startX) / frame.width;
+    next.centerY += (event.clientY - drag.startY) / frame.height;
+  } else if (drag.mode === 'rotate') {
+    const centerX = frame.left + start.centerX * frame.width;
+    const centerY = frame.top + start.centerY * frame.height;
+    next.rotation = Math.atan2(event.clientY - centerY, event.clientX - centerX) * 180 / Math.PI + 90;
+  } else {
+    const centerX = frame.left + start.centerX * frame.width;
+    const centerY = frame.top + start.centerY * frame.height;
+    const pixelWidth = Math.max(1, Math.abs(event.clientX - centerX) * 2 * entry.template.width / frame.width);
+    const pixelHeight = Math.max(1, Math.abs(event.clientY - centerY) * 2 * entry.template.height / frame.height);
+    next.width = pixelWidth / entry.template.width;
+    next.height = pixelHeight / entry.template.height;
+  }
+  Object.assign(region, constrainGroupRegion(next, entry.template));
+  markGroupEditorDirty();
+  updateGroupRegionElement(region);
+  event.preventDefault();
+}
+
+function endGroupRegionDrag(event) {
+  const drag = state.regionEditor?.kind === 'group' ? state.regionEditor.drag : null;
+  if (!drag || drag.pointerId !== event.pointerId) return;
+  state.regionEditor.drag = null;
+  const node = event.target.closest('[data-region-id]');
+  node?.classList.remove('is-dragging');
+  if (node?.hasPointerCapture(event.pointerId)) node.releasePointerCapture(event.pointerId);
+}
+
+function nudgeGroupRegion(deltaX, deltaY, rotationDelta = 0) {
+  if (state.inputAssetsSaving) return;
+  const entry = currentGroupRegionEntry();
+  const region = currentGroupRegion();
+  if (!entry || !region) return;
+  const next = {
+    ...region,
+    centerX: region.centerX + deltaX / entry.template.width,
+    centerY: region.centerY + deltaY / entry.template.height,
+    rotation: region.rotation + rotationDelta,
+  };
+  Object.assign(region, constrainGroupRegion(next, entry.template));
+  markGroupEditorDirty();
+  updateGroupRegionElement(region);
+}
+
+function applyGroupInspectorInput(changedInput) {
+  if (state.inputAssetsSaving) return;
+  const entry = currentGroupRegionEntry();
+  const region = currentGroupRegion();
+  if (!entry || !region) return;
+  const x = Number(elements.groupRegionX.value) / 100;
+  const y = Number(elements.groupRegionY.value) / 100;
+  const width = Number(elements.groupRegionWidth.value) / 100;
+  const height = Number(elements.groupRegionHeight.value) / 100;
+  const rotation = Number(elements.groupRegionRotation.value);
+  if (![x, y, width, height, rotation].every(Number.isFinite) || width <= 0 || height <= 0) return;
+  const next = {
+    ...region,
+    centerX: x,
+    centerY: y,
+    width,
+    height,
+    rotation,
+  };
+  Object.assign(region, constrainGroupRegion(next, entry.template));
+  markGroupEditorDirty();
+  renderGroupRegions();
+}
+
+async function saveGroupRegionEditor() {
+  if (state.regionEditor?.kind !== 'group' || state.inputAssetsSaving) return;
+  const editor = state.regionEditor;
+  state.inputAssetsSaving = true;
+  updateControls();
+  setGroupRegionStatus('Đang lưu vùng in Group Shirt…');
+  try {
+    const entries = editor.entries.map((entry) => ({
+      templatePath: entry.template.path,
+      regions: entry.regions.map(cloneGroupRegion),
+    }));
+    const result = unwrap(await api.saveGroupShirtRegions(entries));
+    state.groupTemplates = result.templates;
+    state.regionEditor = null;
+    syncEditorWindowState();
+    elements.editGroupMockupRegions.checked = false;
+    elements.groupRegionTools.classList.add('is-hidden');
+    elements.groupRegionInspector.classList.add('is-hidden');
+    elements.regionLayer.textContent = '';
+    elements.regionLayer.classList.add('is-hidden');
+    renderGroupTemplateSummary();
+    showGroupTemplatePreview(0);
+    elements.groupRegionStatus.textContent =
+      `Đã lưu vùng in cho ${entries.length} ảnh nền Group Shirt.`;
+    showToast(`Đã lưu vùng in cho ${entries.length} ảnh nền Group Shirt.`, 'success');
+  } catch (error) {
+    showError(error);
+    if (state.regionEditor === editor) setGroupRegionStatus('Chưa lưu được vùng in.');
+  } finally {
+    state.inputAssetsSaving = false;
+    updateControls();
+    updatePageNavigation();
+  }
+}
+
 function updatePageNavigation() {
   const visible = state.pageCount > 1 &&
-    (state.viewMode === 'preview' || state.viewMode === 'output' || state.viewMode === 'region');
+    ['preview', 'output', 'region', 'group-region', 'group-template'].includes(state.viewMode);
   elements.pageNavigation.classList.toggle('is-hidden', !visible);
   elements.pageLabel.textContent = `${state.pageIndex + 1} / ${state.pageCount}`;
   elements.previousPageButton.disabled =
@@ -1466,6 +2525,7 @@ function showImage({ url, width, height, mode, title, layout = null }) {
   fitImageFrame();
   updateSafeZone();
   updatePrintRegion();
+  renderGroupRegions();
   updatePageNavigation();
 }
 
@@ -1482,11 +2542,31 @@ function showTemplatePreview() {
   });
 }
 
+function showGroupTemplatePreview(pageIndex = 0) {
+  if (state.groupTemplates.length === 0) return;
+  state.pageIndex = Math.max(0, Math.min(state.groupTemplates.length - 1, pageIndex));
+  state.pageCount = state.groupTemplates.length;
+  const template = state.groupTemplates[state.pageIndex];
+  showImage({
+    url: template.url,
+    width: template.width,
+    height: template.height,
+    mode: 'group-template',
+    title: `Ảnh nền Group Shirt ${state.pageIndex + 1}/${state.pageCount} · ${template.name}`,
+  });
+  const regions = Array.isArray(template.regions) ? template.regions : [];
+  elements.statTemplate.textContent = `${template.width} × ${template.height}px`;
+  elements.statLayout.textContent = `${regions.length} vùng in`;
+}
+
 function setBusy(type, busy) {
   state.busy = busy;
   state.busyType = busy ? type : null;
   for (const element of document.querySelectorAll('[data-lock]')) {
     element.disabled = busy;
+  }
+  for (const row of elements.groupTemplateList.querySelectorAll('.group-template-row')) {
+    row.disabled = busy || state.inputAssetsSaving;
   }
   elements.openInputFolderButton.disabled = busy || state.inputAssetsLoading || state.inputAssetsSaving;
   elements.cancelButton.classList.toggle('is-hidden', !busy);
@@ -1600,6 +2680,11 @@ async function selectWatermark({ fromToggle = false } = {}) {
     ) {
       throw new Error('Watermark không được trùng với ảnh nền mẫu.');
     }
+    if (state.groupTemplates.some(
+      (template) => normalizePath(result.watermark.path) === normalizePath(template.path),
+    )) {
+      throw new Error('Watermark không được trùng với ảnh nền Group Shirt.');
+    }
     state.watermark = result.watermark;
     elements.useWatermark.checked = true;
     for (const selectedPath of [...state.selected]) {
@@ -1646,7 +2731,10 @@ async function runPreview(pageIndex = 0) {
   state.pageIndex = pageIndex;
   setBusy('preview', true);
   try {
-    const result = unwrap(await api.renderPreview({ ...payload, pageIndex }));
+    const groupMode = state.mockupMode === 'group-shirt';
+    const result = unwrap(await (groupMode
+      ? api.renderGroupShirtPreview({ ...payload, pageIndex })
+      : api.renderPreview({ ...payload, pageIndex })));
     state.pageIndex = result.pageIndex;
     state.pageCount = result.pageCount;
     showImage({
@@ -1654,11 +2742,20 @@ async function runPreview(pageIndex = 0) {
       width: result.template.width,
       height: result.template.height,
       mode: 'preview',
-      title: `Preview mockup ${result.pageIndex + 1} · ${result.groupSizes[result.pageIndex]} PNG`,
-      layout: result.layout,
+      title: groupMode
+        ? `Preview Group Shirt ${result.pageIndex + 1}/${result.pageCount} · ${result.template.name || result.group || ''}`
+        : `Preview mockup ${result.pageIndex + 1} · ${result.groupSizes[result.pageIndex]} PNG`,
+      layout: groupMode ? null : result.layout,
     });
+    elements.statTemplate.textContent =
+      `${result.template.width} × ${result.template.height}px`;
+    if (groupMode) {
+      elements.statLayout.textContent = `${result.regionCount || 0} vùng in`;
+    }
     elements.progressFill.style.width = '100%';
-    elements.progressMessage.textContent = `Preview ${result.layout.cols} cột × ${result.layout.rows} hàng`;
+    elements.progressMessage.textContent = groupMode
+      ? `Preview ${result.sourceCount || 0} PNG trên ${result.regionCount || 0} vùng in`
+      : `Preview ${result.layout.cols} cột × ${result.layout.rows} hàng`;
     setAppStatus('Preview sẵn sàng', 'ready');
   } catch (error) {
     showError(error);
@@ -1672,6 +2769,18 @@ function showOutputPage(pageIndex) {
   state.pageIndex = pageIndex;
   state.pageCount = state.output.outputFiles.length;
   const outputFile = state.output.outputFiles[pageIndex];
+  if (state.output.mode === 'group-shirt') {
+    showImage({
+      url: outputFile.url,
+      width: outputFile.width,
+      height: outputFile.height,
+      mode: 'output',
+      title: `${outputFile.name} · ${outputFile.sourceCount || 0} PNG`,
+    });
+    elements.statTemplate.textContent = `${outputFile.width} × ${outputFile.height}px`;
+    elements.statLayout.textContent = `${outputFile.regionCount || 0} vùng in`;
+    return;
+  }
   const layout = state.output.layouts[pageIndex];
   showImage({
     url: outputFile.url,
@@ -1686,7 +2795,10 @@ function showOutputPage(pageIndex) {
 async function generate() {
   let payload;
   try {
-    if (elements.createPdfDownload.checked || elements.createSingleMockups.checked) {
+    if (
+      (state.mockupMode === 'bundle' && elements.createPdfDownload.checked) ||
+      elements.createSingleMockups.checked
+    ) {
       const refreshed = await refreshInputAssets();
       if (!refreshed) return;
     }
@@ -1698,7 +2810,9 @@ async function generate() {
 
   setBusy('generate', true);
   try {
-    const result = unwrap(await api.generateMockups(payload));
+    const result = unwrap(await (state.mockupMode === 'group-shirt'
+      ? api.generateGroupShirtMockups(payload)
+      : api.generateMockups(payload)));
     state.output = result;
     state.pageCount = result.outputFiles.length;
     state.pageIndex = 0;
@@ -1712,18 +2826,35 @@ async function generate() {
     const pdfSkipped = result.pdfDownloadSkipped?.reason === 'PDF_ALREADY_EXISTS';
     const singleSkipped =
       result.singleMockupSkipped?.reason === 'SINGLE_MOCKUP_ALREADY_EXISTS';
+    const generationWarnings = [...new Set(
+      (Array.isArray(result.warnings) ? result.warnings : [])
+        .map((warning) => String(warning?.message || warning || '').trim())
+        .filter(Boolean),
+    )];
     const totalOutputCount = bundleCount + singleCount + pdfCount;
-    const outputParts = [`${bundleCount} mockup bundle`];
+    const outputParts = [state.mockupMode === 'group-shirt'
+      ? `${bundleCount} mockup Group Shirt`
+      : `${bundleCount} mockup bundle`];
     if (singleCount > 0) outputParts.push(`${singleCount} mockup đơn`);
     if (pdfCount > 0) outputParts.push('1 PDF Download');
     elements.progressMessage.textContent = `Đã lưu ${outputParts.join(', ')} vào Done` +
       (singleSkipped ? '; đã bỏ qua mockup đơn vì Done đã có mockup đơn' : '') +
-      (pdfSkipped ? '; đã bỏ qua PDF Download vì Done đã có PDF' : '');
+      (pdfSkipped ? '; đã bỏ qua PDF Download vì Done đã có PDF' : '') +
+      (generationWarnings.length > 0 ? `; có ${generationWarnings.length} cảnh báo` : '');
     setAppStatus('Hoàn tất', 'ready');
     showToast(`Đã tạo thành công ${totalOutputCount} file.`, 'success');
+    if (generationWarnings.length > 0) {
+      showToast(
+        `Hoàn tất với ${generationWarnings.length} cảnh báo: ${generationWarnings.slice(0, 2).join(' ')}`,
+        'info',
+        7800,
+      );
+    }
 
     elements.dialogTitle.textContent = `Đã tạo ${totalOutputCount} file`;
-    const completionNotes = [`Phân chia: ${result.groupSizes.join(' + ')} PNG.`];
+    const completionNotes = [state.mockupMode === 'group-shirt'
+      ? `Đã ghép ${result.assignedSourceCount || result.outputFiles.reduce((total, file) => total + (file.sourceCount || 0), 0)} lượt PNG theo nhóm, màu áo và mặt áo.`
+      : `Phân chia: ${result.groupSizes.join(' + ')} PNG.`];
     if (result.watermarkApplied) completionNotes.push(`Watermark: ${result.watermarkName}.`);
     if (singleCount > 0) completionNotes.push(`Mockup đơn: ${singleCount} file.`);
     if (singleSkipped) {
@@ -1734,6 +2865,12 @@ async function generate() {
       completionNotes.push(
         `PDF Download: đã bỏ qua vì Done đã có ${result.pdfDownloadSkipped.existingName}.`,
       );
+    }
+    if (generationWarnings.length > 0) {
+      const remainder = generationWarnings.length > 3
+        ? ` Còn ${generationWarnings.length - 3} cảnh báo khác.`
+        : '';
+      completionNotes.push(`Cảnh báo: ${generationWarnings.slice(0, 3).join(' ')}${remainder}`);
     }
     completionNotes.push(
       result.metadataRemoved
@@ -1775,6 +2912,8 @@ function navigatePage(delta) {
   const next = state.pageIndex + delta;
   if (next < 0 || next >= state.pageCount || state.busy || state.inputAssetsSaving) return;
   if (state.viewMode === 'region') showRegionEditorPage(next);
+  else if (state.viewMode === 'group-region') showGroupRegionEditorPage(next);
+  else if (state.viewMode === 'group-template') showGroupTemplatePreview(next);
   else if (state.viewMode === 'output') showOutputPage(next);
   else if (state.viewMode === 'preview') runPreview(next);
 }
@@ -1807,6 +2946,12 @@ elements.updatePrimaryButton.addEventListener('click', async () => {
   }
 });
 elements.chooseFolderButton.addEventListener('click', selectSourceFolder);
+elements.mockupModeBundle.addEventListener('change', () => {
+  if (elements.mockupModeBundle.checked) setMockupMode('bundle');
+});
+elements.mockupModeGroup.addEventListener('change', () => {
+  if (elements.mockupModeGroup.checked) setMockupMode('group-shirt');
+});
 let fileListDragDepth = 0;
 elements.fileList.addEventListener('dragenter', (event) => {
   if (!Array.from(event.dataTransfer?.types || []).includes('Files')) return;
@@ -1849,6 +2994,8 @@ window.addEventListener('drop', (event) => {
   if (!state.dropScanning) setFileDropState();
 });
 elements.chooseTemplateButton.addEventListener('click', selectTemplate);
+elements.chooseGroupTemplatesButton.addEventListener('click', selectGroupTemplates);
+elements.renamePngButton.addEventListener('click', openRenamePngDialog);
 elements.watermarkFile.addEventListener('click', () => selectWatermark());
 elements.removeMetadata.addEventListener('change', () => {
   elements.metadataGroups.classList.toggle('is-disabled', !elements.removeMetadata.checked);
@@ -1923,6 +3070,51 @@ elements.printRegion.addEventListener('lostpointercapture', (event) => {
   if (state.regionEditor?.drag?.pointerId === event.pointerId) state.regionEditor.drag = null;
   elements.printRegion.classList.remove('is-dragging');
 });
+elements.editGroupMockupRegions.addEventListener('change', () => {
+  if (elements.editGroupMockupRegions.checked) enterGroupRegionEditor();
+  else exitGroupRegionEditor({ notifyUnsaved: true });
+});
+elements.saveGroupMockupRegions.addEventListener('click', saveGroupRegionEditor);
+elements.addFrontRegionButton.addEventListener('click', () => addGroupRegion('front'));
+elements.addBackRegionButton.addEventListener('click', () => addGroupRegion('back'));
+elements.deleteGroupRegionButton.addEventListener('click', deleteActiveGroupRegion);
+elements.rotateGroupRegionLeft.addEventListener('click', () => nudgeGroupRegion(0, 0, -15));
+elements.rotateGroupRegionRight.addEventListener('click', () => nudgeGroupRegion(0, 0, 15));
+elements.regionLayer.addEventListener('pointerdown', beginGroupRegionDrag);
+elements.regionLayer.addEventListener('pointermove', moveGroupRegionDrag);
+elements.regionLayer.addEventListener('pointerup', endGroupRegionDrag);
+elements.regionLayer.addEventListener('pointercancel', endGroupRegionDrag);
+elements.regionLayer.addEventListener('focusin', (event) => {
+  const node = event.target.closest('[data-region-id]');
+  if (node) selectGroupRegion(node.dataset.regionId);
+});
+elements.regionLayer.addEventListener('lostpointercapture', (event) => {
+  if (state.regionEditor?.kind === 'group' && state.regionEditor.drag?.pointerId === event.pointerId) {
+    state.regionEditor.drag = null;
+  }
+}, true);
+elements.regionLayer.addEventListener('keydown', (event) => {
+  const node = event.target.closest('[data-region-id]');
+  if (!node) return;
+  selectGroupRegion(node.dataset.regionId);
+  const step = event.shiftKey ? 10 : 1;
+  if (event.key === 'ArrowLeft') nudgeGroupRegion(-step, 0);
+  else if (event.key === 'ArrowRight') nudgeGroupRegion(step, 0);
+  else if (event.key === 'ArrowUp') nudgeGroupRegion(0, -step);
+  else if (event.key === 'ArrowDown') nudgeGroupRegion(0, step);
+  else if (event.key === 'Delete') deleteActiveGroupRegion();
+  else return;
+  event.preventDefault();
+});
+for (const input of [
+  elements.groupRegionX,
+  elements.groupRegionY,
+  elements.groupRegionWidth,
+  elements.groupRegionHeight,
+  elements.groupRegionRotation,
+]) {
+  input.addEventListener('change', () => applyGroupInspectorInput(input));
+}
 elements.fileSearch.addEventListener('input', renderFileList);
 elements.selectAllButton.addEventListener('click', () => {
   for (const file of state.files.filter(currentFilterMatches)) {
@@ -1939,6 +3131,46 @@ elements.selectNoneButton.addEventListener('click', () => {
   updateSelectionState();
 });
 elements.removePngButton.addEventListener('click', clearPngFiles);
+elements.renamePngSearch.addEventListener('input', () => {
+  if (state.renamePicker?.saving) return;
+  if (state.renamePicker) state.renamePicker.error = '';
+  renderRenamePngDialog();
+});
+elements.renamePngSelectAll.addEventListener('click', () => {
+  if (!state.renamePicker || state.renamePicker.saving) return;
+  state.renamePicker.error = '';
+  for (const file of renameSelectionFiles()) state.renamePicker.selected.add(file.path);
+  renderRenamePngDialog();
+});
+elements.renamePngSelectNone.addEventListener('click', () => {
+  if (!state.renamePicker || state.renamePicker.saving) return;
+  state.renamePicker.error = '';
+  for (const file of renameSelectionFiles()) state.renamePicker.selected.delete(file.path);
+  renderRenamePngDialog();
+});
+for (const input of [
+  elements.renameColorNone,
+  elements.renameColorLight,
+  elements.renameColorDark,
+  elements.renameSideNone,
+  elements.renameSideFront,
+  elements.renameSideBack,
+]) input.addEventListener('change', () => {
+  if (state.renamePicker?.saving) return;
+  if (state.renamePicker) state.renamePicker.error = '';
+  renderRenamePngDialog();
+});
+elements.renamePngConfirm.addEventListener('click', applyRenamePngFiles);
+elements.renamePngCancel.addEventListener('click', closeRenamePngDialog);
+elements.renamePngClose.addEventListener('click', closeRenamePngDialog);
+elements.renamePngDialog.addEventListener('cancel', (event) => {
+  if (state.renamePicker?.saving) event.preventDefault();
+});
+elements.renamePngDialog.addEventListener('close', () => {
+  state.renamePicker = null;
+  elements.renamePngSearch.value = '';
+  window.setTimeout(() => elements.renamePngButton.focus(), 0);
+});
 elements.previewButton.addEventListener('click', () => runPreview(0));
 elements.generateButton.addEventListener('click', generate);
 elements.cancelButton.addEventListener('click', cancelCurrentJob);
@@ -1994,6 +3226,7 @@ loadPreferences();
 renderTemplateSummary();
 renderWatermarkSummary();
 renderInputAssets();
+setMockupMode('bundle', { initial: true });
 elements.metadataGroups.classList.toggle('is-disabled', !elements.removeMetadata.checked);
 renderFileList();
 updateSelectionState();

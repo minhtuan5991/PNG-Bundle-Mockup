@@ -80,5 +80,9 @@ test('nút Loại bỏ PNG xóa sạch phiên làm việc PNG nhưng giữ nguy�
   assert.match(script, /state\.output = null;[\s\S]*?renderSourcePathSummary\(\);/);
   assert.match(script, /File gốc vẫn được giữ nguyên\./);
   assert.match(script, /removePngButton\.addEventListener\('click', clearPngFiles\)/);
-  assert.doesNotMatch(clearSource, /\bapi\.|unlink|rmSync|removeItem/i);
+  assert.deepEqual(
+    [...clearSource.matchAll(/\bapi\.([A-Za-z]\w*)/g)].map((match) => match[1]),
+    ['clearSourceAuthorization'],
+  );
+  assert.doesNotMatch(clearSource, /unlink|rmSync|removeItem/i);
 });

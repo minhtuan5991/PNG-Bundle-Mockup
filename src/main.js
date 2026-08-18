@@ -5,6 +5,7 @@ const { autoUpdater } = require('electron-updater');
 const fsSync = require('node:fs');
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const { createHash } = require('node:crypto');
 const { pathToFileURL } = require('node:url');
 const {
   inspectImage,
@@ -30,12 +31,27 @@ const {
 } = require('./services/pdf-download-service');
 const {
   listSingleMockupTemplates,
+  findExistingSingleMockupOutputs,
   resolveTemplateRegions,
   generateSingleMockups,
 } = require('./services/single-mockup-service');
 const {
   createSingleMockupRegionStore,
 } = require('./services/single-mockup-regions');
+const {
+  parseGroupShirtTemplateName,
+  applyGroupShirtRenamePlan,
+} = require('./services/group-shirt-filenames');
+const {
+  createGroupShirtRegionStore,
+} = require('./services/group-shirt-regions');
+const {
+  selectLightGroupShirtSources,
+} = require('./services/group-shirt-planner');
+const {
+  renderGroupShirtPreview,
+  generateGroupShirtMockups,
+} = require('./services/group-shirt-service');
 
 const activeJobs = new Map();
 const activeMutations = new Map();
@@ -44,11 +60,14 @@ const windowsAllowedToClose = new WeakSet();
 const closeConfirmations = new Set();
 const editorWindowStates = new Map();
 const allowedShellPaths = new Set();
+const authorizedSourcePaths = new Map();
+const authorizedGroupTemplatePaths = new Map();
 let updateInstallPending = false;
 let pathPreferences = null;
 let inputDirectory = null;
 let inputBackupService = null;
 let singleMockupRegionStore = null;
+let groupShirtRegionStore = null;
 let updateService = null;
 let mainWindow = null;
 let startupUpdateTimer = null;
@@ -63,6 +82,11 @@ const smokeScroll = Number(process.env.PNG_BUNDLE_SMOKE_SCROLL || 0);
 const smokeUpdateStatus = process.env.PNG_BUNDLE_SMOKE_UPDATE || '';
 const syncInputBackupOnly = process.argv.includes('--sync-input-backup');
 const qaUserDataArgument = process.argv.find((argument) => argument.startsWith('--qa-user-data='));
+
+// CI/QA smoke runs only exercise renderer contracts. Disabling hardware
+// acceleration here keeps those checks usable on Windows hosts without a
+// working GPU process while leaving normal installed-app rendering unchanged.
+if (smokeTest) app.disableHardwareAcceleration();
 
 if (qaUserDataArgument && (smokeTest || syncInputBackupOnly)) {
   const rawQaPath = qaUserDataArgument.slice('--qa-user-data='.length);
@@ -125,6 +149,26 @@ function shellPathKey(filePath) {
 
 function allowShellPath(filePath) {
   allowedShellPaths.add(shellPathKey(filePath));
+}
+
+function replaceAuthorizedPaths(store, senderId, filePaths) {
+  store.set(senderId, new Set(filePaths.map(shellPathKey)));
+}
+
+function addAuthorizedPaths(store, senderId, filePaths) {
+  const authorized = store.get(senderId) || new Set();
+  for (const filePath of filePaths) authorized.add(shellPathKey(filePath));
+  store.set(senderId, authorized);
+}
+
+function assertAuthorizedPaths(store, senderId, filePaths, label) {
+  const authorized = store.get(senderId) || new Set();
+  const deniedPath = filePaths.find((filePath) => !authorized.has(shellPathKey(filePath)));
+  if (!deniedPath) return;
+  const error = new Error(`${label} chưa được người dùng chọn trong phiên làm việc hiện tại.`);
+  error.code = 'UNAUTHORIZED_FILE_PATH';
+  error.filePath = path.resolve(String(deniedPath));
+  throw error;
 }
 
 async function scanInputAssets() {
@@ -228,6 +272,170 @@ async function scanPngFolder(folderPath) {
   return files;
 }
 
+async function inspectPngPath(filePath) {
+  const resolvedPath = path.resolve(String(filePath));
+  const [stat, metadata] = await Promise.all([fs.stat(resolvedPath), inspectImage(resolvedPath)]);
+  if (!stat.isFile() || path.extname(resolvedPath).toLocaleLowerCase('en-US') !== '.png') {
+    const error = new Error(`“${path.basename(resolvedPath)}” không phải file PNG hợp lệ.`);
+    error.code = 'GROUP_SHIRT_SOURCE_NOT_PNG';
+    error.filePath = resolvedPath;
+    throw error;
+  }
+  return {
+    path: resolvedPath,
+    directory: path.dirname(resolvedPath),
+    url: toFileUrl(resolvedPath),
+    name: path.basename(resolvedPath),
+    size: stat.size,
+    width: metadata.autoOrient?.width || metadata.width,
+    height: metadata.autoOrient?.height || metadata.height,
+    hasAlpha: metadata.hasAlpha,
+    error: null,
+  };
+}
+
+async function inspectGroupShirtTemplatePath(filePath) {
+  const resolvedPath = path.resolve(String(filePath));
+  const parsed = parseGroupShirtTemplateName(resolvedPath);
+  const [stat, metadata, contents] = await Promise.all([
+    fs.stat(resolvedPath),
+    inspectImage(resolvedPath),
+    fs.readFile(resolvedPath),
+  ]);
+  if (!stat.isFile()) {
+    const error = new Error(`Ảnh nền “${path.basename(resolvedPath)}” không phải file.`);
+    error.code = 'INVALID_GROUP_SHIRT_TEMPLATE';
+    error.filePath = resolvedPath;
+    throw error;
+  }
+  const template = {
+    ...parsed,
+    path: resolvedPath,
+    url: toFileUrl(resolvedPath),
+    name: path.basename(resolvedPath),
+    displayGroup: parsed.group,
+    size: stat.size,
+    width: metadata.autoOrient?.width || metadata.width,
+    height: metadata.autoOrient?.height || metadata.height,
+    format: metadata.format,
+    fingerprint: createHash('sha256').update(contents).digest('hex'),
+  };
+  return {
+    ...template,
+    regions: (await groupShirtRegionStore.get(template)) || [],
+  };
+}
+
+async function inspectGroupShirtTemplatePaths(filePaths) {
+  if (!Array.isArray(filePaths) || filePaths.length === 0) {
+    throw new TypeError('Cần chọn ít nhất một ảnh nền Group Shirt.');
+  }
+  const seen = new Set();
+  const templates = [];
+  for (const filePath of filePaths) {
+    const template = await inspectGroupShirtTemplatePath(filePath);
+    const key = shellPathKey(template.path);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    templates.push(template);
+  }
+  return templates;
+}
+
+function validateGroupShirtSourcePayload(payload = {}, senderId = null) {
+  if (!Array.isArray(payload.sourcePaths) || payload.sourcePaths.length === 0) {
+    throw new TypeError('Cần chọn ít nhất một PNG Group Shirt.');
+  }
+  const sourcePaths = payload.sourcePaths.map((filePath) => {
+    if (typeof filePath !== 'string' || !path.isAbsolute(filePath)) {
+      const error = new TypeError('Đường dẫn PNG Group Shirt phải là đường dẫn tuyệt đối.');
+      error.code = 'INVALID_GROUP_SHIRT_SOURCE_PATH';
+      throw error;
+    }
+    const resolvedPath = path.resolve(filePath);
+    if (path.extname(resolvedPath).toLocaleLowerCase('en-US') !== '.png') {
+      const error = new TypeError(`“${path.basename(resolvedPath)}” không phải PNG.`);
+      error.code = 'GROUP_SHIRT_SOURCE_NOT_PNG';
+      throw error;
+    }
+    return resolvedPath;
+  });
+  if (senderId !== null) {
+    assertAuthorizedPaths(
+      authorizedSourcePaths,
+      senderId,
+      sourcePaths,
+      'PNG Group Shirt',
+    );
+  }
+  const directoryKeys = new Set(sourcePaths.map((filePath) => shellPathKey(path.dirname(filePath))));
+  if (directoryKeys.size !== 1) {
+    const error = new Error('Tất cả PNG Group Shirt phải nằm trong cùng một thư mục.');
+    error.code = 'GROUP_SHIRT_MULTIPLE_SOURCE_DIRECTORIES';
+    throw error;
+  }
+  const sourceDirectory = path.dirname(sourcePaths[0]);
+  if (
+    typeof payload.sourceDirectory !== 'string' ||
+    shellPathKey(payload.sourceDirectory) !== shellPathKey(sourceDirectory)
+  ) {
+    const error = new Error('Thư mục nguồn Group Shirt không khớp với các PNG đã chọn.');
+    error.code = 'GROUP_SHIRT_SOURCE_DIRECTORY_MISMATCH';
+    throw error;
+  }
+  return { sourcePaths, sourceDirectory };
+}
+
+function validateAuthorizedGroupTemplatePaths(filePaths, senderId) {
+  if (!Array.isArray(filePaths) || filePaths.length === 0) {
+    throw new TypeError('Cần chọn ít nhất một ảnh nền Group Shirt.');
+  }
+  const resolvedPaths = filePaths.map((filePath) => {
+    if (typeof filePath !== 'string' || !path.isAbsolute(filePath)) {
+      const error = new TypeError(
+        'Đường dẫn ảnh nền Group Shirt phải là đường dẫn tuyệt đối.',
+      );
+      error.code = 'INVALID_GROUP_SHIRT_TEMPLATE_PATH';
+      throw error;
+    }
+    return path.resolve(filePath);
+  });
+  assertAuthorizedPaths(
+    authorizedGroupTemplatePaths,
+    senderId,
+    resolvedPaths,
+    'Ảnh nền Group Shirt',
+  );
+  return resolvedPaths;
+}
+
+async function preflightGroupSingleMockupSources(options = {}) {
+  const { sourcePaths, sourceDirectory, isCancelled } = options;
+  if (typeof isCancelled === 'function' && isCancelled()) {
+    throw new GenerationCancelledError();
+  }
+  const lightSources = selectLightGroupShirtSources(sourcePaths).map((source) => source.path);
+  if (lightSources.length > 0) return lightSources;
+
+  const existingPaths = await findExistingSingleMockupOutputs(
+    path.join(sourceDirectory, 'Done'),
+  );
+  if (typeof isCancelled === 'function' && isCancelled()) {
+    throw new GenerationCancelledError();
+  }
+  if (existingPaths.length > 0) {
+    // generateSingleMockups performs the authoritative Done check again and
+    // skips before validating this intentionally-empty source list.
+    return [];
+  }
+
+  const error = new Error(
+    'Tạo mockup đơn trong chế độ Group Shirt cần ít nhất một PNG áo sáng màu (.wh hoặc không có tag màu).',
+  );
+  error.code = 'NO_LIGHT_SINGLE_MOCKUP_SOURCES';
+  throw error;
+}
+
 function createWindow() {
   const displayName = `PNG Bundle Mockup v${app.getVersion()}`;
   const window = new BrowserWindow({
@@ -321,6 +529,27 @@ function createWindow() {
             dropApi: typeof window.bundleApi?.inspectDroppedPngFiles === 'function' && typeof window.bundleApi?.getDroppedFilePath === 'function',
             inputApi: typeof window.bundleApi?.getInputAssets === 'function' && typeof window.bundleApi?.saveSingleMockupRegions === 'function',
             v121Controls: Boolean(document.querySelector('#createPdfDownload') && document.querySelector('#downloadUrl') && document.querySelector('#createSingleMockups') && document.querySelector('#editSingleMockupRegions')),
+            v130Api: typeof window.bundleApi?.selectGroupShirtTemplates === 'function' && typeof window.bundleApi?.renameGroupShirtPngFiles === 'function' && typeof window.bundleApi?.saveGroupShirtRegions === 'function' && typeof window.bundleApi?.renderGroupShirtPreview === 'function' && typeof window.bundleApi?.generateGroupShirtMockups === 'function',
+            v130Controls: Boolean(document.querySelector('#mockupModeBundle') && document.querySelector('#mockupModeGroup') && document.querySelector('#chooseGroupTemplatesButton') && document.querySelector('#renamePngButton') && document.querySelector('#addFrontRegionButton') && document.querySelector('#addBackRegionButton')),
+            v130ModeSwitch: (() => {
+              const bundle = document.querySelector('#mockupModeBundle');
+              const group = document.querySelector('#mockupModeGroup');
+              const bundlePanel = document.querySelector('#bundleTemplatePanel');
+              const groupPanel = document.querySelector('#groupTemplatePanel');
+              const pdfBlock = document.querySelector('#pdfOptionBlock');
+              if (!bundle || !group || !bundlePanel || !groupPanel || !pdfBlock) return false;
+              group.click();
+              const groupVisible = group.checked && !bundle.checked &&
+                bundlePanel.classList.contains('is-hidden') &&
+                !groupPanel.classList.contains('is-hidden') &&
+                pdfBlock.classList.contains('is-hidden');
+              bundle.click();
+              const bundleVisible = bundle.checked && !group.checked &&
+                !bundlePanel.classList.contains('is-hidden') &&
+                groupPanel.classList.contains('is-hidden') &&
+                !pdfBlock.classList.contains('is-hidden');
+              return groupVisible && bundleVisible;
+            })(),
             updateApi: typeof window.bundleApi?.checkForUpdates === 'function' && typeof window.bundleApi?.onUpdateStatus === 'function',
             updateUi: Boolean(document.querySelector('#checkUpdateButton') && document.querySelector('#updateDialog')),
             version: document.title === '${displayName}',
@@ -376,6 +605,8 @@ function createWindow() {
     const job = activeJobs.get(key);
     if (job) job.cancelled = true;
     editorWindowStates.delete(key);
+    authorizedSourcePaths.delete(key);
+    authorizedGroupTemplatePaths.delete(key);
   });
   window.on('close', (event) => {
     const key = windowWebContentsId;
@@ -398,6 +629,8 @@ function createWindow() {
     deferredCloseWindows.delete(key);
     closeConfirmations.delete(key);
     editorWindowStates.delete(key);
+    authorizedSourcePaths.delete(key);
+    authorizedGroupTemplatePaths.delete(key);
     if (mainWindow === window) mainWindow = null;
   });
   return window;
@@ -417,7 +650,7 @@ function confirmDiscardEditorChanges(key, window) {
   dialog.showMessageBox(window, {
     type: 'warning',
     title: 'Vùng in chưa được lưu',
-    message: 'Bạn có thay đổi vùng in mockup đơn chưa được lưu.',
+    message: 'Bạn có thay đổi vùng in chưa được lưu.',
     detail: 'Thoát lúc này sẽ bỏ các thay đổi đó.',
     buttons: ['Tiếp tục chỉnh sửa', 'Thoát không lưu'],
     defaultId: 0,
@@ -462,7 +695,7 @@ function beginJob(event, type) {
     error.code = 'APP_CLOSING';
     throw error;
   }
-  if (activeJobs.has(key)) {
+  if (activeJobs.has(key) || activeMutations.has(key)) {
     const error = new Error('Một thao tác khác đang chạy. Hãy đợi thao tác đó hoàn tất.');
     error.code = 'JOB_ALREADY_RUNNING';
     throw error;
@@ -485,10 +718,15 @@ function beginMutation(event, options = {}) {
   const key = event.sender.id;
   if (
     deferredCloseWindows.has(key) ||
-    (updateInstallPending && options.allowDuringUpdateInstall !== true)
+    (updateInstallPending && options.allowDuringUpdateInstall !== true) ||
+    activeJobs.has(key)
   ) {
-    const error = new Error('Ứng dụng đang chuẩn bị đóng hoặc cài cập nhật. Không thể ghi dữ liệu mới.');
-    error.code = 'APP_CLOSING';
+    const error = new Error(
+      activeJobs.has(key)
+        ? 'Hãy chờ tác vụ tạo ảnh hiện tại hoàn tất trước khi thay đổi dữ liệu.'
+        : 'Ứng dụng đang chuẩn bị đóng hoặc cài cập nhật. Không thể ghi dữ liệu mới.',
+    );
+    error.code = activeJobs.has(key) ? 'JOB_ALREADY_RUNNING' : 'APP_CLOSING';
     throw error;
   }
   activeMutations.set(key, (activeMutations.get(key) || 0) + 1);
@@ -576,6 +814,11 @@ function registerIpc() {
       if (result.canceled || result.filePaths.length === 0) return { cancelled: true };
       const folderPath = result.filePaths[0];
       const files = await scanPngFolder(folderPath);
+      replaceAuthorizedPaths(
+        authorizedSourcePaths,
+        event.sender.id,
+        files.map((file) => file.path),
+      );
       await rememberPath(PATH_KEYS.SOURCE_FOLDER, folderPath);
       return {
         cancelled: false,
@@ -585,8 +828,78 @@ function registerIpc() {
     }),
   );
 
-  ipcMain.handle('source:inspect-dropped-png-files', (_event, filePaths) =>
-    safeCall(() => inspectDroppedPngFiles(filePaths, { inspectImage })),
+  ipcMain.handle('source:inspect-dropped-png-files', (event, filePaths) =>
+    safeCall(async () => {
+      const result = await inspectDroppedPngFiles(filePaths, { inspectImage });
+      addAuthorizedPaths(
+        authorizedSourcePaths,
+        event.sender.id,
+        result.files.map((file) => file.path),
+      );
+      return result;
+    }),
+  );
+
+  ipcMain.handle('source:clear-authorization', (event) =>
+    safeCall(async () => {
+      authorizedSourcePaths.delete(event.sender.id);
+      return { cleared: true };
+    }),
+  );
+
+  ipcMain.handle('source:rename-group-shirt-png-files', (event, payload = {}) =>
+    safeCall(async () => {
+      const mutation = beginMutation(event);
+      try {
+        if (!Array.isArray(payload.filePaths) || payload.filePaths.length === 0) {
+          throw new TypeError('Hãy chọn ít nhất một PNG để đổi tên.');
+        }
+        assertAuthorizedPaths(
+          authorizedSourcePaths,
+          event.sender.id,
+          payload.filePaths,
+          'PNG cần đổi tên',
+        );
+        const beforeByPath = new Map();
+        for (const filePath of payload.filePaths) {
+          const inspected = await inspectPngPath(filePath);
+          beforeByPath.set(shellPathKey(filePath), inspected);
+        }
+        const operations = payload.filePaths.map((filePath) => ({
+          path: filePath,
+          color: payload.color || null,
+          side: payload.side || null,
+        }));
+        const renamed = await applyGroupShirtRenamePlan(operations);
+        const mappings = [];
+        for (const item of renamed.renamed) {
+          const before = beforeByPath.get(shellPathKey(item.from));
+          const file = {
+            ...before,
+            path: item.to,
+            directory: path.dirname(item.to),
+            url: toFileUrl(item.to),
+            name: path.basename(item.to),
+          };
+          mappings.push({ oldPath: item.from, file });
+        }
+        for (const item of renamed.unchanged) {
+          mappings.push({
+            oldPath: item.path,
+            file: beforeByPath.get(shellPathKey(item.path)),
+          });
+        }
+        const authorized = authorizedSourcePaths.get(event.sender.id) || new Set();
+        for (const mapping of mappings) {
+          authorized.delete(shellPathKey(mapping.oldPath));
+          authorized.add(shellPathKey(mapping.file.path));
+        }
+        authorizedSourcePaths.set(event.sender.id, authorized);
+        return { mappings };
+      } finally {
+        mutation.finish();
+      }
+    }),
   );
 
   ipcMain.handle('input:get-assets', (event) =>
@@ -632,6 +945,39 @@ function registerIpc() {
     }),
   );
 
+  ipcMain.handle('group-shirt:save-regions', (event, entries) =>
+    safeCall(async () => {
+      const mutation = beginMutation(event);
+      try {
+        if (!Array.isArray(entries) || entries.length === 0) {
+          throw new TypeError('Danh sách vùng in Group Shirt không hợp lệ.');
+        }
+        const templatePaths = entries.map((entry) => entry?.templatePath);
+        assertAuthorizedPaths(
+          authorizedGroupTemplatePaths,
+          event.sender.id,
+          templatePaths,
+          'Ảnh nền Group Shirt',
+        );
+        const safeEntries = [];
+        for (const entry of entries) {
+          const template = await inspectGroupShirtTemplatePath(entry?.templatePath);
+          safeEntries.push({ template, regions: entry?.regions });
+        }
+        await groupShirtRegionStore.replaceAll(safeEntries);
+        const templates = await Promise.all(safeEntries.map(async (entry) => ({
+          ...entry.template,
+          regions: (await groupShirtRegionStore.get(entry.template)) || [],
+        })));
+        const editorState = editorWindowStates.get(event.sender.id);
+        if (editorState) editorWindowStates.set(event.sender.id, { ...editorState, dirty: false });
+        return { templates };
+      } finally {
+        mutation.finish();
+      }
+    }),
+  );
+
   ipcMain.handle('dialog:select-template', (event) =>
     safeCall(async () => {
       const owner = BrowserWindow.fromWebContents(event.sender);
@@ -661,6 +1007,31 @@ function registerIpc() {
           format: metadata.format,
         },
       };
+    }),
+  );
+
+  ipcMain.handle('dialog:select-group-shirt-templates', (event) =>
+    safeCall(async () => {
+      const owner = BrowserWindow.fromWebContents(event.sender);
+      const defaultPath = await getRememberedDialogPath(PATH_KEYS.GROUP_TEMPLATE_FILE);
+      const result = await dialog.showOpenDialog(owner, {
+        title: 'Chọn ảnh nền Mockup Group Shirt',
+        properties: ['openFile', 'multiSelections'],
+        ...(defaultPath ? { defaultPath } : {}),
+        filters: [
+          { name: 'Ảnh nền mkg', extensions: ['png', 'jpg', 'jpeg', 'webp', 'tif', 'tiff'] },
+          { name: 'Tất cả file', extensions: ['*'] },
+        ],
+      });
+      if (result.canceled || result.filePaths.length === 0) return { cancelled: true };
+      const templates = await inspectGroupShirtTemplatePaths(result.filePaths);
+      replaceAuthorizedPaths(
+        authorizedGroupTemplatePaths,
+        event.sender.id,
+        templates.map((template) => template.path),
+      );
+      await rememberPath(PATH_KEYS.GROUP_TEMPLATE_FILE, result.filePaths[0]);
+      return { cancelled: false, templates };
     }),
   );
 
@@ -697,6 +1068,11 @@ function registerIpc() {
 
   ipcMain.handle('preview:render', (event, payload) =>
     safeCall(async () => {
+      if (payload?.mode && payload.mode !== 'bundle') {
+        const error = new Error('Hãy dùng luồng preview Mockup Group Shirt cho chế độ đã chọn.');
+        error.code = 'INVALID_MOCKUP_MODE';
+        throw error;
+      }
       const jobControl = beginJob(event, 'preview');
       try {
         const result = await renderPreview({
@@ -715,8 +1091,169 @@ function registerIpc() {
     }),
   );
 
+  ipcMain.handle('group-shirt:preview', (event, payload = {}) =>
+    safeCall(async () => {
+      if (payload?.mode && payload.mode !== 'group-shirt') {
+        const error = new Error('Sai chế độ preview Mockup Group Shirt.');
+        error.code = 'INVALID_MOCKUP_MODE';
+        throw error;
+      }
+      const jobControl = beginJob(event, 'preview');
+      try {
+        const { sourcePaths, sourceDirectory } = validateGroupShirtSourcePayload(
+          payload,
+          event.sender.id,
+        );
+        const templatePaths = validateAuthorizedGroupTemplatePaths(
+          payload.templatePaths,
+          event.sender.id,
+        );
+        const templates = await inspectGroupShirtTemplatePaths(templatePaths);
+        const result = await renderGroupShirtPreview({
+          sourcePaths,
+          sourceDirectory,
+          templates,
+          settings: payload.settings,
+          watermarkPath: payload.watermarkPath || null,
+          pageIndex: payload.pageIndex,
+          isCancelled: () => jobControl.job.cancelled,
+          onProgress: jobControl.sendProgress,
+        });
+        const activeTemplate = templates.find(
+          (template) => shellPathKey(template.path) === shellPathKey(result.template.path),
+        );
+        return {
+          ...result,
+          buffer: undefined,
+          dataUrl: `data:image/png;base64,${result.buffer.toString('base64')}`,
+          sourceCount: result.assignmentCount,
+          regionCount: activeTemplate?.regions.length || result.assignmentCount,
+        };
+      } finally {
+        jobControl.finish();
+      }
+    }),
+  );
+
+  ipcMain.handle('group-shirt:generate', (event, payload = {}) =>
+    safeCall(async () => {
+      if (payload?.mode && payload.mode !== 'group-shirt') {
+        const error = new Error('Sai chế độ tạo Mockup Group Shirt.');
+        error.code = 'INVALID_MOCKUP_MODE';
+        throw error;
+      }
+      if (payload?.createPdfDownload === true) {
+        const error = new Error('Mockup Group Shirt không hỗ trợ tạo PDF Download.');
+        error.code = 'UNSUPPORTED_OPTION_FOR_MODE';
+        throw error;
+      }
+      const jobControl = beginJob(event, 'generate');
+      const createdPaths = [];
+      try {
+        const { sourcePaths, sourceDirectory } = validateGroupShirtSourcePayload(
+          payload,
+          event.sender.id,
+        );
+        const templatePaths = validateAuthorizedGroupTemplatePaths(
+          payload.templatePaths,
+          event.sender.id,
+        );
+        const createSingleMockups = payload?.createSingleMockups === true;
+        const lightSources = createSingleMockups
+          ? await preflightGroupSingleMockupSources({
+              sourcePaths,
+              sourceDirectory,
+              isCancelled: () => jobControl.job.cancelled,
+            })
+          : null;
+        const templates = await inspectGroupShirtTemplatePaths(templatePaths);
+        if (createSingleMockups && inputBackupService) await inputBackupService.synchronize();
+        const groupEnd = createSingleMockups ? 0.78 : 1;
+        const result = await generateGroupShirtMockups({
+          sourcePaths,
+          sourceDirectory,
+          templates,
+          settings: payload.settings,
+          watermarkPath: payload.watermarkPath || null,
+          removeMetadata: payload.removeMetadata !== false,
+          isCancelled: () => jobControl.job.cancelled,
+          onProgress: scaledProgress(jobControl.sendProgress, 0, groupEnd),
+        });
+        createdPaths.push(...result.outputPaths);
+        allowShellPath(result.outputDir);
+        if (jobControl.job.cancelled) throw new GenerationCancelledError();
+
+        let singleResult = null;
+        if (createSingleMockups) {
+          singleResult = await generateSingleMockups({
+            sourcePaths: lightSources,
+            inputDirectory,
+            outputDirectory: result.outputDir,
+            regionStore: singleMockupRegionStore,
+            settings: payload.settings,
+            alphaThreshold: payload.settings?.alphaThreshold,
+            watermarkPath: payload.watermarkPath || null,
+            removeMetadata: payload.removeMetadata !== false,
+            isCancelled: () => jobControl.job.cancelled,
+            onProgress: scaledProgress(jobControl.sendProgress, groupEnd, 1),
+          });
+          createdPaths.push(...singleResult.outputPaths);
+        }
+        if (jobControl.job.cancelled) throw new GenerationCancelledError();
+
+        const outputFiles = result.outputs.map((output) => ({
+          path: output.path,
+          url: toFileUrl(output.path),
+          name: output.name,
+          width: output.template.width,
+          height: output.template.height,
+          templateName: output.template.name,
+          groupKey: output.groupKey,
+          color: output.color,
+          sourceCount: output.assignmentCount,
+          regionCount: templates.find(
+            (template) => shellPathKey(template.path) === shellPathKey(output.template.path),
+          )?.regions.length || output.assignmentCount,
+        }));
+        return {
+          ...result,
+          mode: 'group-shirt',
+          outputFiles,
+          assignedSourceCount: result.outputs.reduce(
+            (total, output) => total + output.assignmentCount,
+            0,
+          ),
+          singleMockupFiles: (singleResult?.outputPaths || []).map((filePath) => ({
+            path: filePath,
+            url: toFileUrl(filePath),
+            name: path.basename(filePath),
+          })),
+          singleMockupCount: singleResult?.outputPaths.length || 0,
+          singleMockupSkipped: singleResult?.skipped
+            ? {
+                reason: singleResult.skipReason,
+                existingNames: (singleResult.existingPaths || []).map((filePath) => path.basename(filePath)),
+              }
+            : null,
+          outputPaths: undefined,
+          outputs: undefined,
+        };
+      } catch (error) {
+        await Promise.allSettled(createdPaths.map((filePath) => fs.rm(filePath, { force: true })));
+        throw error;
+      } finally {
+        jobControl.finish();
+      }
+    }),
+  );
+
   ipcMain.handle('mockup:generate', (event, payload) =>
     safeCall(async () => {
+      if (payload?.mode && payload.mode !== 'bundle') {
+        const error = new Error('Hãy dùng luồng tạo Mockup Group Shirt cho chế độ đã chọn.');
+        error.code = 'INVALID_MOCKUP_MODE';
+        throw error;
+      }
       const jobControl = beginJob(event, 'generate');
       const createdPaths = [];
       try {
@@ -906,6 +1443,10 @@ async function initializeApplication() {
   singleMockupRegionStore = createSingleMockupRegionStore({
     userDataPath,
     onWarning: (error) => console.warn('SINGLE_MOCKUP_REGIONS_LOAD', error),
+  });
+  groupShirtRegionStore = createGroupShirtRegionStore({
+    userDataPath,
+    onWarning: (error) => console.warn('GROUP_SHIRT_REGIONS_LOAD', error),
   });
   pathPreferences = createPathPreferencesStore({
     userDataPath,

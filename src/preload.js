@@ -12,14 +12,22 @@ contextBridge.exposeInMainWorld('bundleApi', {
   getDroppedFilePath: (file) => webUtils.getPathForFile(file),
   inspectDroppedPngFiles: (filePaths) =>
     ipcRenderer.invoke('source:inspect-dropped-png-files', filePaths),
+  clearSourceAuthorization: () => ipcRenderer.invoke('source:clear-authorization'),
+  renameGroupShirtPngFiles: (payload) =>
+    ipcRenderer.invoke('source:rename-group-shirt-png-files', payload),
   getInputAssets: () => ipcRenderer.invoke('input:get-assets'),
   saveSingleMockupRegions: (entries) =>
     ipcRenderer.invoke('input:save-single-mockup-regions', entries),
+  saveGroupShirtRegions: (entries) =>
+    ipcRenderer.invoke('group-shirt:save-regions', entries),
   setEditorState: (value) => ipcRenderer.send('window:set-editor-state', value),
   selectTemplate: () => ipcRenderer.invoke('dialog:select-template'),
+  selectGroupShirtTemplates: () => ipcRenderer.invoke('dialog:select-group-shirt-templates'),
   selectWatermark: () => ipcRenderer.invoke('dialog:select-watermark'),
   renderPreview: (payload) => ipcRenderer.invoke('preview:render', payload),
+  renderGroupShirtPreview: (payload) => ipcRenderer.invoke('group-shirt:preview', payload),
   generateMockups: (payload) => ipcRenderer.invoke('mockup:generate', payload),
+  generateGroupShirtMockups: (payload) => ipcRenderer.invoke('group-shirt:generate', payload),
   cancelJob: () => ipcRenderer.invoke('job:cancel'),
   openPath: (targetPath) => ipcRenderer.invoke('shell:open-path', targetPath),
   onProgress: (callback) => {

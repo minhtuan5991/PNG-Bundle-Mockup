@@ -453,6 +453,31 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [x] Push commit `ed37630`/annotated tag v1.2.5; Windows CI `31270193124` và Release Windows `31270217854` success.
 - [x] Release ID `367263645` public/stable có đúng ba asset; tải ngược xác minh SHA-256 installer `2EA990EAF0189AD4F304B124D251E63C03BE12C4B4629812AF5413E88ACCF214`, blockmap `5BC30873669A630D7DB41C86728FBD94D61E88AE75C0BAA00272B077C65DC14F`, `latest.yml` `6A7E5ADE5879AC84E1D23F599118E78D869B102A12DA593818B940C6F4DAB70B`; updater metadata khớp và `/releases/latest` trỏ đúng Release này.
 
+## E9. v1.3.0 — Mockup Group Shirt
+
+- [x] `package.json`, `package-lock.json` và package root cùng version `1.3.0`.
+- [x] Bước 2 có đúng hai radio cùng `name="mockupMode"`, Bundle mặc định và PDF nằm trong block Bundle-only.
+- [x] Parser PNG xử lý khoảng trắng/tag order linh hoạt/default `wh/f`, chặn tag lặp/xung đột và ordinal không hợp lệ; rename xuất canonical color rồi side.
+- [x] Parser template coi `mkg` là marker stem, hỗ trợ đuôi ảnh thật và exact group/color matching.
+- [x] Đổi tên vật lý preflight collision, chạy hai phase, hỗ trợ case-only và rollback toàn batch khi lỗi.
+- [x] Store vùng Group Shirt độc lập, ghi nguyên tử, giữ order/front/back/rotation và loại record hỏng/sai kích thước; record cũ thiếu fingerprint không match descriptor có SHA-256.
+- [x] Editor có thêm/xóa vùng trước/sau, resize/move/rotate; nhãn không chỉ dựa vào màu; có input số, nút và keyboard alternative.
+- [x] Planner 6F+6B với 3F+3B tạo đúng 2 trang; trang cuối partial và không lặp PNG trong một template variant.
+- [x] PNG thiếu mặt chỉ dùng vùng trước; PNG thiếu màu chỉ dùng nền áo sáng; nhóm thiếu template hoặc side thiếu vùng bị chặn.
+- [x] Compositor crop alpha, fit contain, xoay quanh tâm, watermark cuối, metadata cuối; `removeMetadata:false` giữ EXIF/XMP/ICC nền.
+- [x] Nền Group Shirt JPEG/TIFF có EXIF Orientation dùng kích thước auto-orient và PNG output không còn orientation cũ.
+- [x] Output Group Shirt dùng page 3 số, phân biệt template stem trùng và dùng một revision collision-safe cho toàn batch.
+- [x] Cancel/lỗi xóa temp và rollback output của lượt hiện tại.
+- [x] Backend Group Shirt từ chối PDF; mockup đơn lọc effective-light và vẫn giữ skip một lần/Done.
+- [x] IPC preview/generate/rename/save-region kiểm tra capability source/template theo `event.sender.id` trước inspect hoặc ghi file.
+- [x] Nhớ thêm đường dẫn nền Group Shirt mà không mất các preference cũ.
+- [x] Packaging config chỉ allowlist `Input/README.txt` và PDF mẫu; không dùng wildcard có thể gom tài sản riêng local.
+- [x] Toàn bộ automated tests **116/116** đạt; `node --check` và `git diff --check` đạt.
+- [ ] Electron source/packaged smoke: môi trường local hiện lỗi GPU process trước khi renderer load; chạy lại trên Windows/CI artifact.
+- [x] Build installer local chỉ chứa `Input/README.txt` và PDF mẫu; Setup 104.367.149 byte, blockmap 109.389 byte, `latest.yml` 363 byte, version/path/size/SHA-512 khớp. SHA-256 installer `503A14125E0BED8E333BA9D6A43006A6E0CD22754B2759D257042CC0B18614D1`; Authenticode NotSigned.
+- [ ] Cài mới/nâng cấp trên VM sạch; xác minh vùng Group Shirt còn sau khi mở lại app và uninstall vẫn giữ Input/output.
+- [ ] Commit, annotated tag `v1.3.0`, Windows CI/Release workflow và ba asset public được xác minh.
+
 ## F. Sign-off
 
 | Hạng mục | Người kiểm tra | Ngày | Kết quả/Ghi chú |
@@ -474,5 +499,6 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 | v1.2.4 clean uninstall QA/release | Codex local QA + GitHub Actions | 2026-08-07 | 73/73 test; clean build/Input payload đạt; CI và Release workflow success. Release ID `366528649` có đúng ba asset tải ngược khớp. Uninstall tương tác ngoài registry sandbox còn chờ. |
 | v1.2.4 replacement single-mockup QA/release | Codex local QA + GitHub Actions | 2026-08-08 | 74/74 test; mockup đơn bỏ qua nếu `Done` đã có `single_*.png`. Release cũ bị xóa; tag trỏ `1231fc9`; Release ID `367243225` và ba asset tải ngược đều được xác minh. |
 | v1.2.5 remove-PNG QA/release | Codex local QA + GitHub Actions | 2026-08-09 | 75/75 test; source/package smoke đạt; Release ID `367263645`, đúng ba asset tải ngược, updater metadata và `/releases/latest` đều được xác minh. |
+| v1.3.0 Group Shirt source QA | Codex local QA | 2026-08-19 | 116/116 automated test; engine Group Shirt 30/30; capability/fingerprint/metadata/orientation đạt. NSIS build và payload Input/version/checksum đạt; Electron smoke bị chặn bởi GPU process của môi trường, VM/release còn chờ. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.
