@@ -22,7 +22,6 @@ const GROUP_SHIRT_TEMPLATE_EXTENSIONS = Object.freeze([
 ]);
 const TEMPLATE_EXTENSION_SET = new Set(GROUP_SHIRT_TEMPLATE_EXTENSIONS);
 const SOURCE_MARKERS = new Set(['wh', 'bl', 'f', 'b']);
-const TEMPLATE_MARKERS = new Set(['wh', 'bl']);
 
 class GroupShirtFilenameError extends Error {
   constructor(message, code, details = {}) {
@@ -55,7 +54,7 @@ function normalizeGroupKey(value) {
   const display = normalizeGroupDisplay(value);
   if (!display) {
     throw new GroupShirtFilenameError(
-      'Tên nhóm trước dấu ngoặc hoặc mkg không được để trống.',
+      'Tên nhóm trước dấu ngoặc hoặc mgs không được để trống.',
       'MISSING_GROUP_KEY',
     );
   }
@@ -158,29 +157,27 @@ function parseGroupShirtTemplateName(value) {
     );
   }
 
-  const rawStem = name.slice(0, -path.extname(name).length);
-  const { baseStem, markers } = peelTerminalMarkers(rawStem, TEMPLATE_MARKERS, name);
-  const colorMarker = resolveExclusiveMarker(markers, 'wh', 'bl', 'màu áo', name);
-  const templateMatch = baseStem.match(/^(.*?)\s*mkg\s*$/iu);
+  const rawStem = name.slice(0, -path.extname(name).length).trim();
+  const templateMatch = rawStem.match(/^(.*?)\s*mgs(?:[\s._-]*(.*?))?\s*$/iu);
   if (!templateMatch) {
     throw new GroupShirtFilenameError(
-      `Tên ảnh nền “${name}” phải kết thúc bằng mkg trước phần màu và đuôi ảnh.`,
-      'MISSING_GROUP_SHIRT_MKG_MARKER',
+      `Tên ảnh nền “${name}” phải chứa marker mgs trước đuôi ảnh.`,
+      'MISSING_GROUP_SHIRT_MGS_MARKER',
       { fileName: name },
     );
   }
   const group = normalizeGroupDisplay(templateMatch[1]);
   const groupKey = normalizeGroupKey(group);
+  const variant = normalizeGroupDisplay(templateMatch[2] || '') || null;
   return Object.freeze({
     ...(path.isAbsolute(value) ? { path: path.resolve(value) } : {}),
     name,
     stem: rawStem,
-    baseStem,
+    baseStem: rawStem,
     group,
     groupKey,
-    color: colorMarker || GROUP_SHIRT_COLORS.LIGHT,
-    explicitColor: Boolean(colorMarker),
-    markers: Object.freeze([...markers]),
+    marker: 'mgs',
+    variant,
     extension,
   });
 }

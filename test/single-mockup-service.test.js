@@ -141,6 +141,25 @@ test('quét Input chỉ lấy PNG/JPG/WEBP/TIFF và bỏ qua PDF', async (t) => 
   assert.deepEqual(templates.map((template) => template.format), ['png', 'jpeg', 'webp', 'tiff']);
   assert.ok(templates.every((template) => template.width === 200 && template.height === 200));
 });
+test('lọc mockup đơn chỉ nhận ảnh có marker bundle, không phân biệt hoa thường', async (t) => {
+  const directory = await createTempDirectory(t, 'single-mockup-bundle-marker-');
+  const inputDirectory = path.join(directory, 'Input');
+  await fs.mkdir(inputDirectory);
+  await Promise.all([
+    createSolidImage(path.join(inputDirectory, 'shirt bundle.png'), 'png'),
+    createSolidImage(path.join(inputDirectory, 'BUNDLE cup.jpg'), 'jpeg'),
+    createSolidImage(path.join(inputDirectory, 'shirt mgs.png'), 'png'),
+    createSolidImage(path.join(inputDirectory, 'plain.webp'), 'webp'),
+  ]);
+
+  const templates = await listSingleMockupTemplates(inputDirectory, {
+    templateMarker: 'bundle',
+  });
+  assert.deepEqual(
+    templates.map((template) => template.name),
+    ['BUNDLE cup.jpg', 'shirt bundle.png'],
+  );
+});
 
 test('quét Input có thể bỏ qua ảnh mockup hỏng và trả cảnh báo', async (t) => {
   const directory = await createTempDirectory(t, 'single-mockup-invalid-');

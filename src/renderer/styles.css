@@ -1313,10 +1313,78 @@ input:disabled {
 }
 
 .group-region-actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   align-content: flex-start;
+  gap: 8px;
+}
+
+.group-region-add-buttons,
+.group-region-color-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 7px;
+}
+
+.group-region-color-selector {
+  padding: 7px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
+  background: rgba(2, 6, 23, 0.34);
+}
+
+.region-color-option {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #cbd5e1;
+  cursor: pointer;
+  font-size: 9.5px;
+  font-weight: 750;
+}
+
+.region-color-option input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.light-color-option {
+  border-color: rgba(251, 191, 36, 0.32);
+  background: rgba(120, 53, 15, 0.12);
+}
+
+.light-color-option input { accent-color: #fbbf24; }
+
+.dark-color-option {
+  border-color: rgba(167, 139, 250, 0.34);
+  background: rgba(91, 33, 182, 0.12);
+}
+
+.dark-color-option input { accent-color: #a78bfa; }
+
+.region-color-option:has(input:focus-visible) {
+  outline: 2px solid #f8fafc;
+  outline-offset: 2px;
+}
+
+.region-color-option:has(input:checked) {
+  border-color: currentColor;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.region-color-option:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.group-region-color-help {
+  color: var(--muted-2);
+  font-size: 8.5px;
+  line-height: 1.4;
 }
 
 .group-region-actions .mini-button,
@@ -1596,9 +1664,21 @@ input:disabled {
   box-shadow: 0 0 0 1px rgba(3, 7, 18, 0.72), inset 0 0 28px color-mix(in srgb, var(--region-color) 8%, transparent);
 }
 
-.group-print-region[data-side="back"] {
+.group-print-region[data-color="wh"][data-side="back"] {
   --region-color: #22d3ee;
   --region-dark: rgba(8, 51, 68, 0.92);
+  border-style: dashed;
+}
+
+.group-print-region[data-color="bl"][data-side="front"] {
+  --region-color: #a78bfa;
+  --region-dark: rgba(76, 29, 149, 0.94);
+  border-style: double;
+}
+
+.group-print-region[data-color="bl"][data-side="back"] {
+  --region-color: #fb7185;
+  --region-dark: rgba(136, 19, 55, 0.94);
   border-style: dashed;
 }
 

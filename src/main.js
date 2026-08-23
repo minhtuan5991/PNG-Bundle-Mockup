@@ -177,7 +177,11 @@ async function scanInputAssets() {
   const warnings = [];
   const [pdfPaths, singleMockupTemplates] = await Promise.all([
     findPdfTemplates(inputDirectory),
-    listSingleMockupTemplates(inputDirectory, { ignoreInvalid: true, warnings }),
+    listSingleMockupTemplates(inputDirectory, {
+      ignoreInvalid: true,
+      warnings,
+      templateMarker: 'bundle',
+    }),
   ]);
   const pdfTemplates = await Promise.all(pdfPaths.map(async (filePath) => {
     const stat = await fs.stat(filePath);
@@ -529,9 +533,9 @@ function createWindow() {
             dropApi: typeof window.bundleApi?.inspectDroppedPngFiles === 'function' && typeof window.bundleApi?.getDroppedFilePath === 'function',
             inputApi: typeof window.bundleApi?.getInputAssets === 'function' && typeof window.bundleApi?.saveSingleMockupRegions === 'function',
             v121Controls: Boolean(document.querySelector('#createPdfDownload') && document.querySelector('#downloadUrl') && document.querySelector('#createSingleMockups') && document.querySelector('#editSingleMockupRegions')),
-            v130Api: typeof window.bundleApi?.selectGroupShirtTemplates === 'function' && typeof window.bundleApi?.renameGroupShirtPngFiles === 'function' && typeof window.bundleApi?.saveGroupShirtRegions === 'function' && typeof window.bundleApi?.renderGroupShirtPreview === 'function' && typeof window.bundleApi?.generateGroupShirtMockups === 'function',
-            v130Controls: Boolean(document.querySelector('#mockupModeBundle') && document.querySelector('#mockupModeGroup') && document.querySelector('#chooseGroupTemplatesButton') && document.querySelector('#renamePngButton') && document.querySelector('#addFrontRegionButton') && document.querySelector('#addBackRegionButton')),
-            v130ModeSwitch: (() => {
+            v140Api: typeof window.bundleApi?.selectGroupShirtTemplates === 'function' && typeof window.bundleApi?.renameGroupShirtPngFiles === 'function' && typeof window.bundleApi?.saveGroupShirtRegions === 'function' && typeof window.bundleApi?.renderGroupShirtPreview === 'function' && typeof window.bundleApi?.generateGroupShirtMockups === 'function',
+            v140Controls: Boolean(document.querySelector('#mockupModeBundle') && document.querySelector('#mockupModeGroup') && document.querySelector('#chooseGroupTemplatesButton') && document.querySelector('#renamePngButton') && document.querySelector('#addFrontRegionButton') && document.querySelector('#addBackRegionButton') && document.querySelector('#groupRegionColorLight') && document.querySelector('#groupRegionColorDark')),
+            v140ModeSwitch: (() => {
               const bundle = document.querySelector('#mockupModeBundle');
               const group = document.querySelector('#mockupModeGroup');
               const bundlePanel = document.querySelector('#bundleTemplatePanel');
@@ -542,7 +546,7 @@ function createWindow() {
               const groupVisible = group.checked && !bundle.checked &&
                 bundlePanel.classList.contains('is-hidden') &&
                 !groupPanel.classList.contains('is-hidden') &&
-                pdfBlock.classList.contains('is-hidden');
+                !pdfBlock.classList.contains('is-hidden');
               bundle.click();
               const bundleVisible = bundle.checked && !group.checked &&
                 !bundlePanel.classList.contains('is-hidden') &&
@@ -919,7 +923,10 @@ function registerIpc() {
       try {
         if (!Array.isArray(entries)) throw new TypeError('Danh sách vùng in không hợp lệ.');
         if (inputBackupService) await inputBackupService.synchronize();
-        const templates = await listSingleMockupTemplates(inputDirectory, { ignoreInvalid: true });
+        const templates = await listSingleMockupTemplates(inputDirectory, {
+          ignoreInvalid: true,
+          templateMarker: 'bundle',
+        });
         const byName = new Map(templates.map((template) => [
           template.name.toLocaleLowerCase('en-US'),
           template,
@@ -1019,7 +1026,7 @@ function registerIpc() {
         properties: ['openFile', 'multiSelections'],
         ...(defaultPath ? { defaultPath } : {}),
         filters: [
-          { name: 'Ảnh nền mkg', extensions: ['png', 'jpg', 'jpeg', 'webp', 'tif', 'tiff'] },
+          { name: 'Ảnh nền mgs', extensions: ['png', 'jpg', 'jpeg', 'webp', 'tif', 'tiff'] },
           { name: 'Tất cả file', extensions: ['*'] },
         ],
       });
@@ -1142,11 +1149,6 @@ function registerIpc() {
         error.code = 'INVALID_MOCKUP_MODE';
         throw error;
       }
-      if (payload?.createPdfDownload === true) {
-        const error = new Error('Mockup Group Shirt không hỗ trợ tạo PDF Download.');
-        error.code = 'UNSUPPORTED_OPTION_FOR_MODE';
-        throw error;
-      }
       const jobControl = beginJob(event, 'generate');
       const createdPaths = [];
       try {
@@ -1159,6 +1161,7 @@ function registerIpc() {
           event.sender.id,
         );
         const createSingleMockups = payload?.createSingleMockups === true;
+        const createPdfDownload = payload?.createPdfDownload === true;
         const lightSources = createSingleMockups
           ? await preflightGroupSingleMockupSources({
               sourcePaths,
@@ -1167,8 +1170,13 @@ function registerIpc() {
             })
           : null;
         const templates = await inspectGroupShirtTemplatePaths(templatePaths);
-        if (createSingleMockups && inputBackupService) await inputBackupService.synchronize();
-        const groupEnd = createSingleMockups ? 0.78 : 1;
+        if ((createSingleMockups || createPdfDownload) && inputBackupService) {
+          await inputBackupService.synchronize();
+        }
+        const groupEnd = createSingleMockups
+          ? (createPdfDownload ? 0.68 : 0.78)
+          : (createPdfDownload ? 0.86 : 1);
+        const singleEnd = createPdfDownload ? 0.92 : 1;
         const result = await generateGroupShirtMockups({
           sourcePaths,
           sourceDirectory,
@@ -1188,6 +1196,7 @@ function registerIpc() {
           singleResult = await generateSingleMockups({
             sourcePaths: lightSources,
             inputDirectory,
+            templateMarker: 'bundle',
             outputDirectory: result.outputDir,
             regionStore: singleMockupRegionStore,
             settings: payload.settings,
@@ -1195,11 +1204,35 @@ function registerIpc() {
             watermarkPath: payload.watermarkPath || null,
             removeMetadata: payload.removeMetadata !== false,
             isCancelled: () => jobControl.job.cancelled,
-            onProgress: scaledProgress(jobControl.sendProgress, groupEnd, 1),
+            onProgress: scaledProgress(jobControl.sendProgress, groupEnd, singleEnd),
           });
           createdPaths.push(...singleResult.outputPaths);
         }
         if (jobControl.job.cancelled) throw new GenerationCancelledError();
+
+        let pdfResult = null;
+        if (createPdfDownload) {
+          jobControl.sendProgress({
+            fraction: singleEnd,
+            message: 'Đang cập nhật link tải trong PDF mẫu…',
+            stage: 'pdf-download',
+          });
+          pdfResult = await createDownloadPdf({
+            inputDirectory,
+            outputDirectory: result.outputDir,
+            downloadUrl: payload?.downloadUrl,
+            isCancelled: () => jobControl.job.cancelled,
+          });
+          if (!pdfResult.skipped) createdPaths.push(pdfResult.outputPath);
+          if (jobControl.job.cancelled) throw new GenerationCancelledError();
+          jobControl.sendProgress({
+            fraction: 1,
+            message: pdfResult.skipped
+              ? 'Đã bỏ qua PDF Download vì thư mục Done đã có file PDF.'
+              : 'Đã tạo xong Group Shirt và các file bổ sung.',
+            stage: 'complete',
+          });
+        }
 
         const outputFiles = result.outputs.map((output) => ({
           path: output.path,
@@ -1233,6 +1266,21 @@ function registerIpc() {
             ? {
                 reason: singleResult.skipReason,
                 existingNames: (singleResult.existingPaths || []).map((filePath) => path.basename(filePath)),
+              }
+            : null,
+          pdfDownload: pdfResult && !pdfResult.skipped
+            ? {
+                ...pdfResult,
+                path: pdfResult.outputPath,
+                url: toFileUrl(pdfResult.outputPath),
+                name: path.basename(pdfResult.outputPath),
+                outputPath: undefined,
+              }
+            : null,
+          pdfDownloadSkipped: pdfResult?.skipped
+            ? {
+                reason: pdfResult.skipReason,
+                existingName: path.basename(pdfResult.existingPath || pdfResult.outputPath),
               }
             : null,
           outputPaths: undefined,
@@ -1282,6 +1330,7 @@ function registerIpc() {
           singleResult = await generateSingleMockups({
             sourcePaths: payload.sourcePaths,
             inputDirectory,
+            templateMarker: 'bundle',
             outputDirectory: result.outputDir,
             regionStore: singleMockupRegionStore,
             settings: payload.settings,

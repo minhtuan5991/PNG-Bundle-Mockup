@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
-> Cập nhật: 2026-08-19
-> Phiên bản mã nguồn hiện tại: `1.3.0`
-> Bản stable hiện có: `v1.3.0`
-> Trạng thái: v1.3.0 đã hoàn tất mã nguồn, automated QA, Windows CI và Release Windows; GitHub Release ID `372536307` là stable/public và `/releases/latest` trỏ đúng v1.3.0.
+> Cập nhật: 2026-08-23
+> Phiên bản mã nguồn hiện tại: `1.4.0`
+> Bản stable hiện có: `v1.4.0`
+> Trạng thái: v1.4.0 đã hoàn tất code, automated QA, packaged smoke và bộ cài; đang phát hành qua tag riêng trên GitHub.
 
 ## 1. Mục đích tài liệu
 
@@ -21,7 +21,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.3.0` |
+| Phiên bản mã nguồn | `1.4.0` |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
@@ -131,6 +131,15 @@ Khi tùy chọn bị tắt, app cố gắng giữ metadata của ảnh nền tro
 - `sourceDirectory` hiện tại vẫn là nguồn quyết định `<sourceDirectory>/Done`. Nếu bắt đầu hoàn toàn bằng kéo-thả, thư mục của file hợp lệ đầu tiên trở thành nguồn chính.
 - Ảnh nền và watermark tiếp tục bị loại khỏi tập thiết kế nếu trùng đường dẫn với PNG trong danh sách.
 
+### 3.10 Quy tắc Group Shirt và Input — phạm vi v1.4.0
+
+- Mockup đơn chỉ nhận template có chữ `bundle` trong tên ở cả Bundle và Group Shirt.
+- Ảnh nền Group Shirt dùng marker `mgs`; group key là phần tên chính xác trước marker, không còn suy ra màu từ tên nền.
+- Vùng in Group Shirt dùng schema 2, lưu `color: wh|bl` cùng `side: front|back`, khóa tỷ lệ pixel `42×48` và hỗ trợ xoay trong biên.
+- Planner gom toàn bộ PNG cùng tên nhóm, phân loại theo bốn profile tag và chỉ chọn template có đúng các track màu/mặt tương thích.
+- Khi thiếu nguồn, planner chọn ngẫu nhiên trong đúng track/cùng nhóm; khi thừa nguồn, planner tạo trang mới rồi lấp phần còn thiếu đúng track.
+- PDF Download dùng được trong cả Bundle và Group Shirt; quy tắc chỉ một PDF/Done và một bộ mockup đơn/Done không thay đổi.
+
 ## 4. Thứ tự xử lý ảnh
 
 Thứ tự này là hợp đồng chức năng và phải được giữ khi sửa engine:
@@ -172,6 +181,10 @@ Nếu một bước bổ sung thất bại hoặc người dùng huỷ, main ph�
 | `src/services/pdf-download-service.js` | Tìm PDF mẫu, cập nhật link/annotation, vẽ URL mới và ghi PDF không đè file cũ. |
 | `src/services/single-mockup-regions.js` | Kiểm tra vùng `7:8` và lưu cấu hình theo template trong `userData`. |
 | `src/services/single-mockup-service.js` | Quét ảnh mẫu, chọn PNG ngẫu nhiên và composite mockup đơn. |
+| `src/services/group-shirt-filenames.js` | Parser tên PNG, marker nền `mgs` và transaction đổi tên PNG Group Shirt. |
+| `src/services/group-shirt-regions.js` | Schema/store vùng Group Shirt màu+mặt, tỷ lệ `42×48`, rotation và fingerprint. |
+| `src/services/group-shirt-planner.js` | Chọn template tương thích, chia trang và lặp ngẫu nhiên nguồn đúng track. |
+| `src/services/group-shirt-service.js` | Preview/composite Group Shirt, watermark, metadata, output collision-safe và rollback. |
 | `test/*.test.js` | Kiểm thử layout, engine ảnh, persistence, updater, Input, kéo-thả, PDF và mockup đơn. |
 | `.github/workflows/ci.yml` | Chạy test và đóng gói unpacked trên Windows khi push/PR vào `main`. |
 | `.github/workflows/release-windows.yml` | Kiểm tra tag, test, build NSIS và phát hành GitHub Release. |
@@ -185,7 +198,7 @@ Nếu một bước bổ sung thất bại hoặc người dùng huỷ, main ph�
 - Main gửi tiến trình về renderer; renderer có thể yêu cầu hủy.
 - Renderer gửi đường dẫn PNG kéo-thả để main kiểm tra bằng filesystem/Sharp trước khi nạp.
 - Renderer đọc danh sách tài sản `Input`, gửi toàn bộ vùng in khi lưu và nhận lại trạng thái đã cấu hình theo template.
-- Payload generate có thể yêu cầu thêm mockup đơn và PDF Download; main dùng cùng `outputDir` do engine bundle tạo.
+- Payload generate của Bundle hoặc Group Shirt có thể yêu cầu thêm mockup đơn và PDF Download; main dùng cùng thư mục `Done` của engine chính.
 - Updater chạy ở main process; renderer chỉ nhận snapshot trạng thái tuần tự hóa được và gửi yêu cầu kiểm tra/tải/cài.
 
 ## 6. Persistence
@@ -572,3 +585,16 @@ Mốc QA local ngày 2026-08-07:
 - Commit phát hành `2f652dd` và annotated tag `v1.3.0` đã được push atomic. Windows CI run `32167145210` và Release Windows run `32167145143` đều success.
 - GitHub Release ID `372536307` stable/public, không draft/prerelease, có đúng ba asset và là `/releases/latest`. SHA-256 asset CI: installer `E0EC48FD8B8C1FE06DB67C5FD83480A5A006D833C564B95E4DCDBEEAF7EEA293` (104.367.152 byte), blockmap `5FD829B08A98BEC1145E533F7DC361CBB3E2EAADE3483C5047133FD9A7A349E5` (109.447 byte), `latest.yml` `54B14034503F0A5B3581DFDCFEEE834BA3DAA1FC93E48C4F41370CD3DF2CDAED` (363 byte).
 - Bốn JPG riêng chưa được theo dõi trong `Input` không được stage, commit hoặc đóng gói trong installer.
+
+## 21. Bản v1.4.0 — bundle/mgs, vùng màu và planner mới
+
+- Nâng version source/lockfile/installer lên `1.4.0`; phát hành bằng commit/tag mới, không ghi đè v1.3.0.
+- Mockup đơn ở cả hai mode chỉ dùng template Input có chữ `bundle`; Group Shirt chọn nguồn effective-light (`.wh` hoặc không tag màu).
+- Nền Group Shirt bắt buộc marker `mgs` và exact group trước marker. Vùng in schema 2 lưu màu áo và mặt áo, khóa tỷ lệ pixel `42×48`, có hai checkbox màu loại trừ và bốn kiểu hiển thị.
+- Planner triển khai đủ bốn profile tag, tạo trang bổ sung khi thừa PNG và lặp ngẫu nhiên đúng track/cùng nhóm khi thiếu.
+- Group Shirt nhận PDF Download giống Bundle, dùng nguyên quy tắc chỉ một PDF trong `Done`.
+- Automated suite đạt **118/118**, 0 fail/skipped/todo; `node --check` đạt.
+- Packaged smoke trên `release/win-unpacked/PNG Bundle Mockup.exe` đạt **19/19**, gồm title v1.4.0, API, controls, PDF chung và chuyển mode.
+- Build local tạo installer 104.369.200 byte, SHA-256 `DA69CF3958EC535FAA24EDE985B4E160E0AF95E56530967FA2AD13A42A363277`; blockmap 109.413 byte, SHA-256 `F0FA30B1728CAA125D0C237B2332B30F08906E95365586B655A396560514DD4F`; `latest.yml` 363 byte, SHA-256 `F648D0AF197FBD555D76CBD6C4C2085E0723682A1AC43773943ED179F72A765D`. Metadata updater khớp installer; Authenticode `NotSigned`.
+- `app.asar` mang version 1.4.0 và có planner/service mới. Allowlist installer vẫn chỉ chứa README/PDF mẫu; bốn JPG riêng local trong `Input` không bị sửa, stage hoặc đóng gói.
+- QA cài tương tác trên máy/VM sạch và chạy bộ dữ liệu thật 6–8 vùng vẫn cần thực hiện trước khi phát hành public.

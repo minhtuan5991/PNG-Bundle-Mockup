@@ -56,6 +56,8 @@ const elements = {
   groupRegionTools: document.querySelector('#groupRegionTools'),
   addFrontRegionButton: document.querySelector('#addFrontRegionButton'),
   addBackRegionButton: document.querySelector('#addBackRegionButton'),
+  groupRegionColorLight: document.querySelector('#groupRegionColorLight'),
+  groupRegionColorDark: document.querySelector('#groupRegionColorDark'),
   deleteGroupRegionButton: document.querySelector('#deleteGroupRegionButton'),
   groupRegionStatus: document.querySelector('#groupRegionStatus'),
   groupRegionInspector: document.querySelector('#groupRegionInspector'),
@@ -262,12 +264,48 @@ function parseGroupSourceName(fileName) {
   };
 }
 
-function groupColorKey(groupKey, color) {
-  return `${groupKey}\u0000${color}`;
+function groupRegionTrackKey(color, side) {
+  return `${color === 'bl' ? 'bl' : 'wh'}\u0000${side === 'b' || side === 'back' ? 'back' : 'front'}`;
 }
 
-function groupSourceDirectory(file) {
-  return String(file?.directory || state.sourceDirectory || '').trim();
+function groupProfile(descriptors) {
+  const hasColor = descriptors.some((item) => Boolean(item.parsed.explicitColor));
+  const hasSide = descriptors.some((item) => Boolean(item.parsed.explicitSide));
+  if (hasColor && hasSide) return 'color-side';
+  if (hasColor) return 'color-only';
+  if (hasSide) return 'side-only';
+  return 'plain';
+}
+
+function groupTemplateCompatibility(group, template) {
+  const regions = Array.isArray(template.regions) ? template.regions : [];
+  if (regions.length === 0) return 'chưa có vùng in';
+  const sourceTracks = new Set(group.descriptors.map((item) =>
+    groupRegionTrackKey(item.parsed.color, item.parsed.side)));
+  const regionTracks = new Set(regions.map((region) =>
+    groupRegionTrackKey(region.color || 'wh', region.side)));
+  if ([...sourceTracks].some((key) => !regionTracks.has(key))) {
+    return 'thiếu vùng đúng màu hoặc mặt của PNG';
+  }
+  if ([...regionTracks].some((key) => !sourceTracks.has(key))) {
+    return 'có vùng màu hoặc mặt không có PNG tương ứng';
+  }
+  const frontCount = regions.filter((region) => region.side === 'front').length;
+  const backCount = regions.filter((region) => region.side === 'back').length;
+  const darkCount = regions.filter((region) => (region.color || 'wh') === 'bl').length;
+  if (group.profile === 'plain' && (backCount > 0 || darkCount > 0)) {
+    return 'nhóm không tag chỉ dùng vùng trước áo sáng';
+  }
+  if (group.profile === 'side-only' && (darkCount > 0 || frontCount === 0 || backCount === 0)) {
+    return 'nhóm chỉ tag mặt cần vùng trước và sau áo sáng';
+  }
+  if (group.profile === 'color-only' && backCount > 0) {
+    return 'nhóm chỉ tag màu không dùng nền có vùng mặt sau';
+  }
+  if (group.profile === 'color-side' && (frontCount === 0 || backCount === 0)) {
+    return 'nhóm đủ tag màu/mặt cần nền có cả vùng trước và sau';
+  }
+  return null;
 }
 
 function analyzeGroupShirtSetup() {
@@ -279,55 +317,51 @@ function analyzeGroupShirtSetup() {
 
   for (const descriptor of descriptors.filter((item) => item.parsed.valid)) {
     const { parsed } = descriptor;
-    const key = groupColorKey(parsed.groupKey, parsed.color);
-    if (!sourceGroups.has(key)) {
-      sourceGroups.set(key, {
-        key,
+    if (!sourceGroups.has(parsed.groupKey)) {
+      sourceGroups.set(parsed.groupKey, {
+        key: parsed.groupKey,
         displayGroup: parsed.displayGroup,
         groupKey: parsed.groupKey,
-        color: parsed.color,
-        front: [],
-        back: [],
+        descriptors: [],
+        profile: 'plain',
       });
     }
-    sourceGroups.get(key)[parsed.side === 'b' ? 'back' : 'front'].push(descriptor);
-    const slot = `${key}\u0000${parsed.side}\u0000${parsed.ordinal}`;
+    sourceGroups.get(parsed.groupKey).descriptors.push(descriptor);
+    const slot = `${parsed.groupKey}\u0000${parsed.color}\u0000${parsed.side}\u0000${parsed.ordinal}`;
     if (logicalSlots.has(slot)) {
       logicalDuplicates.push({ first: logicalSlots.get(slot), duplicate: descriptor });
     } else {
       logicalSlots.set(slot, descriptor);
     }
   }
+  for (const group of sourceGroups.values()) group.profile = groupProfile(group.descriptors);
 
-  const templatesByGroupColor = new Map();
+  const templatesByGroup = new Map();
   for (const template of state.groupTemplates) {
-    const key = groupColorKey(template.groupKey, template.color || 'wh');
-    if (!templatesByGroupColor.has(key)) templatesByGroupColor.set(key, []);
-    templatesByGroupColor.get(key).push(template);
+    if (!templatesByGroup.has(template.groupKey)) templatesByGroup.set(template.groupKey, []);
+    templatesByGroup.get(template.groupKey).push(template);
   }
   const missingTemplateGroups = [...sourceGroups.values()].filter(
-    (group) => !templatesByGroupColor.has(group.key),
+    (group) => !templatesByGroup.has(group.groupKey),
   );
   const matchedTemplates = [];
   const unusedTemplates = [];
-  for (const template of state.groupTemplates) {
-    const key = groupColorKey(template.groupKey, template.color || 'wh');
-    if (sourceGroups.has(key)) matchedTemplates.push(template);
-    else unusedTemplates.push(template);
-  }
   const regionIssues = [];
-  for (const template of matchedTemplates) {
-    const key = groupColorKey(template.groupKey, template.color || 'wh');
-    const group = sourceGroups.get(key);
-    const regions = Array.isArray(template.regions) ? template.regions : [];
-    const frontCount = regions.filter((region) => region.side === 'front').length;
-    const backCount = regions.filter((region) => region.side === 'back').length;
-    if (group.front.length > 0 && frontCount === 0) {
-      regionIssues.push({ template, side: 'front', group });
+  for (const group of sourceGroups.values()) {
+    const candidates = templatesByGroup.get(group.groupKey) || [];
+    const compatible = [];
+    const incompatible = [];
+    for (const template of candidates) {
+      const message = groupTemplateCompatibility(group, template);
+      if (message) incompatible.push({ template, group, message });
+      else compatible.push(template);
     }
-    if (group.back.length > 0 && backCount === 0) {
-      regionIssues.push({ template, side: 'back', group });
-    }
+    matchedTemplates.push(...compatible);
+    unusedTemplates.push(...incompatible.map((item) => item.template));
+    if (candidates.length > 0 && compatible.length === 0) regionIssues.push(incompatible[0]);
+  }
+  for (const template of state.groupTemplates) {
+    if (!sourceGroups.has(template.groupKey)) unusedTemplates.push(template);
   }
 
   return {
@@ -337,11 +371,10 @@ function analyzeGroupShirtSetup() {
     logicalDuplicates,
     missingTemplateGroups,
     matchedTemplates,
-    unusedTemplates,
+    unusedTemplates: [...new Set(unusedTemplates)],
     regionIssues,
   };
 }
-
 function groupSourceDescriptors() {
   return selectedFiles().map((file) => ({ file, parsed: parseGroupSourceName(file.name) }));
 }
@@ -450,7 +483,7 @@ function renderInputAssets() {
 
   elements.pdfDownloadFields.classList.toggle(
     'is-hidden',
-    state.mockupMode === 'group-shirt' || !elements.createPdfDownload.checked,
+    !elements.createPdfDownload.checked,
   );
   updateControls();
 }
@@ -1363,19 +1396,17 @@ function validateGroupReady({ includeAdditionalOutputs = false } = {}) {
     );
   }
   if (state.groupTemplates.length === 0) {
-    throw new Error('Hãy chọn ít nhất một ảnh nền có marker mkg cho Mockup Group Shirt.');
+    throw new Error('Hãy chọn ít nhất một ảnh nền có marker mgs cho Mockup Group Shirt.');
   }
   if (analysis.missingTemplateGroups.length > 0) {
     throw new Error(
-      `Không có ảnh nền phù hợp cho: ${analysis.missingTemplateGroups.slice(0, 3)
-        .map((group) => `${group.displayGroup}.${group.color}`).join(', ')}.`,
+      `Không có ảnh nền mgs phù hợp cho: ${analysis.missingTemplateGroups.slice(0, 3)
+        .map((group) => group.displayGroup).join(', ')}.`,
     );
   }
   if (analysis.regionIssues.length > 0) {
     const issue = analysis.regionIssues[0];
-    throw new Error(
-      `Ảnh nền “${issue.template.name}” chưa có vùng in mặt ${issue.side === 'front' ? 'trước' : 'sau'} cho nhóm ${issue.group.displayGroup}.${issue.group.color}.`,
-    );
+    throw new Error(`Ảnh nền “${issue.template.name}” không phù hợp: ${issue.message}.`);
   }
   if (elements.useWatermark.checked && !state.watermark) {
     throw new Error('Hãy chọn file watermark PNG nền trong suốt.');
@@ -1391,14 +1422,10 @@ function validateGroupReady({ includeAdditionalOutputs = false } = {}) {
     settings,
     removeMetadata: elements.removeMetadata.checked,
     watermarkPath: elements.useWatermark.checked ? state.watermark.path : null,
-    createPdfDownload: false,
   };
-  if (includeAdditionalOutputs) {
-    payload.createSingleMockups = elements.createSingleMockups.checked;
-  }
+  if (includeAdditionalOutputs) Object.assign(payload, readAdditionalGenerationOptions());
   return payload;
 }
-
 function validateReady(options = {}) {
   return state.mockupMode === 'group-shirt'
     ? validateGroupReady(options)
@@ -1477,7 +1504,7 @@ function updateControls() {
   elements.selectNoneButton.disabled = scanning || state.selected.size === 0;
   elements.removePngButton.disabled = scanning || state.files.length === 0 || editorActive;
   elements.createPdfDownload.disabled =
-    groupMode || state.inputAssetsLoading || editorActive;
+    state.inputAssetsLoading || editorActive;
   elements.downloadUrl.disabled =
     state.inputAssetsLoading || !elements.createPdfDownload.checked || editorActive;
   elements.createSingleMockups.disabled =
@@ -1494,6 +1521,10 @@ function updateControls() {
   elements.addFrontRegionButton.disabled =
     state.regionEditor?.kind !== 'group' || editorSaving;
   elements.addBackRegionButton.disabled =
+    state.regionEditor?.kind !== 'group' || editorSaving;
+  elements.groupRegionColorLight.disabled =
+    state.regionEditor?.kind !== 'group' || editorSaving;
+  elements.groupRegionColorDark.disabled =
     state.regionEditor?.kind !== 'group' || editorSaving;
   for (const row of elements.groupTemplateList.querySelectorAll('.group-template-row')) {
     row.disabled = state.busy || editorSaving;
@@ -1531,7 +1562,7 @@ function renderGroupTemplateSummary() {
   if (!elements.groupTemplateSummary || !elements.groupTemplateList) return;
   const templates = state.groupTemplates;
   elements.groupTemplateSummary.textContent = templates.length === 0
-    ? 'Chưa chọn ảnh nền có marker mkg.'
+    ? 'Chưa chọn ảnh nền có marker mgs.'
     : `${templates.length} ảnh nền Group Shirt đã chọn.`;
   elements.groupTemplateList.textContent = '';
   for (const [index, template] of templates.entries()) {
@@ -1547,10 +1578,12 @@ function renderGroupTemplateSummary() {
     const name = document.createElement('strong');
     name.textContent = template.name;
     const regions = Array.isArray(template.regions) ? template.regions : [];
-    const frontCount = regions.filter((region) => region.side === 'front').length;
-    const backCount = regions.filter((region) => region.side === 'back').length;
+    const count = (color, side) => regions.filter((region) =>
+      (region.color || 'wh') === color && region.side === side).length;
     const meta = document.createElement('small');
-    meta.textContent = `Nhóm ${template.displayGroup || template.groupKey} · ${template.color === 'bl' ? 'áo tối' : 'áo sáng'} · ${frontCount} trước / ${backCount} sau`;
+    meta.textContent = `Nhóm ${template.displayGroup || template.groupKey} · ` +
+      `sáng ${count('wh', 'front')} trước/${count('wh', 'back')} sau · ` +
+      `tối ${count('bl', 'front')} trước/${count('bl', 'back')} sau`;
     copy.append(name, meta);
     row.append(image, copy);
     row.addEventListener('click', () => {
@@ -1600,24 +1633,23 @@ function renderGroupReadiness() {
       `Trùng PNG logic: ${item.displayGroup}.${item.color}.${item.side}, số thứ tự ${item.ordinal}.`;
   } else if (state.groupTemplates.length === 0) {
     elements.groupReadinessSummary.textContent =
-      `${analysis.sourceGroups.size} nhóm–màu PNG · chưa chọn ảnh nền mkg.`;
+      `${analysis.sourceGroups.size} nhóm PNG · chưa chọn ảnh nền mgs.`;
   } else if (analysis.missingTemplateGroups.length > 0) {
     elements.groupReadinessSummary.textContent =
-      `Thiếu ảnh nền cho ${analysis.missingTemplateGroups.map((group) => `${group.displayGroup}.${group.color}`).join(', ')}.`;
+      `Thiếu ảnh nền mgs cho ${analysis.missingTemplateGroups.map((group) => group.displayGroup).join(', ')}.`;
   } else if (analysis.regionIssues.length > 0) {
     const issue = analysis.regionIssues[0];
     elements.groupReadinessSummary.textContent =
-      `${issue.template.name} thiếu vùng mặt ${issue.side === 'front' ? 'trước' : 'sau'} cho ${issue.group.displayGroup}.${issue.group.color}.`;
+      `${issue.template.name} không phù hợp: ${issue.message}.`;
   } else {
     const unusedWarning = analysis.unusedTemplates.length > 0
-      ? ` · cảnh báo: ${analysis.unusedTemplates.length} nền không khớp sẽ được bỏ qua`
+      ? ` · cảnh báo: ${analysis.unusedTemplates.length} nền không phù hợp sẽ được bỏ qua`
       : '';
     elements.groupReadinessSummary.textContent =
-      `${analysis.descriptors.length} PNG · ${analysis.sourceGroups.size} nhóm–màu · ` +
+      `${analysis.descriptors.length} PNG · ${analysis.sourceGroups.size} nhóm · ` +
       `${analysis.matchedTemplates.length} nền khớp · ${regionCount} vùng in${unusedWarning}.`;
   }
 }
-
 function closeActiveRegionEditorForModeChange() {
   if (state.inputAssetsSaving) return false;
   if (!state.regionEditor) return true;
@@ -1652,12 +1684,12 @@ function setMockupMode(mode, { initial = false } = {}) {
   elements.bundleSettingsPanel.classList.toggle('is-hidden', isGroup);
   elements.bundleMarginSettingsPanel.classList.toggle('is-hidden', isGroup);
   elements.groupSettingsPanel.classList.toggle('is-hidden', !isGroup);
-  elements.pdfOptionBlock.classList.toggle('is-hidden', isGroup);
+  elements.pdfOptionBlock.classList.toggle('is-hidden', false);
   elements.renamePngButton.classList.toggle('is-hidden', !isGroup);
   elements.groupRenameHint.classList.toggle('is-hidden', !isGroup);
   elements.pdfDownloadFields.classList.toggle(
     'is-hidden',
-    isGroup || !elements.createPdfDownload.checked,
+    !elements.createPdfDownload.checked,
   );
   state.output = null;
   elements.openOutputButton.classList.add('is-hidden');
@@ -2042,6 +2074,7 @@ function cloneGroupRegion(region) {
   return {
     id: String(region.id),
     side: region.side === 'back' ? 'back' : 'front',
+    color: region.color === 'bl' ? 'bl' : 'wh',
     centerX: Number(region.centerX),
     centerY: Number(region.centerY),
     width: Number(region.width),
@@ -2050,13 +2083,14 @@ function cloneGroupRegion(region) {
   };
 }
 
-function defaultGroupRegion(template, side, index = 0) {
+function defaultGroupRegion(template, side, color, index = 0) {
   const pixelHeight = Math.max(24, Math.min(template.height * 0.42, template.width * 0.42 * 8 / 7));
   const pixelWidth = pixelHeight * 7 / 8;
   const offset = ((index % 5) - 2) * Math.min(0.06, pixelWidth / template.width / 3);
   return {
     id: `region-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     side,
+    color: color === 'bl' ? 'bl' : 'wh',
     centerX: Math.max(pixelWidth / template.width / 2, Math.min(1 - pixelWidth / template.width / 2, 0.5 + offset)),
     centerY: 0.5,
     width: pixelWidth / template.width,
@@ -2088,10 +2122,15 @@ function rotatedRegionExtents(region, template) {
 
 function constrainGroupRegion(region, template) {
   const next = cloneGroupRegion(region);
-  const minimumWidth = Math.min(1, 1 / template.width);
-  const minimumHeight = Math.min(1, 1 / template.height);
-  next.width = Math.max(minimumWidth, Math.min(1, next.width));
-  next.height = Math.max(minimumHeight, Math.min(1, next.height));
+  const aspectRatio = 42 / 48;
+  let pixelWidth = Math.max(7, Number(next.width) * template.width);
+  let pixelHeight = pixelWidth / aspectRatio;
+  if (!Number.isFinite(pixelHeight) || pixelHeight < 8) {
+    pixelHeight = 8;
+    pixelWidth = pixelHeight * aspectRatio;
+  }
+  next.width = pixelWidth / template.width;
+  next.height = pixelHeight / template.height;
   next.rotation = ((next.rotation % 360) + 540) % 360 - 180;
   let extents = rotatedRegionExtents(next, template);
   if (extents.x > 1 || extents.y > 1) {
@@ -2104,7 +2143,6 @@ function constrainGroupRegion(region, template) {
   next.centerY = Math.max(extents.y / 2, Math.min(1 - extents.y / 2, next.centerY));
   return next;
 }
-
 function markGroupEditorDirty(message = null) {
   if (state.regionEditor?.kind !== 'group') return;
   const wasDirty = state.regionEditor.dirty;
@@ -2116,12 +2154,13 @@ function markGroupEditorDirty(message = null) {
 function setGroupRegionStatus(message = null) {
   const entry = currentGroupRegionEntry();
   if (!entry || !elements.groupRegionStatus) return;
-  const front = entry.regions.filter((region) => region.side === 'front').length;
-  const back = entry.regions.filter((region) => region.side === 'back').length;
+  const count = (color, side) => entry.regions.filter((region) =>
+    region.color === color && region.side === side).length;
   elements.groupRegionStatus.textContent = message ||
-    `Ảnh ${state.pageIndex + 1}/${state.regionEditor.entries.length}: ${entry.template.name} · ${front} vùng trước, ${back} vùng sau.`;
+    `Ảnh ${state.pageIndex + 1}/${state.regionEditor.entries.length}: ${entry.template.name} · ` +
+    `sáng ${count('wh', 'front')} trước/${count('wh', 'back')} sau · ` +
+    `tối ${count('bl', 'front')} trước/${count('bl', 'back')} sau.`;
 }
-
 function syncGroupRegionInspector() {
   const entry = currentGroupRegionEntry();
   const region = currentGroupRegion();
@@ -2148,7 +2187,7 @@ function syncGroupRegionInspector() {
     return;
   }
   elements.groupRegionSelectionStatus.textContent =
-    `Đang chọn vùng mặt ${region.side === 'front' ? 'trước' : 'sau'}`;
+    `Đang chọn vùng ${region.color === 'bl' ? 'áo tối' : 'áo sáng'} · mặt ${region.side === 'front' ? 'trước' : 'sau'}`;
   elements.groupRegionX.value = (region.centerX * 100).toFixed(2);
   elements.groupRegionY.value = (region.centerY * 100).toFixed(2);
   elements.groupRegionWidth.value = (region.width * 100).toFixed(2);
@@ -2166,16 +2205,21 @@ function renderGroupRegions() {
     syncGroupRegionInspector();
     return;
   }
-  const sideIndexes = { front: 0, back: 0 };
+  const trackIndexes = new Map();
   for (const region of entry.regions) {
-    sideIndexes[region.side] += 1;
+    const track = groupRegionTrackKey(region.color, region.side);
+    const trackIndex = (trackIndexes.get(track) || 0) + 1;
+    trackIndexes.set(track, trackIndex);
+    const colorLabel = region.color === 'bl' ? 'Tối' : 'Sáng';
+    const sideLabel = region.side === 'front' ? 'Trước' : 'Sau';
     const node = document.createElement('div');
     node.className = `group-print-region${region.id === state.regionEditor.activeRegionId ? ' is-active' : ''}`;
     node.dataset.regionId = region.id;
     node.dataset.side = region.side;
+    node.dataset.color = region.color;
     node.tabIndex = 0;
     node.setAttribute('role', 'button');
-    node.setAttribute('aria-label', `Vùng in mặt ${region.side === 'front' ? 'trước' : 'sau'} ${sideIndexes[region.side]}`);
+    node.setAttribute('aria-label', `Vùng in áo ${colorLabel.toLocaleLowerCase('vi')} mặt ${sideLabel.toLocaleLowerCase('vi')} ${trackIndex}`);
     node.style.left = `${(region.centerX - region.width / 2) * 100}%`;
     node.style.top = `${(region.centerY - region.height / 2) * 100}%`;
     node.style.width = `${region.width * 100}%`;
@@ -2183,7 +2227,7 @@ function renderGroupRegions() {
     node.style.transform = `rotate(${region.rotation}deg)`;
     const label = document.createElement('span');
     label.className = 'group-region-label';
-    label.textContent = `${region.side === 'front' ? 'Trước' : 'Sau'} ${sideIndexes[region.side]}`;
+    label.textContent = `${colorLabel} · ${sideLabel} ${trackIndex}`;
     node.append(label);
     for (const handle of ['nw', 'ne', 'sw', 'se']) {
       const resize = document.createElement('i');
@@ -2201,7 +2245,6 @@ function renderGroupRegions() {
   }
   syncGroupRegionInspector();
 }
-
 function updateGroupRegionElement(region) {
   const node = [...elements.regionLayer.querySelectorAll('[data-region-id]')]
     .find((candidate) => candidate.dataset.regionId === region.id);
@@ -2291,11 +2334,20 @@ function exitGroupRegionEditor({ notifyUnsaved = false } = {}) {
   updateControls();
 }
 
+function selectedGroupRegionColor() {
+  return elements.groupRegionColorDark.checked ? 'bl' : 'wh';
+}
+
 function addGroupRegion(side) {
   if (state.inputAssetsSaving) return;
   const entry = currentGroupRegionEntry();
   if (!entry) return;
-  const region = defaultGroupRegion(entry.template, side, entry.regions.length);
+  const region = defaultGroupRegion(
+    entry.template,
+    side,
+    selectedGroupRegionColor(),
+    entry.regions.length,
+  );
   entry.regions.push(region);
   state.regionEditor.activeRegionId = region.id;
   markGroupEditorDirty();
@@ -2371,8 +2423,13 @@ function moveGroupRegionDrag(event) {
   } else {
     const centerX = frame.left + start.centerX * frame.width;
     const centerY = frame.top + start.centerY * frame.height;
-    const pixelWidth = Math.max(1, Math.abs(event.clientX - centerX) * 2 * entry.template.width / frame.width);
-    const pixelHeight = Math.max(1, Math.abs(event.clientY - centerY) * 2 * entry.template.height / frame.height);
+    const candidateWidth = Math.max(0, Math.abs(event.clientX - centerX) * 2 * entry.template.width / frame.width);
+    const candidateHeight = Math.max(0, Math.abs(event.clientY - centerY) * 2 * entry.template.height / frame.height);
+    const aspectRatio = 42 / 48;
+    const preferredHeight =
+      (aspectRatio * candidateWidth + candidateHeight) / (aspectRatio ** 2 + 1);
+    const pixelHeight = Math.max(8, preferredHeight);
+    const pixelWidth = pixelHeight * aspectRatio;
     next.width = pixelWidth / entry.template.width;
     next.height = pixelHeight / entry.template.height;
   }
@@ -2414,23 +2471,31 @@ function applyGroupInspectorInput(changedInput) {
   if (!entry || !region) return;
   const x = Number(elements.groupRegionX.value) / 100;
   const y = Number(elements.groupRegionY.value) / 100;
-  const width = Number(elements.groupRegionWidth.value) / 100;
-  const height = Number(elements.groupRegionHeight.value) / 100;
   const rotation = Number(elements.groupRegionRotation.value);
-  if (![x, y, width, height, rotation].every(Number.isFinite) || width <= 0 || height <= 0) return;
+  if (![x, y, rotation].every(Number.isFinite)) return;
   const next = {
     ...region,
     centerX: x,
     centerY: y,
-    width,
-    height,
     rotation,
   };
+  if (changedInput === elements.groupRegionHeight) {
+    const height = Number(elements.groupRegionHeight.value) / 100;
+    if (!Number.isFinite(height) || height <= 0) return;
+    const pixelHeight = height * entry.template.height;
+    next.height = height;
+    next.width = pixelHeight * (42 / 48) / entry.template.width;
+  } else if (changedInput === elements.groupRegionWidth) {
+    const width = Number(elements.groupRegionWidth.value) / 100;
+    if (!Number.isFinite(width) || width <= 0) return;
+    const pixelWidth = width * entry.template.width;
+    next.width = width;
+    next.height = pixelWidth * (48 / 42) / entry.template.height;
+  }
   Object.assign(region, constrainGroupRegion(next, entry.template));
   markGroupEditorDirty();
   renderGroupRegions();
 }
-
 async function saveGroupRegionEditor() {
   if (state.regionEditor?.kind !== 'group' || state.inputAssetsSaving) return;
   const editor = state.regionEditor;
@@ -2795,10 +2860,7 @@ function showOutputPage(pageIndex) {
 async function generate() {
   let payload;
   try {
-    if (
-      (state.mockupMode === 'bundle' && elements.createPdfDownload.checked) ||
-      elements.createSingleMockups.checked
-    ) {
+    if (elements.createPdfDownload.checked || elements.createSingleMockups.checked) {
       const refreshed = await refreshInputAssets();
       if (!refreshed) return;
     }
@@ -3077,6 +3139,12 @@ elements.editGroupMockupRegions.addEventListener('change', () => {
 elements.saveGroupMockupRegions.addEventListener('click', saveGroupRegionEditor);
 elements.addFrontRegionButton.addEventListener('click', () => addGroupRegion('front'));
 elements.addBackRegionButton.addEventListener('click', () => addGroupRegion('back'));
+elements.groupRegionColorLight.addEventListener('change', () => {
+  if (elements.groupRegionColorLight.checked) elements.groupRegionColorDark.checked = false;
+});
+elements.groupRegionColorDark.addEventListener('change', () => {
+  if (elements.groupRegionColorDark.checked) elements.groupRegionColorLight.checked = false;
+});
 elements.deleteGroupRegionButton.addEventListener('click', deleteActiveGroupRegion);
 elements.rotateGroupRegionLeft.addEventListener('click', () => nudgeGroupRegion(0, 0, -15));
 elements.rotateGroupRegionRight.addEventListener('click', () => nudgeGroupRegion(0, 0, 15));

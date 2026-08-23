@@ -85,26 +85,24 @@ test('từ chối tên PNG sai mẫu, ordinal 0, tag lặp hoặc tag mâu thu�
   );
 });
 
-test('ảnh nền cần hậu tố mkg, exact group và thiếu màu mặc định wh', () => {
-  const light = parseGroupShirtTemplateName('1 mkg.png');
-  assert.equal(light.groupKey, '1');
-  assert.equal(light.color, 'wh');
-  assert.equal(light.explicitColor, false);
+test('ảnh nền cần marker mgs, giữ exact group và nhận tên variant phía sau', () => {
+  const base = parseGroupShirtTemplateName('1 mgs.png');
+  assert.equal(base.groupKey, '1');
+  assert.equal(base.marker, 'mgs');
+  assert.equal(base.variant, null);
 
-  const dark = parseGroupShirtTemplateName('Nhóm ÁoMKG.bl.JpG');
-  assert.equal(dark.groupKey, 'nhóm áo');
-  assert.equal(dark.color, 'bl');
-  assert.equal(dark.explicitColor, true);
+  const variant = parseGroupShirtTemplateName('Nhóm ÁoMGS dark-shirt.JpG');
+  assert.equal(variant.groupKey, 'nhóm áo');
+  assert.equal(variant.variant, 'dark-shirt');
   assert.throws(
-    () => parseGroupShirtTemplateName('1 background.wh.png'),
-    (error) => error.code === 'MISSING_GROUP_SHIRT_MKG_MARKER',
+    () => parseGroupShirtTemplateName('1 background.png'),
+    (error) => error.code === 'MISSING_GROUP_SHIRT_MGS_MARKER',
   );
   assert.throws(
-    () => parseGroupShirtTemplateName('1mkg.wh.bl.png'),
-    (error) => error.code === 'CONFLICTING_NAME_MARKERS',
+    () => parseGroupShirtTemplateName('mgs.png'),
+    (error) => error.code === 'MISSING_GROUP_KEY',
   );
 });
-
 test('lập tên mới theo thứ tự chuẩn color rồi side và thay tag cùng loại', () => {
   const root = path.resolve('D:\\Mockups');
   assert.equal(

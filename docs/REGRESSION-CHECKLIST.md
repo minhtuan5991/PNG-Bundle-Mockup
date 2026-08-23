@@ -4,6 +4,8 @@
 
 ## Trạng thái mốc
 
+- [x] QA v1.4.0 ngày 2026-08-23: **118/118 test đạt**; packaged smoke **19/19**; NSIS/checksum/app.asar/Input allowlist đạt. Cài tương tác và dữ liệu thật còn chờ.
+
 - [x] QA local v1.2.3 ngày 2026-08-07: **73/73 test đạt**; build sạch tạo đủ installer/blockmap/`latest.yml`, version/checksum/Input payload đạt. Kiểm thử cài mới custom path và nâng cấp tại chỗ trên máy/VM sạch còn chờ.
 - [x] QA local v1.2.2 ngày 2026-08-07: **73/73 test đạt**; source CDP kiểm tra chọn mockup đơn, kéo vùng `42:48`, ổn định viewport và đóng cửa sổ đều đạt; packaged basic/region smoke trên `win-unpacked` đạt, title/header đúng v1.2.2.
 - [x] QA/release v1.2.1 ngày 2026-08-07: **66/66 test đạt**; Windows CI thử lại, source/package basic+region smoke, headless Input backup exit `0`, single-instance lock exit `3`, NSIS final, GitHub Release/asset và thông báo updater v1.2.0 đều đạt. Cài mới và download/cài nâng cấp tương tác còn chờ.
@@ -478,6 +480,25 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [ ] Cài mới/nâng cấp trên VM sạch; xác minh vùng Group Shirt còn sau khi mở lại app và uninstall vẫn giữ Input/output.
 - [x] Commit `2f652dd` và annotated tag `v1.3.0` được push atomic; Windows CI `32167145210` và Release Windows `32167145143` success. Release ID `372536307` stable/public có đúng ba asset, checksum/size API khớp và `/releases/latest` trỏ v1.3.0.
 
+## E10. v1.4.0 — bundle/mgs, vùng màu và planner lặp đúng track
+
+- [x] `package.json`, `package-lock.json` và package root cùng version `1.4.0`.
+- [x] Mockup đơn Bundle/Group chỉ quét template có chữ `bundle`, không phân biệt hoa/thường; ảnh khác trong Input không được dùng.
+- [x] Parser nền chỉ nhận marker `mgs`, giữ exact group trước marker và hỗ trợ phần tên variant phía sau.
+- [x] Schema vùng Group Shirt 2 lưu màu `wh/bl`, di trú record schema 1 thiếu màu thành `wh`, kiểm tra fingerprint/kích thước và tỷ lệ pixel `42×48`.
+- [x] Editor có hai checkbox Áo sáng/Áo tối loại trừ nhau hoặc bỏ chọn cả hai; không chọn mặc định sáng; bốn track màu+mặt có nhãn/viền khác nhau.
+- [x] Scale kéo chuột và input rộng/cao khóa tỷ lệ `42×48`; move/rotate tiếp tục giữ vùng nằm trong ảnh.
+- [x] Planner kiểm tra đủ bốn profile: không tag, chỉ mặt, chỉ màu, đủ màu+mặt; chỉ dùng template có track tương thích.
+- [x] Thiếu PNG lặp ngẫu nhiên đúng track/cùng nhóm; thừa PNG tạo thêm trang rồi lấp phần thiếu của từng trang đúng track.
+- [x] Group Shirt hỗ trợ PDF Download; backend giữ quy tắc chỉ một PDF/Done và không rollback PDF có sẵn.
+- [x] Mockup đơn Group Shirt chỉ chọn nguồn effective-light và giữ quy tắc chỉ một bộ `single_*.png`/Done.
+- [x] `node --check` đạt; automated tests **118/118**, 0 fail/skipped/todo.
+- [x] Packaged executable smoke **19/19** đạt, gồm title v1.4.0, API/controls, hai checkbox màu và PDF hiển thị ở cả hai mode.
+- [x] Build local: Setup 104.369.200 byte, SHA-256 `DA69CF3958EC535FAA24EDE985B4E160E0AF95E56530967FA2AD13A42A363277`; blockmap 109.413 byte, SHA-256 `F0FA30B1728CAA125D0C237B2332B30F08906E95365586B655A396560514DD4F`; `latest.yml` 363 byte, SHA-256 `F648D0AF197FBD555D76CBD6C4C2085E0723682A1AC43773943ED179F72A765D`; metadata khớp, Authenticode NotSigned.
+- [x] `app.asar` version 1.4.0 và chứa Group Shirt planner; installer allowlist không gom bốn JPG riêng local.
+- [ ] Cài tương tác trên máy/VM sạch, tạo thử dữ liệu thật với nền 6–8 vùng và xác minh visually.
+- [ ] GitHub push/tag/Release và xác minh ba asset public.
+
 ## F. Sign-off
 
 | Hạng mục | Người kiểm tra | Ngày | Kết quả/Ghi chú |
@@ -500,5 +521,6 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 | v1.2.4 replacement single-mockup QA/release | Codex local QA + GitHub Actions | 2026-08-08 | 74/74 test; mockup đơn bỏ qua nếu `Done` đã có `single_*.png`. Release cũ bị xóa; tag trỏ `1231fc9`; Release ID `367243225` và ba asset tải ngược đều được xác minh. |
 | v1.2.5 remove-PNG QA/release | Codex local QA + GitHub Actions | 2026-08-09 | 75/75 test; source/package smoke đạt; Release ID `367263645`, đúng ba asset tải ngược, updater metadata và `/releases/latest` đều được xác minh. |
 | v1.3.0 Group Shirt QA/release | Codex local QA + GitHub Actions | 2026-08-19 | 116/116 automated test; local NSIS payload/checksum đạt. Commit `2f652dd`, CI/Release workflow success; Release ID `372536307` stable/public có đúng ba asset và là `/releases/latest`. Electron smoke local bị chặn bởi GPU process; cài/nâng cấp VM vẫn còn chờ. |
+| v1.4.0 planner/installer QA | Codex local QA | 2026-08-23 | 118/118 automated test; packaged smoke 19/19; NSIS/checksum/app.asar/Input allowlist đạt. Cài tương tác/VM và dữ liệu thật còn chờ. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.

@@ -120,6 +120,7 @@ function assignment(sourcePath, region = {}) {
     region: {
       id: region.id || `region-${generatedRegionId}`,
       side: region.side || 'front',
+      color: region.color || 'wh',
       centerX: region.centerX ?? 0.5,
       centerY: region.centerY ?? 0.5,
       width: region.width ?? 0.35,
@@ -146,7 +147,7 @@ function plannedOutput(templatePath, assignments, options = {}) {
 
 test('compositor crop alpha, xoay quanh tâm và giữ PNG trong đúng vùng in', async (t) => {
   const directory = await createTempDirectory(t);
-  const templatePath = path.join(directory, '1 mkg.wh.png');
+  const templatePath = path.join(directory, '1 mgs.png');
   const sourcePath = path.join(directory, '1 (1).wh.f.png');
   await createTemplate(templatePath);
   await createPaddedDesign(sourcePath, {
@@ -175,7 +176,7 @@ test('compositor crop alpha, xoay quanh tâm và giữ PNG trong đúng vùng in
 
 test('watermark luôn là lớp trên cùng sau tất cả vùng in', async (t) => {
   const directory = await createTempDirectory(t);
-  const templatePath = path.join(directory, '1 mkg.png');
+  const templatePath = path.join(directory, '1 mgs.png');
   const sourcePath = path.join(directory, '1 (1).png');
   const watermarkPath = path.join(directory, 'watermark.png');
   await Promise.all([
@@ -192,7 +193,7 @@ test('watermark luôn là lớp trên cùng sau tất cả vùng in', async (t) 
 
   const output = plannedOutput(templatePath, [assignment(sourcePath, {
     id: 'front-centre',
-    width: 0.4,
+    width: 0.35,
     height: 0.4,
   })]);
   const withoutWatermark = await renderGroupShirtOutputToBuffer({ output });
@@ -206,8 +207,8 @@ test('watermark luôn là lớp trên cùng sau tất cả vùng in', async (t) 
 test('nền JPEG/TIFF dùng kích thước auto-orient và output bỏ EXIF Orientation', async (t) => {
   const directory = await createTempDirectory(t, 'group-shirt-orientation-');
   const outputDirectory = path.join(directory, 'Done');
-  const jpegTemplate = path.join(directory, '1 mkg.wh.jpg');
-  const tiffTemplate = path.join(directory, '2 mkg.wh.tiff');
+  const jpegTemplate = path.join(directory, '1 mgs.jpg');
+  const tiffTemplate = path.join(directory, '2 mgs.tiff');
   const sourcePath = path.join(directory, '1 (1).png');
   const jpeg = sharp({
     create: {
@@ -231,10 +232,10 @@ test('nền JPEG/TIFF dùng kích thước auto-orient và output bỏ EXIF Orie
     plan: {
       outputs: [
         plannedOutput(jpegTemplate, [assignment(sourcePath, {
-          id: 'jpeg-front', width: 0.45, height: 0.35,
+          id: 'jpeg-front', width: 0.35, height: 0.2,
         })]),
         plannedOutput(tiffTemplate, [assignment(sourcePath, {
-          id: 'tiff-front', width: 0.45, height: 0.35,
+          id: 'tiff-front', width: 0.35, height: 0.2,
         })], { groupKey: '2' }),
       ],
     },
@@ -257,8 +258,8 @@ test('nền JPEG/TIFF dùng kích thước auto-orient và output bỏ EXIF Orie
 test('generate hỗ trợ nhiều variant, xóa metadata cuối, giữ metadata khi tắt và không ghi đè', async (t) => {
   const directory = await createTempDirectory(t);
   const outputDirectory = path.join(directory, 'Done');
-  const templateOne = path.join(directory, '1 mkg.wh.png');
-  const templateTwo = path.join(directory, '1 alternative mkg.wh.png');
+  const templateOne = path.join(directory, '1 mgs.png');
+  const templateTwo = path.join(directory, '1 mgs alternative.png');
   const sourcePath = path.join(directory, '1 (1).wh.f.png');
   await Promise.all([
     createTemplate(templateOne, { metadata: true }),
@@ -315,7 +316,7 @@ test('generate hỗ trợ nhiều variant, xóa metadata cuối, giữ metadata 
 test('service tích hợp planner: 6 mặt trước + 6 mặt sau trên 3+3 vùng tạo đúng 2 ảnh', async (t) => {
   const directory = await createTempDirectory(t);
   const outputDirectory = path.join(directory, 'Done');
-  const templatePath = path.join(directory, '1 mkg.wh.png');
+  const templatePath = path.join(directory, '1 mgs.png');
   await createTemplate(templatePath, { width: 300, height: 240 });
   const sourcePaths = [];
   for (const side of ['f', 'b']) {
@@ -337,7 +338,7 @@ test('service tích hợp planner: 6 mặt trước + 6 mặt sau trên 3+3 vùn
         side,
         centerX: 0.2 + index * 0.3,
         centerY,
-        width: 0.16,
+        width: 0.175,
         height: 0.25,
         rotation: 0,
       });
@@ -368,8 +369,8 @@ test('service tích hợp planner: 6 mặt trước + 6 mặt sau trên 3+3 vùn
 
 test('preview dùng đúng outputIndex, giới hạn kích thước và báo tiến độ hoàn tất', async (t) => {
   const directory = await createTempDirectory(t);
-  const firstTemplate = path.join(directory, '1 mkg.wh.png');
-  const secondTemplate = path.join(directory, '2 mkg.wh.png');
+  const firstTemplate = path.join(directory, '1 mgs.png');
+  const secondTemplate = path.join(directory, '2 mgs.png');
   const firstSource = path.join(directory, '1 (1).png');
   const secondSource = path.join(directory, '2 (1).png');
   await Promise.all([
@@ -383,7 +384,9 @@ test('preview dùng đúng outputIndex, giới hạn kích thước và báo ti�
     plan: {
       outputs: [
         plannedOutput(firstTemplate, [assignment(firstSource, { id: 'one' })]),
-        plannedOutput(secondTemplate, [assignment(secondSource, { id: 'two' })], { groupKey: '2' }),
+        plannedOutput(secondTemplate, [assignment(secondSource, {
+          id: 'two', width: 0.2916666666666667, height: 0.4,
+        })], { groupKey: '2' }),
       ],
     },
     outputIndex: 1,
@@ -395,7 +398,7 @@ test('preview dùng đúng outputIndex, giới hạn kích thước và báo ti�
   assert.equal(preview.pageIndex, 1);
   assert.equal(preview.pageCount, 2);
   assert.deepEqual(preview.preview, { width: 100, height: 83 });
-  assert.equal(preview.template.name, '2 mkg.wh.png');
+  assert.equal(preview.template.name, '2 mgs.png');
   assert.equal(progress.at(-1).fraction, 1);
   assert.equal(progress.at(-1).stage, 'group-shirt-preview');
 });
@@ -403,7 +406,7 @@ test('preview dùng đúng outputIndex, giới hạn kích thước và báo ti�
 test('hủy giữa batch sẽ dọn sạch temp và không giữ output dở dang', async (t) => {
   const directory = await createTempDirectory(t);
   const outputDirectory = path.join(directory, 'Done');
-  const templatePath = path.join(directory, '1 mkg.wh.png');
+  const templatePath = path.join(directory, '1 mgs.png');
   const firstSource = path.join(directory, '1 (1).wh.f.png');
   const secondSource = path.join(directory, '1 (2).wh.f.png');
   await Promise.all([
@@ -438,7 +441,7 @@ test('hủy giữa batch sẽ dọn sạch temp và không giữ output dở dan
 test('rollback toàn bộ khi một PNG nguồn không thể đọc', async (t) => {
   const directory = await createTempDirectory(t);
   const outputDirectory = path.join(directory, 'Done');
-  const templatePath = path.join(directory, '1 mkg.wh.png');
+  const templatePath = path.join(directory, '1 mgs.png');
   const validSource = path.join(directory, '1 (1).png');
   const missingSource = path.join(directory, '1 (2).png');
   await Promise.all([createTemplate(templatePath), createPaddedDesign(validSource)]);
@@ -459,21 +462,19 @@ test('rollback toàn bộ khi một PNG nguồn không thể đọc', async (t) 
   assert.deepEqual(entries, []);
 });
 
-test('service từ chối source hoặc region lặp trong cùng một output', async (t) => {
+test('service cho phép lặp source ngẫu nhiên nhưng vẫn từ chối region lặp', async (t) => {
   const directory = await createTempDirectory(t);
-  const templatePath = path.join(directory, '1 mkg.png');
+  const templatePath = path.join(directory, '1 mgs.png');
   const sourcePath = path.join(directory, '1 (1).png');
   await Promise.all([createTemplate(templatePath), createPaddedDesign(sourcePath)]);
 
-  await assert.rejects(
-    renderGroupShirtOutputToBuffer({
-      output: plannedOutput(templatePath, [
-        assignment(sourcePath, { id: 'front-1', centerX: 0.3 }),
-        assignment(sourcePath, { id: 'front-2', centerX: 0.7 }),
-      ]),
-    }),
-    (error) => error.code === 'DUPLICATE_SOURCE_IN_GROUP_SHIRT_OUTPUT',
-  );
+  const repeated = await renderGroupShirtOutputToBuffer({
+    output: plannedOutput(templatePath, [
+      assignment(sourcePath, { id: 'front-1', centerX: 0.3 }),
+      assignment(sourcePath, { id: 'front-2', centerX: 0.7 }),
+    ]),
+  });
+  assert.equal(repeated.output.assignments.length, 2);
   const otherSource = path.join(directory, '1 (2).png');
   await createPaddedDesign(otherSource);
   await assert.rejects(
@@ -494,8 +495,8 @@ test('vùng xoay vượt mép ảnh bị chặn trước khi compositor chạy',
       side: 'front',
       centerX: 0.9,
       centerY: 0.5,
-      width: 0.3,
-      height: 0.5,
+      width: 0.35,
+      height: 0.4,
       rotation: 45,
     }, {
       path: 'template.png',

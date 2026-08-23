@@ -7,6 +7,7 @@ const {
   parseGroupShirtTemplateName,
 } = require('./group-shirt-filenames');
 const {
+  normalizeGroupShirtColor,
   normalizeGroupShirtSide,
   validateGroupShirtRegions,
 } = require('./group-shirt-regions');
@@ -55,9 +56,7 @@ function normalizeSourceDescriptor(source) {
   const parsed = (
     candidate.groupKey === undefined ||
     (candidate.ordinal === undefined && candidate.sequence === undefined)
-  )
-    ? parseGroupShirtSourceName(fileValue)
-    : null;
+  ) ? parseGroupShirtSourceName(fileValue) : null;
   const rawGroup = candidate.group ?? parsed?.group ?? candidate.groupKey;
   const group = String(rawGroup ?? '').normalize('NFC').trim().replace(/\s+/gu, ' ');
   const groupKey = normalizeGroupKey(candidate.groupKey ?? parsed?.groupKey ?? group);
@@ -119,8 +118,8 @@ function normalizeTemplateDescriptor(template) {
     name,
     group: group || groupKey,
     groupKey,
-    color: normalizedColor(candidate.color ?? parsed?.color),
-    explicitColor: candidate.explicitColor ?? parsed?.explicitColor ?? candidate.color !== undefined,
+    marker: candidate.marker || parsed?.marker || 'mgs',
+    variant: candidate.variant ?? parsed?.variant ?? null,
   };
 }
 
@@ -136,8 +135,9 @@ function templateIdentity(template) {
     : template.name.toLocaleLowerCase('en-US');
 }
 
-function groupColorKey(groupKey, color) {
-  return `${groupKey}\u0000${color}`;
+function trackKey(color, side) {
+  const normalizedSide = side === 'b' || side === 'back' ? 'back' : 'front';
+  return `${normalizedColor(color)}\0${normalizedSide}`;
 }
 
 function localeCompare(left, right) {
@@ -207,7 +207,7 @@ function validateNoDuplicateSources(sources) {
       );
     }
     identities.add(identity);
-    const slot = `${groupColorKey(source.groupKey, source.color)}\u0000${source.side}\u0000${source.ordinal}`;
+    const slot = `${source.groupKey}\0${source.color}\0${source.side}\0${source.ordinal}`;
     if (logicalSlots.has(slot)) {
       throw new GroupShirtPlanError(
         `Nhóm “${source.group}” có nhiều PNG trùng màu, mặt và số thứ tự ${source.ordinal}.`,
@@ -234,177 +234,236 @@ function validateNoDuplicateTemplates(templates) {
   }
 }
 
-function makeAssignments(regions, frontSources, backSources) {
-  let frontIndex = 0;
-  let backIndex = 0;
-  let frontSlot = 0;
-  let backSlot = 0;
-  const assignments = [];
-  for (let regionIndex = 0; regionIndex < regions.length; regionIndex += 1) {
-    const region = regions[regionIndex];
-    const side = normalizeGroupShirtSide(region.side);
-    const source = side === 'front'
-      ? frontSources[frontIndex++]
-      : backSources[backIndex++];
-    const sideSlotIndex = side === 'front' ? frontSlot++ : backSlot++;
-    if (source) {
-      assignments.push({
-        region,
-        regionIndex,
-        side,
-        sideSlotIndex,
-        source,
-      });
-    }
+function profileFromSources(sources) {
+  const hasColor = sources.some((source) => source.explicitColor);
+  const hasSide = sources.some((source) => source.explicitSide);
+  if (hasColor && hasSide) return 'color-side';
+  if (hasColor) return 'color-only';
+  if (hasSide) return 'side-only';
+  return 'plain';
+}
+
+function buildSourceGroup(groupSources) {
+  const first = groupSources[0];
+  const tracks = new Map();
+  for (const source of groupSources) {
+    const key = trackKey(source.color, source.side);
+    if (!tracks.has(key)) tracks.set(key, []);
+    tracks.get(key).push(source);
   }
-  return assignments;
+  for (const [key, items] of tracks) tracks.set(key, sortedSources(items));
+  return {
+    group: first.group,
+    groupKey: first.groupKey,
+    profile: profileFromSources(groupSources),
+    sources: sortedSources(groupSources),
+    tracks,
+  };
+}
+
+function countRegionsByTrack(regions) {
+  const counts = new Map();
+  for (const region of regions) {
+    const key = trackKey(normalizeGroupShirtColor(region.color), normalizeGroupShirtSide(region.side));
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  return counts;
+}
+
+function templateCompatibility(group, regions) {
+  if (regions.length === 0) return { compatible: false, reason: 'không có vùng in' };
+  const regionTracks = countRegionsByTrack(regions);
+  const sourceTrackKeys = new Set(group.tracks.keys());
+  const regionTrackKeys = new Set(regionTracks.keys());
+  const missingTrack = [...sourceTrackKeys].find((key) => !regionTrackKeys.has(key));
+  if (missingTrack) {
+    return { compatible: false, reason: 'thiếu vùng đúng màu hoặc mặt của PNG' };
+  }
+  const extraTrack = [...regionTrackKeys].find((key) => !sourceTrackKeys.has(key));
+  if (extraTrack) {
+    return { compatible: false, reason: 'có vùng màu hoặc mặt không có PNG tương ứng' };
+  }
+
+  const frontCount = regions.filter((region) => region.side === 'front').length;
+  const backCount = regions.filter((region) => region.side === 'back').length;
+  const darkCount = regions.filter((region) => region.color === 'bl').length;
+  if (group.profile === 'plain' && (backCount > 0 || darkCount > 0)) {
+    return { compatible: false, reason: 'nhóm không tag chỉ dùng vùng trước áo sáng' };
+  }
+  if (group.profile === 'side-only' && (darkCount > 0 || frontCount === 0 || backCount === 0)) {
+    return { compatible: false, reason: 'nhóm chỉ tag mặt cần vùng trước và sau áo sáng' };
+  }
+  if (group.profile === 'color-only' && backCount > 0) {
+    return { compatible: false, reason: 'nhóm chỉ tag màu không dùng nền có vùng mặt sau' };
+  }
+  if (group.profile === 'color-side' && (frontCount === 0 || backCount === 0)) {
+    return { compatible: false, reason: 'nhóm đủ tag màu/mặt cần nền có cả vùng trước và sau' };
+  }
+  return { compatible: true, regionTracks };
+}
+
+function randomIndex(maxExclusive, random) {
+  const value = Number(random());
+  if (!Number.isFinite(value) || value < 0 || value >= 1) {
+    throw new GroupShirtPlanError(
+      'Bộ sinh số ngẫu nhiên phải trả về giá trị từ 0 đến nhỏ hơn 1.',
+      'INVALID_GROUP_SHIRT_RANDOM_VALUE',
+    );
+  }
+  return Math.floor(value * maxExclusive);
+}
+
+function makeAssignments(regions, group, batchIndex, random) {
+  const capacities = countRegionsByTrack(regions);
+  const slotIndexes = new Map();
+  return regions.map((region, regionIndex) => {
+    const key = trackKey(region.color, region.side);
+    const sources = group.tracks.get(key);
+    const slotIndex = slotIndexes.get(key) || 0;
+    slotIndexes.set(key, slotIndex + 1);
+    const sourceIndex = batchIndex * capacities.get(key) + slotIndex;
+    const repeated = sourceIndex >= sources.length;
+    const source = repeated ? sources[randomIndex(sources.length, random)] : sources[sourceIndex];
+    return {
+      region,
+      regionIndex,
+      color: region.color,
+      side: region.side,
+      trackSlotIndex: slotIndex,
+      source,
+      repeated,
+    };
+  });
+}
+
+function batchCountFor(group, regions) {
+  const capacities = countRegionsByTrack(regions);
+  let count = 1;
+  for (const [key, sources] of group.tracks) {
+    count = Math.max(count, Math.ceil(sources.length / capacities.get(key)));
+  }
+  return count;
 }
 
 async function createGroupShirtPlan(options = {}) {
   if (!Array.isArray(options.sources) || options.sources.length === 0) {
-    throw new GroupShirtPlanError(
-      'Cần chọn ít nhất một PNG Group Shirt.',
-      'NO_GROUP_SHIRT_SOURCES',
-    );
+    throw new GroupShirtPlanError('Cần chọn ít nhất một PNG Group Shirt.', 'NO_GROUP_SHIRT_SOURCES');
   }
   if (!Array.isArray(options.templates) || options.templates.length === 0) {
-    throw new GroupShirtPlanError(
-      'Cần chọn ít nhất một ảnh nền mkg.',
-      'NO_GROUP_SHIRT_TEMPLATES',
-    );
+    throw new GroupShirtPlanError('Cần chọn ít nhất một ảnh nền mgs.', 'NO_GROUP_SHIRT_TEMPLATES');
   }
   if (options.regionResolver !== undefined && typeof options.regionResolver !== 'function') {
     throw new TypeError('regionResolver phải là một hàm.');
   }
+  const random = options.random || Math.random;
+  if (typeof random !== 'function') throw new TypeError('random phải là một hàm.');
 
   const sources = options.sources.map(normalizeSourceDescriptor);
   const templates = options.templates.map(normalizeTemplateDescriptor);
   validateNoDuplicateSources(sources);
   validateNoDuplicateTemplates(templates);
 
-  const sourcesByGroupColor = new Map();
+  const sourceBuckets = new Map();
   for (const source of sources) {
-    const key = groupColorKey(source.groupKey, source.color);
-    if (!sourcesByGroupColor.has(key)) {
-      sourcesByGroupColor.set(key, {
-        key,
-        group: source.group,
-        groupKey: source.groupKey,
-        color: source.color,
-        front: [],
-        back: [],
-      });
-    }
-    sourcesByGroupColor.get(key)[source.side === 'b' ? 'back' : 'front'].push(source);
+    if (!sourceBuckets.has(source.groupKey)) sourceBuckets.set(source.groupKey, []);
+    sourceBuckets.get(source.groupKey).push(source);
   }
-  for (const group of sourcesByGroupColor.values()) {
-    group.front = sortedSources(group.front);
-    group.back = sortedSources(group.back);
-  }
+  const groups = [...sourceBuckets.values()].map(buildSourceGroup).sort((left, right) =>
+    localeCompare(left.group, right.group));
 
-  const templatesByGroupColor = new Map();
+  const templateBuckets = new Map();
   for (const template of templates) {
-    const key = groupColorKey(template.groupKey, template.color);
-    if (!templatesByGroupColor.has(key)) templatesByGroupColor.set(key, []);
-    templatesByGroupColor.get(key).push(template);
+    if (!templateBuckets.has(template.groupKey)) templateBuckets.set(template.groupKey, []);
+    templateBuckets.get(template.groupKey).push(template);
   }
-  for (const variants of templatesByGroupColor.values()) {
+  for (const variants of templateBuckets.values()) {
     variants.sort((left, right) => localeCompare(left.name, right.name));
   }
 
-  const missingTemplates = [...sourcesByGroupColor.values()].filter(
-    (group) => !templatesByGroupColor.has(group.key),
-  );
-  if (missingTemplates.length > 0) {
+  const missingGroups = groups.filter((group) => !templateBuckets.has(group.groupKey));
+  if (missingGroups.length > 0) {
     throw new GroupShirtPlanError(
-      `Không có ảnh nền phù hợp cho: ${missingTemplates.map((group) =>
-        `${group.group}.${group.color}`).join(', ')}.`,
+      `Không có ảnh nền mgs phù hợp cho: ${missingGroups.map((group) => group.group).join(', ')}.`,
       'MISSING_MATCHING_GROUP_SHIRT_TEMPLATE',
-      { missing: missingTemplates.map((group) => ({
-        group: group.group,
-        groupKey: group.groupKey,
-        color: group.color,
-      })) },
+      { missing: missingGroups.map((group) => ({ group: group.group, groupKey: group.groupKey })) },
     );
   }
 
-  const orderedGroups = [...sourcesByGroupColor.values()].sort((left, right) => (
-    localeCompare(left.group, right.group) || localeCompare(left.color, right.color)
-  ));
   const outputs = [];
+  const warnings = [];
   const resolvedTemplateRegions = new Map();
-  for (const group of orderedGroups) {
-    const variants = templatesByGroupColor.get(group.key);
-    for (let variantIndex = 0; variantIndex < variants.length; variantIndex += 1) {
-      const template = variants[variantIndex];
+  const usedTemplateIds = new Set();
+  const groupSummaries = [];
+  for (const group of groups) {
+    const candidates = templateBuckets.get(group.groupKey);
+    const eligible = [];
+    const incompatible = [];
+    for (const template of candidates) {
       const regions = await resolveRegions(template, options);
       resolvedTemplateRegions.set(templateIdentity(template), regions);
-      const frontCapacity = regions.filter((region) => region.side === 'front').length;
-      const backCapacity = regions.filter((region) => region.side === 'back').length;
-      if (group.front.length > 0 && frontCapacity === 0) {
-        throw new GroupShirtPlanError(
-          `Ảnh nền “${template.name}” chưa có vùng in mặt trước.`,
-          'MISSING_GROUP_SHIRT_FRONT_REGION',
-          { template, group: group.group },
-        );
-      }
-      if (group.back.length > 0 && backCapacity === 0) {
-        throw new GroupShirtPlanError(
-          `Ảnh nền “${template.name}” chưa có vùng in mặt sau.`,
-          'MISSING_GROUP_SHIRT_BACK_REGION',
-          { template, group: group.group },
-        );
-      }
-      const frontPageCount = group.front.length > 0
-        ? Math.ceil(group.front.length / frontCapacity)
-        : 0;
-      const backPageCount = group.back.length > 0
-        ? Math.ceil(group.back.length / backCapacity)
-        : 0;
-      const batchCount = Math.max(frontPageCount, backPageCount);
+      const compatibility = templateCompatibility(group, regions);
+      if (compatibility.compatible) eligible.push({ template, regions });
+      else incompatible.push({ template, reason: compatibility.reason });
+    }
+    if (eligible.length === 0) {
+      throw new GroupShirtPlanError(
+        `Không có ảnh nền mgs có vùng in phù hợp cho nhóm “${group.group}”.`,
+        'NO_COMPATIBLE_GROUP_SHIRT_TEMPLATE',
+        { group, incompatible },
+      );
+    }
+    for (const item of incompatible) {
+      warnings.push({
+        code: 'INCOMPATIBLE_GROUP_SHIRT_TEMPLATE',
+        message: `Ảnh nền “${item.template.name}” không dùng cho nhóm “${group.group}”: ${item.reason}.`,
+        template: item.template,
+      });
+    }
+
+    for (let variantIndex = 0; variantIndex < eligible.length; variantIndex += 1) {
+      const { template, regions } = eligible[variantIndex];
+      usedTemplateIds.add(templateIdentity(template));
+      const batchCount = batchCountFor(group, regions);
       for (let batchIndex = 0; batchIndex < batchCount; batchIndex += 1) {
-        const frontSources = group.front.slice(
-          batchIndex * frontCapacity,
-          (batchIndex + 1) * frontCapacity,
-        );
-        const backSources = group.back.slice(
-          batchIndex * backCapacity,
-          (batchIndex + 1) * backCapacity,
-        );
+        const assignments = makeAssignments(regions, group, batchIndex, random);
         outputs.push({
           outputIndex: outputs.length,
           group: group.group,
+          displayGroup: group.group,
           groupKey: group.groupKey,
-          color: group.color,
+          profile: group.profile,
           template,
           variantIndex,
-          variantCount: variants.length,
+          variantCount: eligible.length,
           batchIndex,
+          pageIndex: batchIndex,
           batchCount,
-          frontSources,
-          backSources,
-          assignments: makeAssignments(regions, frontSources, backSources),
+          assignments,
         });
       }
     }
+
+    const trackCounts = {};
+    for (const [key, items] of group.tracks) trackCounts[key.replace('\0', '.')] = items.length;
+    groupSummaries.push({
+      group: group.group,
+      groupKey: group.groupKey,
+      profile: group.profile,
+      sourceCount: group.sources.length,
+      trackCounts,
+      templateCount: eligible.length,
+    });
   }
 
-  const usedTemplateIds = new Set(outputs.map((output) => templateIdentity(output.template)));
   return {
     sources,
     templates,
     outputs,
     outputCount: outputs.length,
-    groups: orderedGroups.map((group) => ({
-      group: group.group,
-      groupKey: group.groupKey,
-      color: group.color,
-      frontCount: group.front.length,
-      backCount: group.back.length,
-      templateCount: templatesByGroupColor.get(group.key).length,
-    })),
+    groups: groupSummaries,
     unusedTemplates: templates.filter((template) => !usedTemplateIds.has(templateIdentity(template))),
     resolvedTemplateRegions,
+    warnings,
   };
 }
 

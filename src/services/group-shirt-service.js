@@ -169,6 +169,7 @@ async function resolveGroupShirtPlan(options = {}) {
     templates: options.templates || options.templatePaths,
     regionsByTemplate: options.regionsByTemplate,
     regionResolver: options.regionResolver,
+    random: options.random,
   };
   const plan = await createPlan(plannerOptions);
   planOutputs(plan);
@@ -307,7 +308,6 @@ async function normalizePlannedOutput(rawOutput, outputIndex, caches, options = 
     );
   }
 
-  const seenSources = new Set();
   const seenRegionIds = new Set();
   const normalizedAssignments = [];
   for (let assignmentIndex = 0; assignmentIndex < assignments.length; assignmentIndex += 1) {
@@ -315,15 +315,6 @@ async function normalizePlannedOutput(rawOutput, outputIndex, caches, options = 
     const assignment = assignments[assignmentIndex];
     const rawSource = assignment?.source || assignment?.sourcePath;
     const sourcePath = resolvedFilePath(rawSource?.path || rawSource, 'PNG Group Shirt');
-    const sourceKey = fileSystemKey(sourcePath);
-    if (seenSources.has(sourceKey)) {
-      throw new GroupShirtError(
-        'Một PNG không được lặp lại trong cùng một ảnh Group Shirt.',
-        'DUPLICATE_SOURCE_IN_GROUP_SHIRT_OUTPUT',
-        { filePath: sourcePath, outputIndex },
-      );
-    }
-    seenSources.add(sourceKey);
 
     const region = normalizedRegion(assignment?.region, template);
     if (region.id !== undefined && region.id !== null) {

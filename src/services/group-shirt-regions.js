@@ -3,7 +3,11 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
 
-const GROUP_SHIRT_REGION_SCHEMA_VERSION = 1;
+const GROUP_SHIRT_REGION_SCHEMA_VERSION = 2;
+const GROUP_SHIRT_PRINT_ASPECT_WIDTH = 42;
+const GROUP_SHIRT_PRINT_ASPECT_HEIGHT = 48;
+const GROUP_SHIRT_PRINT_ASPECT_RATIO =
+  GROUP_SHIRT_PRINT_ASPECT_WIDTH / GROUP_SHIRT_PRINT_ASPECT_HEIGHT;
 const DEFAULT_GROUP_SHIRT_REGION_FILE_NAME = 'group-shirt-regions.json';
 const MAX_GROUP_SHIRT_REGIONS_PER_TEMPLATE = 64;
 const COORDINATE_EPSILON = 1e-9;
@@ -48,6 +52,17 @@ function normalizeGroupShirtSide(value) {
     'Vùng in phải là mặt trước hoặc mặt sau.',
     'INVALID_GROUP_SHIRT_REGION_SIDE',
     { side: value },
+  );
+}
+
+function normalizeGroupShirtColor(value) {
+  const normalized = String(value ?? 'wh').trim().toLocaleLowerCase('en-US');
+  if (normalized === 'wh' || normalized === 'light') return 'wh';
+  if (normalized === 'bl' || normalized === 'dark') return 'bl';
+  throw new GroupShirtRegionError(
+    'Vùng in phải thuộc áo sáng màu hoặc áo tối màu.',
+    'INVALID_GROUP_SHIRT_REGION_COLOR',
+    { color: value },
   );
 }
 
@@ -147,6 +162,7 @@ function validateGroupShirtRegion(region, templateSize = null) {
   const normalized = {
     id: normalizeRegionId(region.id),
     side: normalizeGroupShirtSide(region.side ?? region.type),
+    color: normalizeGroupShirtColor(region.color ?? region.shirtColor),
     ...coordinates,
     rotation: normalizeRotation(region.rotation ?? region.angle),
   };
@@ -165,6 +181,16 @@ function validateGroupShirtRegion(region, templateSize = null) {
 
   const size = templateSize ? normalizeTemplateSize(templateSize) : null;
   if (size) {
+    const pixelWidth = normalized.width * size.width;
+    const pixelHeight = normalized.height * size.height;
+    const actualRatio = pixelWidth / pixelHeight;
+    if (Math.abs(actualRatio - GROUP_SHIRT_PRINT_ASPECT_RATIO) > 1e-6) {
+      throw new GroupShirtRegionError(
+        'Vùng in Group Shirt phải giữ đúng tỷ lệ 42×48.',
+        'INVALID_GROUP_SHIRT_REGION_ASPECT_RATIO',
+        { region: normalized, actualRatio },
+      );
+    }
     const corners = rotatedPixelCorners(normalized, size);
     if (corners.some((corner) => (
       corner.x < -COORDINATE_EPSILON || corner.y < -COORDINATE_EPSILON ||
@@ -255,6 +281,7 @@ function cloneRegion(region) {
   return {
     id: region.id,
     side: region.side,
+    color: region.color,
     centerX: region.centerX,
     centerY: region.centerY,
     width: region.width,
@@ -289,7 +316,8 @@ function sanitizeGroupShirtRegionDocument(rawDocument) {
   const output = defaultGroupShirtRegionDocument();
   if (
     !rawDocument || typeof rawDocument !== 'object' || Array.isArray(rawDocument) ||
-    rawDocument.schemaVersion !== GROUP_SHIRT_REGION_SCHEMA_VERSION ||
+    (rawDocument.schemaVersion !== 1 &&
+      rawDocument.schemaVersion !== GROUP_SHIRT_REGION_SCHEMA_VERSION) ||
     !rawDocument.templates || typeof rawDocument.templates !== 'object' ||
     Array.isArray(rawDocument.templates)
   ) return output;
@@ -477,10 +505,13 @@ function createGroupShirtRegionStore(options = {}) {
 
 module.exports = {
   GROUP_SHIRT_REGION_SCHEMA_VERSION,
+  GROUP_SHIRT_PRINT_ASPECT_WIDTH,
+  GROUP_SHIRT_PRINT_ASPECT_HEIGHT,
   DEFAULT_GROUP_SHIRT_REGION_FILE_NAME,
   MAX_GROUP_SHIRT_REGIONS_PER_TEMPLATE,
   GroupShirtRegionError,
   defaultGroupShirtRegionDocument,
+  normalizeGroupShirtColor,
   normalizeGroupShirtSide,
   validateGroupShirtRegion,
   validateGroupShirtRegions,

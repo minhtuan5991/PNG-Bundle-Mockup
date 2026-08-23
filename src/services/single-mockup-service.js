@@ -70,8 +70,17 @@ function normalizeDirectory(directoryPath, optionName) {
   return path.resolve(directoryPath);
 }
 
+function templateNameIncludesMarker(fileName, marker) {
+  if (marker === undefined || marker === null || String(marker).trim() === '') return true;
+  const normalizedMarker = String(marker).normalize('NFC').trim().toLocaleLowerCase('en-US');
+  const stem = path.basename(String(fileName), path.extname(String(fileName)))
+    .normalize('NFC')
+    .toLocaleLowerCase('en-US');
+  return stem.includes(normalizedMarker);
+}
+
 async function listSingleMockupTemplates(inputDirectory, options = {}) {
-  const { ignoreInvalid = false, warnings = [] } = options;
+  const { ignoreInvalid = false, warnings = [], templateMarker = null } = options;
   if (!Array.isArray(warnings)) {
     throw new TypeError('warnings phải là một mảng.');
   }
@@ -88,7 +97,9 @@ async function listSingleMockupTemplates(inputDirectory, options = {}) {
   }
 
   const candidates = entries
-    .filter((entry) => entry.isFile() && TEMPLATE_EXTENSION_SET.has(path.extname(entry.name).toLowerCase()))
+    .filter((entry) => entry.isFile() &&
+      TEMPLATE_EXTENSION_SET.has(path.extname(entry.name).toLowerCase()) &&
+      templateNameIncludesMarker(entry.name, templateMarker))
     .sort((left, right) =>
       left.name.localeCompare(right.name, 'vi', { numeric: true, sensitivity: 'base' }),
     );
@@ -509,6 +520,7 @@ async function generateSingleMockups(options = {}) {
     sourceDirectory,
     outputDirectory,
     templates: providedTemplates = null,
+    templateMarker = null,
     regionStore = null,
     regions = null,
     random = Math.random,
@@ -546,7 +558,9 @@ async function generateSingleMockups(options = {}) {
     };
   }
 
-  const templates = providedTemplates || await listSingleMockupTemplates(inputDirectory);
+  const templates = providedTemplates || await listSingleMockupTemplates(inputDirectory, {
+    templateMarker,
+  });
   if (!Array.isArray(templates) || templates.length === 0) {
     throw new SingleMockupError(
       'Thư mục Input chưa có ảnh mockup đơn.',
@@ -692,6 +706,7 @@ module.exports = {
   SINGLE_MOCKUP_TEMPLATE_EXTENSIONS,
   SingleMockupError,
   SingleMockupCancelledError,
+  templateNameIncludesMarker,
   listSingleMockupTemplates,
   selectRandomSourcePngs,
   validateSourcePngPaths,

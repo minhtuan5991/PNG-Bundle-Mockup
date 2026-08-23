@@ -26,7 +26,7 @@ async function createFixturePaths(t) {
   const userDataPath = path.join(root, 'User Data');
   const sourceFolder = path.join(root, 'Thiết kế PNG');
   const templateFile = path.join(root, 'Ảnh nền MẪU.JPEG');
-  const groupTemplateFile = path.join(root, '1 mkg.wh.PNG');
+  const groupTemplateFile = path.join(root, '1 mgs.PNG');
   const watermarkFile = path.join(root, 'Watermark TRONG SUỐT.PNG');
   await fs.mkdir(sourceFolder, { recursive: true });
   await fs.writeFile(templateFile, 'template');

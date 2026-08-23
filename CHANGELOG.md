@@ -4,7 +4,30 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
-Chưa có thay đổi sau v1.3.0.
+Chưa có thay đổi sau v1.4.0.
+
+## [1.4.0] - 2026-08-23
+
+### Added
+
+- Group Shirt hỗ trợ **Tạo PDF Download** với cùng quy tắc chỉ một PDF trong mỗi thư mục `Done` như Bundle.
+- Vùng in Group Shirt lưu thêm màu áo sáng/tối; giao diện có hai checkbox loại trừ, không chọn mặc định áo sáng, và bốn kiểu hiển thị riêng cho sáng/tối × trước/sau.
+- Thêm planner theo bốn profile tên PNG: không tag, chỉ tag mặt, chỉ tag màu và đủ tag màu+mặt.
+- Thêm test hồi quy cho marker `bundle`, marker nền `mgs`, tỷ lệ vùng 42×48, trang thừa/thiếu, lặp ngẫu nhiên đúng track và PDF trong Group Shirt.
+
+### Changed
+
+- Mockup đơn ở cả Bundle và Group Shirt chỉ dùng ảnh Input có chữ `bundle` trong tên; Group Shirt chỉ chọn PNG áo sáng (`.wh` hoặc không gắn tag màu) làm nguồn ngẫu nhiên.
+- Ảnh nền Group Shirt bắt buộc có marker `mgs`; phần tên trước marker được so khớp chính xác với tên nhóm PNG trước `(số)`.
+- Vùng in Group Shirt khóa tỷ lệ pixel `42×48` khi tạo, scale, nhập kích thước và xoay.
+- Mỗi track màu/mặt ghép PNG theo thứ tự. Vùng thiếu được lấp ngẫu nhiên bằng PNG trong đúng track/cùng nhóm; PNG thừa tạo thêm trang và các vùng còn thiếu của trang mới cũng được lấp đúng track.
+- Schema vùng Group Shirt tăng lên 2; cấu hình schema 1 hợp lệ được di trú thành vùng áo sáng.
+- Nâng version ứng dụng và bộ cài local lên `1.4.0`.
+
+### Compatibility
+
+- Giữ nguyên Bundle grid, kéo-thả, watermark, xóa metadata, quy tắc một PDF/Done và một bộ mockup đơn/Done.
+- v1.4.0 được phát hành qua tag riêng; không ghi đè tag hoặc asset của các bản public trước.
 
 ## [1.3.0] - 2026-08-19
 

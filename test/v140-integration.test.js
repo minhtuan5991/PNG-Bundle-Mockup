@@ -11,12 +11,12 @@ function read(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), 'utf8');
 }
 
-test('v1.3.0 dùng hai radio loại trừ và chỉ Bundle chứa PDF Download', () => {
+test('v1.4.0 dùng hai radio loại trừ và cả hai chế độ hỗ trợ PDF Download', () => {
   const html = read('src/renderer/index.html');
   assert.match(html, /id="mockupModeBundle"\s+name="mockupMode"[^>]*value="bundle"[^>]*checked/);
   assert.match(html, /id="mockupModeGroup"\s+name="mockupMode"[^>]*value="group-shirt"/);
   const pdfBlock = html.match(/<div id="pdfOptionBlock">([\s\S]*?)<\/div>\s*<label class="check-option">/);
-  assert.ok(pdfBlock, 'PDF option phải có wrapper Bundle-only');
+  assert.ok(pdfBlock, 'PDF option phải nằm trong khối tùy chọn dùng chung');
   assert.match(pdfBlock[1], /id="createPdfDownload"/);
   assert.match(html, /id="chooseGroupTemplatesButton"/);
   assert.match(html, /id="editGroupMockupRegions"/);
@@ -32,7 +32,7 @@ test('mọi ID renderer query đều tồn tại đúng một lần trong HTML',
   }
 });
 
-test('preload và main expose đủ IPC Group Shirt nhưng chặn PDF ở backend', () => {
+test('preload và main expose đủ IPC Group Shirt, PDF và bộ lọc template bundle', () => {
   const preload = read('src/preload.js');
   const main = read('src/main.js');
   for (const apiName of [
@@ -49,7 +49,8 @@ test('preload và main expose đủ IPC Group Shirt nhưng chặn PDF ở backen
     'group-shirt:preview',
     'group-shirt:generate',
   ]) assert.match(main, new RegExp(`ipcMain\\.handle\\('${channel}'`));
-  assert.match(main, /createPdfDownload\s*===\s*true[\s\S]*?UNSUPPORTED_OPTION_FOR_MODE/);
+  assert.match(main, /ipcMain\.handle\('group-shirt:generate'[\s\S]*?createDownloadPdf\(\{/);
+  assert.match(main, /ipcMain\.handle\('group-shirt:generate'[\s\S]*?templateMarker:\s*'bundle'/);
   assert.match(main, /selectLightGroupShirtSources\(sourcePaths\)/);
 });
 
@@ -80,8 +81,9 @@ test('Group Shirt đăng ký job trước mọi inspect async và xác thực ca
 test('allowlist và fingerprint bảo vệ source/template theo từng renderer', () => {
   const main = read('src/main.js');
   assert.match(main, /if\s*\(smokeTest\)\s*app\.disableHardwareAcceleration\(\)/);
-  assert.match(main, /v130Api:\s*typeof window\.bundleApi\?\.selectGroupShirtTemplates/);
-  assert.match(main, /v130Controls:\s*Boolean\(document\.querySelector\('#mockupModeBundle'\)/);
+  assert.match(main, /v140Api:\s*typeof window\.bundleApi\?\.selectGroupShirtTemplates/);
+  assert.match(main, /v140Controls:\s*Boolean\(document\.querySelector\('#mockupModeBundle'\)/);
+  assert.match(main, /v140ModeSwitch:[\s\S]*?!pdfBlock\.classList\.contains\('is-hidden'\)/);
   assert.match(main, /const authorizedSourcePaths\s*=\s*new Map\(\)/);
   assert.match(main, /const authorizedGroupTemplatePaths\s*=\s*new Map\(\)/);
   assert.match(main, /replaceAuthorizedPaths\([\s\S]*?event\.sender\.id/);
@@ -114,16 +116,18 @@ test('mockup đơn Group Shirt preflight áo sáng trước render nhưng vẫn 
     'preflight áo sáng phải hoàn tất trước render Group Shirt',
   );
   assert.match(generate, /generateSingleMockups\(\{[\s\S]*?sourcePaths:\s*lightSources/);
+  assert.match(generate, /generateSingleMockups\(\{[\s\S]*?templateMarker:\s*'bundle'/);
 });
 
-test('renderer dispatch theo mode và payload Group Shirt luôn tắt PDF', () => {
+test('renderer dispatch theo mode và payload Group Shirt nhận tùy chọn PDF dùng chung', () => {
   const script = read('src/renderer/app.js');
   assert.match(script, /state\.mockupMode\s*===\s*'group-shirt'[\s\S]*?api\.renderGroupShirtPreview/);
   assert.match(script, /state\.mockupMode\s*===\s*'group-shirt'[\s\S]*?api\.generateGroupShirtMockups/);
   const validationStart = script.indexOf('function validateGroupReady');
   const validationEnd = script.indexOf('\nfunction validateReady', validationStart);
   const validation = script.slice(validationStart, validationEnd);
-  assert.match(validation, /createPdfDownload:\s*false/);
+  assert.match(validation, /includeAdditionalOutputs[\s\S]*?readAdditionalGenerationOptions\(\)/);
+  assert.doesNotMatch(validation, /createPdfDownload:\s*false/);
   assert.match(validation, /templatePaths:\s*state\.groupTemplates/);
   assert.match(validation, /directories\.size\s*!==\s*1/);
 });
@@ -154,7 +158,7 @@ test('renderer giữ preview và thống kê đúng chế độ hiện tại', (
   assert.match(preview, /if\s*\(groupMode\)[\s\S]*?statLayout\.textContent\s*=\s*`\$\{result\.regionCount\s*\|\|\s*0\}\s*vùng in`/);
 });
 
-test('Group Shirt ẩn thiết lập Bundle nhưng giữ alpha và hướng dẫn tay xoay riêng', () => {
+test('Group Shirt ẩn thiết lập Bundle, giữ alpha và có bộ chọn màu vùng in', () => {
   const html = read('src/renderer/index.html');
   const script = read('src/renderer/app.js');
   assert.match(
@@ -165,12 +169,16 @@ test('Group Shirt ẩn thiết lập Bundle nhưng giữ alpha và hướng dẫ
   assert.match(script, /regionCount\s*=\s*analysis\.matchedTemplates\.reduce/);
   assert.match(script, /groupReadinessSummary\.classList\.toggle\([\s\S]*?'is-ready'/);
   assert.match(script, /groupReadinessSummary\.classList\.toggle\([\s\S]*?'is-warning'/);
-  assert.match(html, /Kéo nút tròn ↻ riêng phía trên vùng để xoay tự do/);
+  assert.match(html, /Vùng luôn giữ tỷ lệ 42×48 khi scale hoặc xoay/);
+  assert.match(html, /id=.groupRegionColorLight.[\s\S]*?Áo sáng màu/);
+  assert.match(html, /id=.groupRegionColorDark.[\s\S]*?Áo tối màu/);
+  assert.match(script, /groupRegionColorLight\.checked[\s\S]*?groupRegionColorDark\.checked\s*=\s*false/);
+  assert.match(script, /groupRegionColorDark\.checked[\s\S]*?groupRegionColorLight\.checked\s*=\s*false/);
   assert.match(html, /Đổi tên PNG chỉ gắn hoặc thay tag màu\/mặt/);
   assert.match(html, /“Nhóm \(số\)”[\s\S]*?File Explorer/);
 });
 
-test('vùng Group Shirt resize tự do với kích thước tối thiểu 1 pixel', () => {
+test('vùng Group Shirt scale khóa đúng tỷ lệ pixel 42×48 và tối thiểu 7×8', () => {
   const script = read('src/renderer/app.js');
   const constrainStart = script.indexOf('function constrainGroupRegion');
   const markDirtyStart = script.indexOf('function markGroupEditorDirty', constrainStart);
@@ -178,17 +186,18 @@ test('vùng Group Shirt resize tự do với kích thước tối thiểu 1 pixe
   const dragEnd = script.indexOf('function endGroupRegionDrag', dragStart);
   const constrain = script.slice(constrainStart, markDirtyStart);
   const drag = script.slice(dragStart, dragEnd);
-  assert.match(constrain, /minimumWidth\s*=\s*Math\.min\(1,\s*1\s*\/\s*template\.width\)/);
-  assert.match(constrain, /minimumHeight\s*=\s*Math\.min\(1,\s*1\s*\/\s*template\.height\)/);
-  assert.match(drag, /pixelWidth\s*=\s*Math\.max\(1,/);
-  assert.match(drag, /pixelHeight\s*=\s*Math\.max\(1,/);
-  assert.doesNotMatch(drag, /pixelWidth\s*\*\s*8\s*\/\s*7|pixelHeight\s*\*\s*7\s*\/\s*8/);
+  assert.match(constrain, /aspectRatio\s*=\s*42\s*\/\s*48/);
+  assert.match(constrain, /pixelWidth\s*=\s*Math\.max\(7,/);
+  assert.match(constrain, /pixelHeight\s*=\s*pixelWidth\s*\/\s*aspectRatio/);
+  assert.match(drag, /aspectRatio\s*=\s*42\s*\/\s*48/);
+  assert.match(drag, /pixelHeight\s*=\s*Math\.max\(8,/);
+  assert.match(drag, /pixelWidth\s*=\s*pixelHeight\s*\*\s*aspectRatio/);
 });
 
-test('package và lockfile cùng mang version 1.3.0', () => {
+test('package và lockfile cùng mang version 1.4.0', () => {
   const manifest = JSON.parse(read('package.json'));
   const lockfile = JSON.parse(read('package-lock.json'));
-  assert.equal(manifest.version, '1.3.0');
-  assert.equal(lockfile.version, '1.3.0');
-  assert.equal(lockfile.packages[''].version, '1.3.0');
+  assert.equal(manifest.version, '1.4.0');
+  assert.equal(lockfile.version, '1.4.0');
+  assert.equal(lockfile.packages[''].version, '1.4.0');
 });
