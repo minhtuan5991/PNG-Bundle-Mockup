@@ -497,7 +497,7 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [x] Build local: Setup 104.369.200 byte, SHA-256 `DA69CF3958EC535FAA24EDE985B4E160E0AF95E56530967FA2AD13A42A363277`; blockmap 109.413 byte, SHA-256 `F0FA30B1728CAA125D0C237B2332B30F08906E95365586B655A396560514DD4F`; `latest.yml` 363 byte, SHA-256 `F648D0AF197FBD555D76CBD6C4C2085E0723682A1AC43773943ED179F72A765D`; metadata khớp, Authenticode NotSigned.
 - [x] `app.asar` version 1.4.0 và chứa Group Shirt planner; installer allowlist không gom bốn JPG riêng local.
 - [ ] Cài tương tác trên máy/VM sạch, tạo thử dữ liệu thật với nền 6–8 vùng và xác minh visually.
-- [ ] GitHub push/tag/Release và xác minh ba asset public.
+- [x] Commit `930b728cc974b6627db049ca36e41af65e3f2acc` và annotated tag `v1.4.0` đã push; Windows CI `32631459252` và Release Windows `32631472745` success. Release ID `375169659` stable/public có đúng ba asset, digest/size API khớp và `/releases/latest` trỏ v1.4.0.
 
 ## F. Sign-off
 
@@ -521,6 +521,6 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 | v1.2.4 replacement single-mockup QA/release | Codex local QA + GitHub Actions | 2026-08-08 | 74/74 test; mockup đơn bỏ qua nếu `Done` đã có `single_*.png`. Release cũ bị xóa; tag trỏ `1231fc9`; Release ID `367243225` và ba asset tải ngược đều được xác minh. |
 | v1.2.5 remove-PNG QA/release | Codex local QA + GitHub Actions | 2026-08-09 | 75/75 test; source/package smoke đạt; Release ID `367263645`, đúng ba asset tải ngược, updater metadata và `/releases/latest` đều được xác minh. |
 | v1.3.0 Group Shirt QA/release | Codex local QA + GitHub Actions | 2026-08-19 | 116/116 automated test; local NSIS payload/checksum đạt. Commit `2f652dd`, CI/Release workflow success; Release ID `372536307` stable/public có đúng ba asset và là `/releases/latest`. Electron smoke local bị chặn bởi GPU process; cài/nâng cấp VM vẫn còn chờ. |
-| v1.4.0 planner/installer QA | Codex local QA | 2026-08-23 | 118/118 automated test; packaged smoke 19/19; NSIS/checksum/app.asar/Input allowlist đạt. Cài tương tác/VM và dữ liệu thật còn chờ. |
+| v1.4.0 planner/installer QA/release | Codex local QA + GitHub Actions | 2026-08-23 | 118/118 automated test; packaged smoke 19/19; NSIS/checksum/app.asar/Input allowlist đạt. Commit `930b728`, CI/Release workflow success; Release ID `375169659` stable/public có đúng ba asset và là `/releases/latest`. Cài tương tác/VM và dữ liệu thật còn chờ. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.

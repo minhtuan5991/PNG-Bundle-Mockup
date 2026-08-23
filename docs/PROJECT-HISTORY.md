@@ -3,7 +3,7 @@
 > Cập nhật: 2026-08-23
 > Phiên bản mã nguồn hiện tại: `1.4.0`
 > Bản stable hiện có: `v1.4.0`
-> Trạng thái: v1.4.0 đã hoàn tất code, automated QA, packaged smoke và bộ cài; đang phát hành qua tag riêng trên GitHub.
+> Trạng thái: v1.4.0 đã phát hành stable/public trên GitHub và đang là bản Latest.
 
 ## 1. Mục đích tài liệu
 
@@ -597,4 +597,6 @@ Mốc QA local ngày 2026-08-07:
 - Packaged smoke trên `release/win-unpacked/PNG Bundle Mockup.exe` đạt **19/19**, gồm title v1.4.0, API, controls, PDF chung và chuyển mode.
 - Build local tạo installer 104.369.200 byte, SHA-256 `DA69CF3958EC535FAA24EDE985B4E160E0AF95E56530967FA2AD13A42A363277`; blockmap 109.413 byte, SHA-256 `F0FA30B1728CAA125D0C237B2332B30F08906E95365586B655A396560514DD4F`; `latest.yml` 363 byte, SHA-256 `F648D0AF197FBD555D76CBD6C4C2085E0723682A1AC43773943ED179F72A765D`. Metadata updater khớp installer; Authenticode `NotSigned`.
 - `app.asar` mang version 1.4.0 và có planner/service mới. Allowlist installer vẫn chỉ chứa README/PDF mẫu; bốn JPG riêng local trong `Input` không bị sửa, stage hoặc đóng gói.
-- QA cài tương tác trên máy/VM sạch và chạy bộ dữ liệu thật 6–8 vùng vẫn cần thực hiện trước khi phát hành public.
+- Commit phát hành `930b728cc974b6627db049ca36e41af65e3f2acc` và annotated tag `v1.4.0` đã được push. Windows CI `32631459252` và Release Windows `32631472745` đều thành công.
+- Release ID `375169659` stable/public, không phải prerelease/draft và là `/releases/latest`; có đúng ba asset: Setup 104.369.132 byte (`1F8F0B29D6A67D850C1C6E018560905137DD437D7A63429F82E6381C838F430B`), blockmap 109.332 byte (`3DEB532B25E802BD7FDEE057A95D543E3E361A5FCB1F78F1440CF7A3EFD32745`) và `latest.yml` 363 byte (`60DC99F46A6800055FDBE936C129DBECA96A1B54AFC6A88FA980DF548ECB2526`).
+- QA cài tương tác trên máy/VM sạch và chạy bộ dữ liệu thật 6–8 vùng vẫn còn chờ sau phát hành.
