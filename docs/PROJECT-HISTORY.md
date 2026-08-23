@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
-> Cập nhật: 2026-08-23
+> Cập nhật: 2026-08-24
 > Phiên bản mã nguồn hiện tại: `1.4.2`
-> Bản stable hiện có: `v1.4.1`
-> Trạng thái: v1.4.2 đang được chuẩn bị phát hành; stable public `/releases/latest` vẫn là v1.4.1 cho đến khi workflow hoàn tất.
+> Bản stable hiện có: `v1.4.2`
+> Trạng thái: v1.4.2 đã phát hành stable/public và `/releases/latest` đang trỏ đúng Release này.
 
 ## 1. Mục đích tài liệu
 
@@ -623,4 +623,5 @@ Mốc QA local ngày 2026-08-07:
 - Version source/lockfile/installer local là `1.4.2`. Automated tests **121/121** đạt; Electron source và packaged smoke đều **21/21** đạt, gồm check runtime `v142SharedMgs`.
 - Build local tạo installer 104.370.063 byte, SHA-256 `463E3CC84528DD7A6ACEB8B64A17AF434AF9CCC6736F17994B80671D6DBCD1E9`; blockmap 109.635 byte, SHA-256 `A2F6C62EB881701CD05D7A49C7977EC00BEB5032DECD88E270F6F3879D4FD57B`; `latest.yml` 363 byte, SHA-256 `0165BEDB1992D0D4BF4C34B1A2A3D374DA9562654A97FABF6AE9A0DC02C78A2D`. Metadata updater khớp installer; Authenticode `NotSigned`.
 - `app.asar` v1.4.2 chứa planner/renderer shared-template và parser marker-only; packaged `Input` chỉ có `README.txt` cùng `Toystory HLW1.pdf`. Bốn JPG riêng local không bị sửa hoặc đóng gói.
-- Bản phát hành dùng commit/tag mới `v1.4.2`; trạng thái workflow, Release ID và asset remote sẽ được bổ sung sau khi GitHub hoàn tất.
+- Commit phát hành `b8c44860213eaa1a17e58e34e08beee6400332ec` và annotated tag `v1.4.2` đã được push atomically. Windows CI `32653936792` và Release Windows `32653936827` đều thành công.
+- Release ID `375273484` stable/public, không phải prerelease/draft và là `/releases/latest`; có đúng ba asset: Setup 104.369.203 byte (`62A5495726F6FBA8BFF996AC324D709CE6D061CF91109689A512D1090046693D`), blockmap 109.581 byte (`6F69BD556D58F560EDB1F89040AF2F1CAD722AEC3A53EA97CF42DBE8FF442AFE`) và `latest.yml` 363 byte (`60D2A96A003B90424BAF96BBFBEC57D855D715E6E87B002EDFF899087E54A155`).
