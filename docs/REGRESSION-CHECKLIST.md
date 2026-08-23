@@ -4,6 +4,7 @@
 
 ## Trạng thái mốc
 
+- [x] QA local v1.4.1 ngày 2026-08-23: **119/119 test đạt**; source/package smoke **20/20**; NSIS/checksum/app.asar/Input allowlist đạt. GitHub Release đang chờ.
 - [x] QA v1.4.0 ngày 2026-08-23: **118/118 test đạt**; packaged smoke **19/19**; NSIS/checksum/app.asar/Input allowlist đạt. Cài tương tác và dữ liệu thật còn chờ.
 
 - [x] QA local v1.2.3 ngày 2026-08-07: **73/73 test đạt**; build sạch tạo đủ installer/blockmap/`latest.yml`, version/checksum/Input payload đạt. Kiểm thử cài mới custom path và nâng cấp tại chỗ trên máy/VM sạch còn chờ.
@@ -499,6 +500,18 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [ ] Cài tương tác trên máy/VM sạch, tạo thử dữ liệu thật với nền 6–8 vùng và xác minh visually.
 - [x] Commit `930b728cc974b6627db049ca36e41af65e3f2acc` và annotated tag `v1.4.0` đã push; Windows CI `32631459252` và Release Windows `32631472745` success. Release ID `375169659` stable/public có đúng ba asset, digest/size API khớp và `/releases/latest` trỏ v1.4.0.
 
+## E11. v1.4.1 — `.mgs1` và source directory
+
+- [x] `.mgs1.jpg` và `mgs1.jpg` được parse thành group key `1`; `1.mgs.jpg` cũng là nhóm `1`.
+- [x] Dạng chuẩn `1 mgs.jpg` và `1 mgs lifestyle.jpg` tiếp tục giữ exact group/variant như trước.
+- [x] Planner end-to-end nhận PNG nhóm `1` + nền `.mgs1.jpg` và tạo output thay vì báo thiếu template.
+- [x] Renderer khôi phục `groupSourceDirectory(file)` với ưu tiên `file.directory`, fallback `state.sourceDirectory`; Preview/Tạo không còn `ReferenceError`.
+- [x] Store vùng in không đổi schema/key/fingerprint, vì vậy thiết lập của file nền hiện có vẫn được dùng lại.
+- [x] `node --check`, `git diff --check`, **119/119** automated test và Electron source smoke **20/20** đạt.
+- [x] `package.json`, `package-lock.json` và package root cùng version `1.4.1`.
+- [x] Build local và packaged smoke đạt: Setup 104.370.173 byte (`E492F133…E19DC`), blockmap 109.494 byte (`73C89632…24DD3`), `latest.yml` 363 byte (`3B6416E2…9392A`); metadata khớp, `app.asar` v1.4.1 và Input allowlist đúng.
+- [ ] Push/tag/Release và xác minh ba asset public.
+
 ## F. Sign-off
 
 | Hạng mục | Người kiểm tra | Ngày | Kết quả/Ghi chú |
@@ -522,5 +535,6 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 | v1.2.5 remove-PNG QA/release | Codex local QA + GitHub Actions | 2026-08-09 | 75/75 test; source/package smoke đạt; Release ID `367263645`, đúng ba asset tải ngược, updater metadata và `/releases/latest` đều được xác minh. |
 | v1.3.0 Group Shirt QA/release | Codex local QA + GitHub Actions | 2026-08-19 | 116/116 automated test; local NSIS payload/checksum đạt. Commit `2f652dd`, CI/Release workflow success; Release ID `372536307` stable/public có đúng ba asset và là `/releases/latest`. Electron smoke local bị chặn bởi GPU process; cài/nâng cấp VM vẫn còn chờ. |
 | v1.4.0 planner/installer QA/release | Codex local QA + GitHub Actions | 2026-08-23 | 118/118 automated test; packaged smoke 19/19; NSIS/checksum/app.asar/Input allowlist đạt. Commit `930b728`, CI/Release workflow success; Release ID `375169659` stable/public có đúng ba asset và là `/releases/latest`. Cài tương tác/VM và dữ liệu thật còn chờ. |
+| v1.4.1 Group Shirt hotfix QA | Codex local QA | 2026-08-23 | 119/119 test; source/package smoke 20/20; NSIS/checksum/app.asar/Input allowlist đạt. Push/tag/Release đang chờ. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.

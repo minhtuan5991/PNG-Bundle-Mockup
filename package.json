@@ -1,6 +1,6 @@
 {
   "name": "png-bundle-mockup",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Ứng dụng desktop tự động sắp xếp PNG lên ảnh nền mockup.",
   "main": "src/main.js",
   "author": "PNG Bundle Mockup",

@@ -158,17 +158,22 @@ function parseGroupShirtTemplateName(value) {
   }
 
   const rawStem = name.slice(0, -path.extname(name).length).trim();
-  const templateMatch = rawStem.match(/^(.*?)\s*mgs(?:[\s._-]*(.*?))?\s*$/iu);
-  if (!templateMatch) {
+  const prefixMatch = rawStem.match(/^\.?mgs[\s._-]*(.+?)\s*$/iu);
+  const suffixMatch = prefixMatch
+    ? null
+    : rawStem.match(/^(.*?)[\s._-]*mgs(?:[\s._-]*(.*?))?\s*$/iu);
+  if (!prefixMatch && !suffixMatch) {
     throw new GroupShirtFilenameError(
-      `Tên ảnh nền “${name}” phải chứa marker mgs trước đuôi ảnh.`,
+      `Tên ảnh nền “${name}” phải dùng dạng “<nhóm> mgs” hoặc “.mgs<nhóm>” trước đuôi ảnh.`,
       'MISSING_GROUP_SHIRT_MGS_MARKER',
       { fileName: name },
     );
   }
-  const group = normalizeGroupDisplay(templateMatch[1]);
+  const group = normalizeGroupDisplay(prefixMatch?.[1] ?? suffixMatch[1]);
   const groupKey = normalizeGroupKey(group);
-  const variant = normalizeGroupDisplay(templateMatch[2] || '') || null;
+  const variant = prefixMatch
+    ? null
+    : (normalizeGroupDisplay(suffixMatch[2] || '') || null);
   return Object.freeze({
     ...(path.isAbsolute(value) ? { path: path.resolve(value) } : {}),
     name,

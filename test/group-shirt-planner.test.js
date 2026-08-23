@@ -62,6 +62,18 @@ test('nhóm không tag chỉ dùng vùng trước áo sáng và lặp ngẫu nhi
     item.color === 'wh' && item.side === 'front'));
 });
 
+test('alias .mgs trước tên nhóm khớp đúng PNG và tạo được kế hoạch', async () => {
+  const plan = await createGroupShirtPlan({
+    sources: [source('1', 1, 'wh')],
+    templates: [template('.mgs1.jpg', regionsForTrack('wh-f', 2))],
+    random: () => 0,
+  });
+  assert.equal(plan.groups[0].groupKey, '1');
+  assert.equal(plan.outputs.length, 1);
+  assert.equal(plan.outputs[0].template.groupKey, '1');
+  assert.equal(plan.outputs[0].assignments.length, 2);
+});
+
 test('ảnh thừa tạo trang mới và mỗi trang còn thiếu được lấp từ đúng track', async () => {
   const sources = Array.from({ length: 8 }, (_, index) => source('2', index + 1));
   const plan = await createGroupShirtPlan({

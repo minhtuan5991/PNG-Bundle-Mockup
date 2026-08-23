@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
 > Cập nhật: 2026-08-23
-> Phiên bản mã nguồn hiện tại: `1.4.0`
+> Phiên bản mã nguồn hiện tại: `1.4.1`
 > Bản stable hiện có: `v1.4.0`
-> Trạng thái: v1.4.0 đã phát hành stable/public trên GitHub và đang là bản Latest.
+> Trạng thái: v1.4.1 đang được chuẩn bị phát hành từ hotfix Group Shirt; stable public hiện tại vẫn là v1.4.0.
 
 ## 1. Mục đích tài liệu
 
@@ -21,7 +21,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.4.0` |
+| Phiên bản mã nguồn | `1.4.1` |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
@@ -600,3 +600,13 @@ Mốc QA local ngày 2026-08-07:
 - Commit phát hành `930b728cc974b6627db049ca36e41af65e3f2acc` và annotated tag `v1.4.0` đã được push. Windows CI `32631459252` và Release Windows `32631472745` đều thành công.
 - Release ID `375169659` stable/public, không phải prerelease/draft và là `/releases/latest`; có đúng ba asset: Setup 104.369.132 byte (`1F8F0B29D6A67D850C1C6E018560905137DD437D7A63429F82E6381C838F430B`), blockmap 109.332 byte (`3DEB532B25E802BD7FDEE057A95D543E3E361A5FCB1F78F1440CF7A3EFD32745`) và `latest.yml` 363 byte (`60DC99F46A6800055FDBE936C129DBECA96A1B54AFC6A88FA980DF548ECB2526`).
 - QA cài tương tác trên máy/VM sạch và chạy bộ dữ liệu thật 6–8 vùng vẫn còn chờ sau phát hành.
+
+## 22. Bản v1.4.1 — nhận `.mgs1` và khôi phục thư mục nguồn
+
+- Nguyên nhân cảnh báo “Thiếu ảnh nền mgs cho 1”: parser cũ đọc `.mgs1.jpg` thành group key `.` và variant `1`, không khớp PNG `1 (n).wh.png`.
+- Parser mới nhận cả dạng chuẩn `<nhóm> mgs`, dạng dấu chấm `<nhóm>.mgs` và alias marker-first `.mgs<nhóm>`/`mgs<nhóm>`; exact group matching và variant của dạng chuẩn vẫn giữ nguyên.
+- Khôi phục nguyên helper `groupSourceDirectory(file)` từ v1.3.0. Helper đã bị xóa nhầm trong commit v1.4.0 nhưng lời gọi ở validation còn tồn tại, gây `ReferenceError` trước khi payload tới main process.
+- Store vùng in tiếp tục định danh theo template path/name/kích thước/fingerprint, nên vùng đã lưu cho `.mgs1.jpg` được dùng lại và không cần thiết lập lại.
+- Version source/lockfile đã tăng lên `1.4.1`. QA local: `node --check` đạt; automated tests **119/119** đạt; source và packaged Electron smoke đều **20/20** đạt, gồm kiểm tra runtime `v140SourceDirectory`.
+- Build local tạo installer 104.370.173 byte, SHA-256 `E492F13337D6BCD9D7282CA1D3AFDF4CA196F3B44B390C3804A86F46F29E19DC`; blockmap 109.494 byte, SHA-256 `73C896324FBA373FC4452CDD6385D2DF8C6651FB1DBA809BBD32561D2C824DD3`; `latest.yml` 363 byte, SHA-256 `3B6416E2AF7CB3313F5AC87A424FD6AC10FBBD7339105EF69E6D2AAE8639392A`. Metadata updater khớp installer; Authenticode `NotSigned`.
+- `app.asar` mang version 1.4.1 và chứa parser/helper đã sửa. Allowlist packaged `Input` chỉ có README/PDF mẫu; bốn JPG riêng local không bị sửa hoặc đóng gói.

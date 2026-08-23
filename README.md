@@ -11,7 +11,7 @@
 - Nút **Loại bỏ PNG** dọn toàn bộ danh sách để bắt đầu bộ mới mà không xóa file PNG gốc.
 - Hai chế độ loại trừ nhau: **Mockup Bundle PNG** giữ nguyên luồng dàn lưới hiện có; **Mockup Group Shirt** ghép PNG theo nhóm, màu áo và mặt trước/sau.
 - Group Shirt nhận tên `1 (1).wh.f.png`, `1 (2).bl.b.png`; thiếu tag màu được hiểu là áo sáng và thiếu tag mặt được hiểu là mặt trước.
-- Chọn nhiều nền Group Shirt có marker `mgs`, ví dụ `1 mgs.jpg`; phần trước `mgs` phải khớp chính xác nhóm PNG. Mỗi nền lưu được nhiều vùng in áo sáng/tối, mặt trước/sau theo tỷ lệ cố định `42×48`, có thể di chuyển, scale đúng tỷ lệ và xoay.
+- Chọn nhiều nền Group Shirt có marker `mgs`, ví dụ dạng chuẩn `1 mgs.jpg` hoặc dạng tương thích `.mgs1.jpg`; group key ở phía tương ứng của marker phải khớp chính xác nhóm PNG. Mỗi nền lưu được nhiều vùng in áo sáng/tối, mặt trước/sau theo tỷ lệ cố định `42×48`, có thể di chuyển, scale đúng tỷ lệ và xoay.
 - Công cụ **Đổi tên PNG** gắn `.wh/.bl` và `.f/.b` bằng thao tác đổi tên file thật, kiểm tra trùng tên và rollback toàn bộ nếu lỗi.
 - Chọn ảnh nền PNG/JPG/WEBP/TIFF.
 - Chia đều file: `30 / 2 → 15 + 15`, `31 / 2 → 16 + 15`.
@@ -51,7 +51,7 @@
 
 - PNG nguồn dùng dạng `<nhóm> (<số nguyên dương>)[.<tag>...].png`, ví dụ `1 (3).wh.f.png`. Tag màu `.wh/.bl` và tag mặt `.f/.b` có thể ở bất kỳ thứ tự nào; thiếu màu mặc định áo sáng, thiếu mặt mặc định mặt trước.
 - Tất cả PNG có cùng phần tên trước `(số)` thuộc một nhóm. Số thứ tự quyết định thứ tự ghép trong từng loại màu/mặt; `1 (01)` và `1 (1)` là cùng ordinal nên không thể cùng tồn tại trong một track.
-- Ảnh nền phải có đuôi thật PNG/JPG/WEBP/TIFF và tên chứa marker `mgs`, ví dụ `1 mgs.jpg` hoặc `1 mgs lifestyle.png`. Phần trước `mgs` là group key chính xác: nhóm `1` không dùng nền `10 mgs`.
+- Ảnh nền phải có đuôi thật PNG/JPG/WEBP/TIFF và tên chứa marker `mgs`. Dạng chuẩn là `<nhóm> mgs`, ví dụ `1 mgs.jpg` hoặc `1 mgs lifestyle.png`; app cũng nhận dạng tương thích `.mgs<nhóm>`, ví dụ `.mgs1.jpg`. Group key phải khớp chính xác: nhóm `1` không dùng nền `10 mgs` hoặc `.mgs10`.
 - Mỗi vùng in lưu cả mặt (`front/back`) và màu áo (`wh/bl`). Hai checkbox **Áo sáng màu**/**Áo tối màu** loại trừ nhau; không chọn ô nào thì vùng mới mặc định là áo sáng. Bốn tổ hợp màu/mặt có màu, nhãn và kiểu viền riêng để phân biệt.
 - Vùng in luôn giữ tỷ lệ pixel `42×48` khi tạo, kéo scale, nhập rộng/cao hoặc xoay. Vùng sau xoay phải nằm trọn trong ảnh nền.
 - App chỉ dùng template có đúng các track màu/mặt phù hợp với nhóm nguồn:
@@ -128,11 +128,11 @@ Khi bỏ chọn, app giữ metadata của ảnh nền trong khả năng định 
 2. Chạy bộ cài. Khi cài mới, bạn có thể chọn thư mục đích; nên chọn thư mục mà tài khoản hiện tại có quyền ghi để có thể thêm PDF/ảnh mẫu vào `Input`. Nếu chỉ chọn thư mục cha, bộ cài tự thêm thư mục con `PNG Bundle Mockup`. Khi nâng cấp, installer giữ nguyên chế độ/vị trí của bản hiện có, kể cả All Users/custom path, thay vì tạo app thứ hai. Với bản All Users cũ, installer chỉ cấp quyền Modify cho thư mục `Input` và dừng trước khi thay đổi bản cũ nếu bước kiểm tra quyền thất bại.
 3. Mở app bằng icon **PNG Bundle Mockup** trên Desktop hoặc Start Menu.
 
-Sau khi cài, dùng nút **Mở Input** để xác nhận thư mục `Input` nằm cạnh EXE và thêm PDF/ảnh mẫu của bạn. Mã nguồn và bản stable public mới nhất là [`v1.4.0`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.4.0).
+Sau khi cài, dùng nút **Mở Input** để xác nhận thư mục `Input` nằm cạnh EXE và thêm PDF/ảnh mẫu của bạn. Mã nguồn và bản stable public mới nhất là [`v1.4.1`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.4.1).
 
 Bộ cài v1.2.3 thay thế giữ các file runtime Electron bắt buộc nhưng gắn thuộc tính **Hidden** để thư mục cài đặt gọn hơn. Mặc định File Explorer chỉ hiện `Input`, **PNG Bundle Mockup.exe** và **Uninstall PNG Bundle Mockup.exe**. Việc bật **Show hidden files** sẽ làm các file kỹ thuật xuất hiện lại; không xóa hoặc đổi tên chúng vì app cần chúng để chạy.
 
-Chủ dự án muốn phát hành bản tiếp theo xem [hướng dẫn cập nhật thủ công](docs/MANUAL-GITHUB-UPDATE.md). Sau khi v1.4.0 đã public, mọi thay đổi mới phải tăng lên `1.4.1` hoặc cao hơn.
+Chủ dự án muốn phát hành bản tiếp theo xem [hướng dẫn cập nhật thủ công](docs/MANUAL-GITHUB-UPDATE.md). Sau khi v1.4.1 đã public, mọi thay đổi mới phải tăng lên `1.4.2` hoặc cao hơn.
 
 Từ v1.2.4, uninstall thật giữ nguyên `Input` tại vị trí cài đặt nhưng xóa EXE/runtime, shortcut, registry, `%APPDATA%\png-bundle-mockup` và `%LOCALAPPDATA%\png-bundle-mockup-updater`. Các thư mục `Done`, PNG nguồn, mockup và PDF nằm ngoài thư mục cài đặt luôn được giữ nguyên. Luồng update không xóa dữ liệu người dùng và tiếp tục dùng backup/restore `Input`.
 

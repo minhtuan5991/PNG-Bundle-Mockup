@@ -268,6 +268,10 @@ function groupRegionTrackKey(color, side) {
   return `${color === 'bl' ? 'bl' : 'wh'}\u0000${side === 'b' || side === 'back' ? 'back' : 'front'}`;
 }
 
+function groupSourceDirectory(file) {
+  return String(file?.directory || state.sourceDirectory || '').trim();
+}
+
 function groupProfile(descriptors) {
   const hasColor = descriptors.some((item) => Boolean(item.parsed.explicitColor));
   const hasSide = descriptors.some((item) => Boolean(item.parsed.explicitSide));

@@ -83,6 +83,7 @@ test('allowlist và fingerprint bảo vệ source/template theo từng renderer'
   assert.match(main, /if\s*\(smokeTest\)\s*app\.disableHardwareAcceleration\(\)/);
   assert.match(main, /v140Api:\s*typeof window\.bundleApi\?\.selectGroupShirtTemplates/);
   assert.match(main, /v140Controls:\s*Boolean\(document\.querySelector\('#mockupModeBundle'\)/);
+  assert.match(main, /v140SourceDirectory:[\s\S]*?groupSourceDirectory/);
   assert.match(main, /v140ModeSwitch:[\s\S]*?!pdfBlock\.classList\.contains\('is-hidden'\)/);
   assert.match(main, /const authorizedSourcePaths\s*=\s*new Map\(\)/);
   assert.match(main, /const authorizedGroupTemplatePaths\s*=\s*new Map\(\)/);
@@ -130,6 +131,7 @@ test('renderer dispatch theo mode và payload Group Shirt nhận tùy chọn PDF
   assert.doesNotMatch(validation, /createPdfDownload:\s*false/);
   assert.match(validation, /templatePaths:\s*state\.groupTemplates/);
   assert.match(validation, /directories\.size\s*!==\s*1/);
+  assert.match(script, /function groupSourceDirectory\(file\)\s*\{[\s\S]*?file\?\.directory[\s\S]*?state\.sourceDirectory/);
 });
 
 test('renderer giữ preview và thống kê đúng chế độ hiện tại', () => {
@@ -194,10 +196,10 @@ test('vùng Group Shirt scale khóa đúng tỷ lệ pixel 42×48 và tối thi�
   assert.match(drag, /pixelWidth\s*=\s*pixelHeight\s*\*\s*aspectRatio/);
 });
 
-test('package và lockfile cùng mang version 1.4.0', () => {
+test('package và lockfile cùng mang version 1.4.1', () => {
   const manifest = JSON.parse(read('package.json'));
   const lockfile = JSON.parse(read('package-lock.json'));
-  assert.equal(manifest.version, '1.4.0');
-  assert.equal(lockfile.version, '1.4.0');
-  assert.equal(lockfile.packages[''].version, '1.4.0');
+  assert.equal(manifest.version, '1.4.1');
+  assert.equal(lockfile.version, '1.4.1');
+  assert.equal(lockfile.packages[''].version, '1.4.1');
 });

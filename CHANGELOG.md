@@ -4,7 +4,23 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
-Chưa có thay đổi sau v1.4.0.
+Chưa có thay đổi sau v1.4.1.
+
+## [1.4.1] - 2026-08-23
+
+### Fixed
+
+- Sửa parser ảnh nền Group Shirt để `.mgs1.jpg`/`mgs1.jpg` khớp đúng nhóm PNG `1`; đồng thời `1.mgs.jpg` không còn bị hiểu nhầm thành nhóm `1.`. Dạng chuẩn `1 mgs.jpg` và biến thể phía sau marker vẫn tương thích.
+- Khôi phục helper `groupSourceDirectory` bị xóa nhầm khi nâng v1.4.0, loại bỏ lỗi runtime `groupSourceDirectory is not defined` khi Preview hoặc Tạo Mockup Group Shirt.
+
+### Changed
+
+- Hướng dẫn chọn nền trong app và README hiển thị rõ hai dạng tên `1 mgs.jpg` và `.mgs1.jpg`.
+- Nâng version ứng dụng và bộ cài lên `1.4.1`.
+
+### QA
+
+- Thêm test parser/planner/renderer cho hai regression; toàn bộ **119/119** automated test, source smoke **20/20** và packaged smoke **20/20** đạt. Vùng in cũ vẫn dùng lại theo path/fingerprint của ảnh nền.
 
 ## [1.4.0] - 2026-08-23
 

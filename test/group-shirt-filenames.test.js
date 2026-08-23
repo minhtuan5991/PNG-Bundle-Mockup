@@ -94,6 +94,20 @@ test('ảnh nền cần marker mgs, giữ exact group và nhận tên variant ph
   const variant = parseGroupShirtTemplateName('Nhóm ÁoMGS dark-shirt.JpG');
   assert.equal(variant.groupKey, 'nhóm áo');
   assert.equal(variant.variant, 'dark-shirt');
+
+  const prefix = parseGroupShirtTemplateName('.mgs1.jpg');
+  assert.equal(prefix.group, '1');
+  assert.equal(prefix.groupKey, '1');
+  assert.equal(prefix.variant, null);
+
+  const barePrefix = parseGroupShirtTemplateName('mgs1.jpeg');
+  assert.equal(barePrefix.groupKey, '1');
+  assert.equal(barePrefix.variant, null);
+
+  const dottedSuffix = parseGroupShirtTemplateName('1.mgs.webp');
+  assert.equal(dottedSuffix.group, '1');
+  assert.equal(dottedSuffix.groupKey, '1');
+  assert.equal(dottedSuffix.variant, null);
   assert.throws(
     () => parseGroupShirtTemplateName('1 background.png'),
     (error) => error.code === 'MISSING_GROUP_SHIRT_MGS_MARKER',
