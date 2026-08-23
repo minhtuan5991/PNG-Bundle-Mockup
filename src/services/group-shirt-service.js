@@ -672,7 +672,7 @@ async function generateGroupShirtMockups(options = {}) {
     ...(Array.isArray(plan.warnings) ? plan.warnings : []),
     ...unusedTemplates.map((template) => ({
       code: 'UNUSED_GROUP_SHIRT_TEMPLATE',
-      message: `Ảnh nền “${template.name || 'không rõ tên'}” không có nhóm PNG phù hợp nên đã được bỏ qua.`,
+      message: `Ảnh nền “${template.name || 'không rõ tên'}” không có vùng in phù hợp với bất kỳ nhóm PNG nào nên đã được bỏ qua.`,
       template,
     })),
   ];

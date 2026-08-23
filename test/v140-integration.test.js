@@ -84,6 +84,7 @@ test('allowlist và fingerprint bảo vệ source/template theo từng renderer'
   assert.match(main, /v140Api:\s*typeof window\.bundleApi\?\.selectGroupShirtTemplates/);
   assert.match(main, /v140Controls:\s*Boolean\(document\.querySelector\('#mockupModeBundle'\)/);
   assert.match(main, /v140SourceDirectory:[\s\S]*?groupSourceDirectory/);
+  assert.match(main, /v142SharedMgs:[\s\S]*?!analyzeGroupShirtSetup[\s\S]*?state\.groupTemplates/);
   assert.match(main, /v140ModeSwitch:[\s\S]*?!pdfBlock\.classList\.contains\('is-hidden'\)/);
   assert.match(main, /const authorizedSourcePaths\s*=\s*new Map\(\)/);
   assert.match(main, /const authorizedGroupTemplatePaths\s*=\s*new Map\(\)/);
@@ -132,6 +133,13 @@ test('renderer dispatch theo mode và payload Group Shirt nhận tùy chọn PDF
   assert.match(validation, /templatePaths:\s*state\.groupTemplates/);
   assert.match(validation, /directories\.size\s*!==\s*1/);
   assert.match(script, /function groupSourceDirectory\(file\)\s*\{[\s\S]*?file\?\.directory[\s\S]*?state\.sourceDirectory/);
+  const analysisStart = script.indexOf('function analyzeGroupShirtSetup');
+  const analysisEnd = script.indexOf('\nfunction groupSourceDescriptors', analysisStart);
+  const analysis = script.slice(analysisStart, analysisEnd);
+  assert.match(analysis, /for \(const template of state\.groupTemplates\)/);
+  assert.doesNotMatch(analysis, /templatesByGroup|missingTemplateGroups/);
+  assert.match(script, /Không có ảnh nền mgs có vùng in phù hợp cho nhóm/);
+  assert.match(read('src/renderer/index.html'), /mọi nhóm PNG dùng các nền có vùng in phù hợp/);
 });
 
 test('renderer giữ preview và thống kê đúng chế độ hiện tại', () => {
@@ -196,10 +204,10 @@ test('vùng Group Shirt scale khóa đúng tỷ lệ pixel 42×48 và tối thi�
   assert.match(drag, /pixelWidth\s*=\s*pixelHeight\s*\*\s*aspectRatio/);
 });
 
-test('package và lockfile cùng mang version 1.4.1', () => {
+test('package và lockfile cùng mang version 1.4.2', () => {
   const manifest = JSON.parse(read('package.json'));
   const lockfile = JSON.parse(read('package-lock.json'));
-  assert.equal(manifest.version, '1.4.1');
-  assert.equal(lockfile.version, '1.4.1');
-  assert.equal(lockfile.packages[''].version, '1.4.1');
+  assert.equal(manifest.version, '1.4.2');
+  assert.equal(lockfile.version, '1.4.2');
+  assert.equal(lockfile.packages[''].version, '1.4.2');
 });

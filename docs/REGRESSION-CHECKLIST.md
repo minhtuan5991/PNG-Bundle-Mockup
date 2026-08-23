@@ -4,6 +4,7 @@
 
 ## Trạng thái mốc
 
+- [x] QA/release candidate v1.4.2 ngày 2026-08-24: **121/121 test đạt**; source/package smoke **21/21**; shared-mgs planner/renderer, NSIS/checksum/app.asar/Input allowlist đạt. Push/tag/Release đang chờ.
 - [x] QA/release v1.4.1 ngày 2026-08-23: **119/119 test đạt**; source/package smoke **20/20**; NSIS/checksum/app.asar/Input allowlist đạt; GitHub Release stable/public đã xác minh.
 - [x] QA v1.4.0 ngày 2026-08-23: **118/118 test đạt**; packaged smoke **19/19**; NSIS/checksum/app.asar/Input allowlist đạt. Cài tương tác và dữ liệu thật còn chờ.
 
@@ -512,6 +513,22 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [x] Build local và packaged smoke đạt: Setup 104.370.173 byte (`E492F133…E19DC`), blockmap 109.494 byte (`73C89632…24DD3`), `latest.yml` 363 byte (`3B6416E2…9392A`); metadata khớp, `app.asar` v1.4.1 và Input allowlist đúng.
 - [x] Commit `acc696f01ae60838588e09182a1ee8b21b957600` và annotated tag `v1.4.1` đã push atomically; Windows CI `32651080856` và Release Windows `32651080757` success. Release ID `375260609` stable/public/latest có đúng ba asset: Setup 104.369.276 byte (`F382B45B…42AF`), blockmap 109.480 byte (`038F33E8…1A1B3`) và `latest.yml` 363 byte (`C2267E12…8D9E3`).
 
+## E12. v1.4.2 — mọi nền `mgs` dùng chung
+
+- [x] `package.json`, `package-lock.json` và package root cùng version `1.4.2`.
+- [x] Parser nhận `mgs.jpg` và giữ các dạng `.mgs1`, `mgs1`, `1.mgs`, `1 mgs`; phần quanh marker chỉ là nhãn, không khóa nhóm PNG.
+- [x] Planner không còn `templateBuckets`/`MISSING_MATCHING_GROUP_SHIRT_TEMPLATE`; mỗi nhóm xét toàn bộ template rồi lọc bằng vùng màu/mặt.
+- [x] Test nhóm `1` dùng `.mgs2`; hai nhóm dùng chung `.mgs3`; cross-product hai nhóm × hai nền tương thích tạo đủ output và không trộn source.
+- [x] Template dùng cho ít nhất một nhóm không bị coi là thừa; khi không nền nào có track phù hợp, lỗi là `NO_COMPATIBLE_GROUP_SHIRT_TEMPLATE`.
+- [x] Renderer không còn `templatesByGroup`/`missingTemplateGroups`, khử trùng nền khớp và hiển thị hướng dẫn “nền dùng chung”.
+- [x] Service tái sử dụng cùng template cho nhiều nhóm nhưng vẫn tạo đường dẫn output riêng (`_o02`) và không ghi đè.
+- [x] Store vùng in không đổi schema/key/fingerprint; cấu hình `.mgs1/.mgs2/.mgs3` hiện có tiếp tục dùng được.
+- [x] `node --check`, `git diff --check` và automated tests **121/121** đạt.
+- [x] Electron source và packaged smoke **21/21** đạt, gồm `v142SharedMgs`.
+- [x] Build local: Setup 104.370.063 byte (`463E3CC8…CD1E9`), blockmap 109.635 byte (`A2F6C62E…FD57B`), `latest.yml` 363 byte (`0165BEDB…78A2D`); metadata khớp, Authenticode NotSigned.
+- [x] `app.asar` v1.4.2 chứa shared-template logic; packaged Input đúng hai file allowlist và bốn JPG riêng không được đóng gói.
+- [ ] Commit/tag `v1.4.2`, Windows CI, Release Windows và ba asset public đã xác minh.
+
 ## F. Sign-off
 
 | Hạng mục | Người kiểm tra | Ngày | Kết quả/Ghi chú |
@@ -536,5 +553,6 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 | v1.3.0 Group Shirt QA/release | Codex local QA + GitHub Actions | 2026-08-19 | 116/116 automated test; local NSIS payload/checksum đạt. Commit `2f652dd`, CI/Release workflow success; Release ID `372536307` stable/public có đúng ba asset và là `/releases/latest`. Electron smoke local bị chặn bởi GPU process; cài/nâng cấp VM vẫn còn chờ. |
 | v1.4.0 planner/installer QA/release | Codex local QA + GitHub Actions | 2026-08-23 | 118/118 automated test; packaged smoke 19/19; NSIS/checksum/app.asar/Input allowlist đạt. Commit `930b728`, CI/Release workflow success; Release ID `375169659` stable/public có đúng ba asset và là `/releases/latest`. Cài tương tác/VM và dữ liệu thật còn chờ. |
 | v1.4.1 Group Shirt hotfix QA/release | Codex local QA + GitHub Actions | 2026-08-23 | 119/119 test; source/package smoke 20/20; NSIS/checksum/app.asar/Input allowlist đạt. Commit `acc696f`, CI/Release workflow success; Release ID `375260609` stable/public có đúng ba asset và là `/releases/latest`. |
+| v1.4.2 shared mgs release candidate | Codex local QA | 2026-08-24 | 121/121 test; source/package smoke 21/21; shared-template planner/renderer, NSIS/checksum/app.asar/Input allowlist đạt. Push/tag/Release đang chờ. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.

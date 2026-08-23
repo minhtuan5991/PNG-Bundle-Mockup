@@ -62,15 +62,16 @@ test('nhóm không tag chỉ dùng vùng trước áo sáng và lặp ngẫu nhi
     item.color === 'wh' && item.side === 'front'));
 });
 
-test('alias .mgs trước tên nhóm khớp đúng PNG và tạo được kế hoạch', async () => {
+test('số cạnh marker mgs không khóa template vào nhóm PNG', async () => {
   const plan = await createGroupShirtPlan({
     sources: [source('1', 1, 'wh')],
-    templates: [template('.mgs1.jpg', regionsForTrack('wh-f', 2))],
+    templates: [template('.mgs2.jpg', regionsForTrack('wh-f', 2))],
     random: () => 0,
   });
   assert.equal(plan.groups[0].groupKey, '1');
   assert.equal(plan.outputs.length, 1);
-  assert.equal(plan.outputs[0].template.groupKey, '1');
+  assert.equal(plan.outputs[0].groupKey, '1');
+  assert.equal(plan.outputs[0].template.groupKey, '2');
   assert.equal(plan.outputs[0].assignments.length, 2);
 });
 
@@ -184,29 +185,62 @@ test('nhóm đủ tag màu/mặt ghép đúng cả bốn track trên nền có t
   }
 });
 
-test('khớp exact group trước mgs, hỗ trợ variant và bỏ nền thừa', async () => {
+test('mọi template mgs tương thích được dùng chung cho mọi nhóm PNG', async () => {
   const regions = regionsForTrack('wh-f', 2);
   const plan = await createGroupShirtPlan({
-    sources: [source('10', 1)],
+    sources: [source('1', 1), source('a', 1)],
     templates: [
-      template('10 mgs.png', regions),
-      template('10 mgs alt.png', regions),
-      template('1 mgs.png', regions),
+      template('.mgs2.png', regions),
+      template('.mgs3.png', regions),
     ],
     random: () => 0,
   });
+
+  assert.equal(plan.outputs.length, 4);
+  assert.deepEqual(plan.groups.map((group) => group.templateCount), [2, 2]);
+  assert.equal(plan.unusedTemplates.length, 0);
+  assert.deepEqual(
+    [...new Set(plan.outputs.map((output) => output.template.name))],
+    ['.mgs2.png', '.mgs3.png'],
+  );
+  for (const output of plan.outputs) {
+    assert.ok(output.assignments.every((item) => item.source.groupKey === output.groupKey));
+  }
+});
+
+test('chỉ vùng in quyết định template phù hợp và template dùng bởi nhóm khác không bị coi là thừa', async () => {
+  const frontOnly = regionsForTrack('front', 2);
+  const frontBack = [
+    ...regionsForTrack('front', 1),
+    ...regionsForTrack('back', 1, 'back'),
+  ];
+  const plan = await createGroupShirtPlan({
+    sources: [
+      source('1', 1),
+      source('2', 1, null, 'f'),
+      source('2', 1, null, 'b'),
+    ],
+    templates: [
+      template('.mgs1.png', frontOnly),
+      template('.mgs3.png', frontBack),
+    ],
+    random: () => 0,
+  });
+
   assert.equal(plan.outputs.length, 2);
-  assert.equal(plan.groups[0].templateCount, 2);
-  assert.equal(plan.unusedTemplates.length, 1);
-  assert.equal(plan.unusedTemplates[0].groupKey, '1');
+  assert.equal(plan.unusedTemplates.length, 0);
+  assert.equal(plan.outputs.find((output) => output.groupKey === '1').template.name, '.mgs1.png');
+  assert.equal(plan.outputs.find((output) => output.groupKey === '2').template.name, '.mgs3.png');
+  assert.ok(plan.warnings.some((warning) =>
+    warning.code === 'INCOMPATIBLE_GROUP_SHIRT_TEMPLATE'));
 
   await assert.rejects(
     createGroupShirtPlan({
       sources: [source('11', 1)],
-      templates: [template('1 mgs.png', regions)],
+      templates: [template('.mgs9.png', [region('dark', 'front', 'bl')])],
     }),
     (error) => error instanceof GroupShirtPlanError &&
-      error.code === 'MISSING_MATCHING_GROUP_SHIRT_TEMPLATE',
+      error.code === 'NO_COMPATIBLE_GROUP_SHIRT_TEMPLATE',
   );
 });
 

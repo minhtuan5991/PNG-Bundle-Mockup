@@ -340,40 +340,33 @@ function analyzeGroupShirtSetup() {
   }
   for (const group of sourceGroups.values()) group.profile = groupProfile(group.descriptors);
 
-  const templatesByGroup = new Map();
-  for (const template of state.groupTemplates) {
-    if (!templatesByGroup.has(template.groupKey)) templatesByGroup.set(template.groupKey, []);
-    templatesByGroup.get(template.groupKey).push(template);
-  }
-  const missingTemplateGroups = [...sourceGroups.values()].filter(
-    (group) => !templatesByGroup.has(group.groupKey),
-  );
-  const matchedTemplates = [];
-  const unusedTemplates = [];
+  const matchedTemplateSet = new Set();
   const regionIssues = [];
   for (const group of sourceGroups.values()) {
-    const candidates = templatesByGroup.get(group.groupKey) || [];
     const compatible = [];
     const incompatible = [];
-    for (const template of candidates) {
+    for (const template of state.groupTemplates) {
       const message = groupTemplateCompatibility(group, template);
       if (message) incompatible.push({ template, group, message });
       else compatible.push(template);
     }
-    matchedTemplates.push(...compatible);
-    unusedTemplates.push(...incompatible.map((item) => item.template));
-    if (candidates.length > 0 && compatible.length === 0) regionIssues.push(incompatible[0]);
+    for (const template of compatible) matchedTemplateSet.add(template);
+    if (state.groupTemplates.length > 0 && compatible.length === 0) {
+      regionIssues.push({
+        group,
+        template: incompatible[0]?.template || null,
+        message: incompatible[0]?.message || 'không có vùng in phù hợp',
+        incompatible,
+      });
+    }
   }
-  for (const template of state.groupTemplates) {
-    if (!sourceGroups.has(template.groupKey)) unusedTemplates.push(template);
-  }
-
+  const matchedTemplates = state.groupTemplates.filter((template) => matchedTemplateSet.has(template));
+  const unusedTemplates = state.groupTemplates.filter((template) => !matchedTemplateSet.has(template));
   return {
     descriptors,
     invalid,
     sourceGroups,
     logicalDuplicates,
-    missingTemplateGroups,
     matchedTemplates,
     unusedTemplates: [...new Set(unusedTemplates)],
     regionIssues,
@@ -1402,15 +1395,12 @@ function validateGroupReady({ includeAdditionalOutputs = false } = {}) {
   if (state.groupTemplates.length === 0) {
     throw new Error('Hãy chọn ít nhất một ảnh nền có marker mgs cho Mockup Group Shirt.');
   }
-  if (analysis.missingTemplateGroups.length > 0) {
-    throw new Error(
-      `Không có ảnh nền mgs phù hợp cho: ${analysis.missingTemplateGroups.slice(0, 3)
-        .map((group) => group.displayGroup).join(', ')}.`,
-    );
-  }
   if (analysis.regionIssues.length > 0) {
     const issue = analysis.regionIssues[0];
-    throw new Error(`Ảnh nền “${issue.template.name}” không phù hợp: ${issue.message}.`);
+    const example = issue.template ? ` Ví dụ “${issue.template.name}”: ${issue.message}.` : '';
+    throw new Error(
+      `Không có ảnh nền mgs có vùng in phù hợp cho nhóm “${issue.group.displayGroup}”.${example}`,
+    );
   }
   if (elements.useWatermark.checked && !state.watermark) {
     throw new Error('Hãy chọn file watermark PNG nền trong suốt.');
@@ -1585,7 +1575,7 @@ function renderGroupTemplateSummary() {
     const count = (color, side) => regions.filter((region) =>
       (region.color || 'wh') === color && region.side === side).length;
     const meta = document.createElement('small');
-    meta.textContent = `Nhóm ${template.displayGroup || template.groupKey} · ` +
+    meta.textContent = 'Nền dùng chung · ' +
       `sáng ${count('wh', 'front')} trước/${count('wh', 'back')} sau · ` +
       `tối ${count('bl', 'front')} trước/${count('bl', 'back')} sau`;
     copy.append(name, meta);
@@ -1615,7 +1605,6 @@ function renderGroupReadiness() {
     analysis.invalid.length === 0 &&
     analysis.logicalDuplicates.length === 0 &&
     state.groupTemplates.length > 0 &&
-    analysis.missingTemplateGroups.length === 0 &&
     analysis.regionIssues.length === 0;
   elements.groupReadinessSummary.classList.toggle(
     'is-ready',
@@ -1638,13 +1627,10 @@ function renderGroupReadiness() {
   } else if (state.groupTemplates.length === 0) {
     elements.groupReadinessSummary.textContent =
       `${analysis.sourceGroups.size} nhóm PNG · chưa chọn ảnh nền mgs.`;
-  } else if (analysis.missingTemplateGroups.length > 0) {
-    elements.groupReadinessSummary.textContent =
-      `Thiếu ảnh nền mgs cho ${analysis.missingTemplateGroups.map((group) => group.displayGroup).join(', ')}.`;
   } else if (analysis.regionIssues.length > 0) {
     const issue = analysis.regionIssues[0];
     elements.groupReadinessSummary.textContent =
-      `${issue.template.name} không phù hợp: ${issue.message}.`;
+      `Không có nền mgs có vùng in phù hợp cho nhóm ${issue.group.displayGroup}.`;
   } else {
     const unusedWarning = analysis.unusedTemplates.length > 0
       ? ` · cảnh báo: ${analysis.unusedTemplates.length} nền không phù hợp sẽ được bỏ qua`

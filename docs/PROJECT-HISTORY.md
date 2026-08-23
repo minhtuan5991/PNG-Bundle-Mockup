@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
 > Cập nhật: 2026-08-23
-> Phiên bản mã nguồn hiện tại: `1.4.1`
+> Phiên bản mã nguồn hiện tại: `1.4.2`
 > Bản stable hiện có: `v1.4.1`
-> Trạng thái: v1.4.1 đã phát hành stable/public và đang là `/releases/latest`.
+> Trạng thái: v1.4.2 đang được chuẩn bị phát hành; stable public `/releases/latest` vẫn là v1.4.1 cho đến khi workflow hoàn tất.
 
 ## 1. Mục đích tài liệu
 
@@ -21,7 +21,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.4.1` |
+| Phiên bản mã nguồn | `1.4.2` |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
@@ -131,10 +131,10 @@ Khi tùy chọn bị tắt, app cố gắng giữ metadata của ảnh nền tro
 - `sourceDirectory` hiện tại vẫn là nguồn quyết định `<sourceDirectory>/Done`. Nếu bắt đầu hoàn toàn bằng kéo-thả, thư mục của file hợp lệ đầu tiên trở thành nguồn chính.
 - Ảnh nền và watermark tiếp tục bị loại khỏi tập thiết kế nếu trùng đường dẫn với PNG trong danh sách.
 
-### 3.10 Quy tắc Group Shirt và Input — phạm vi v1.4.0
+### 3.10 Quy tắc Group Shirt và Input — phạm vi v1.4.2
 
 - Mockup đơn chỉ nhận template có chữ `bundle` trong tên ở cả Bundle và Group Shirt.
-- Ảnh nền Group Shirt dùng marker `mgs`; group key là phần tên chính xác trước marker, không còn suy ra màu từ tên nền.
+- Ảnh nền Group Shirt chỉ cần có marker `mgs`; mọi nền là template dùng chung, số/chữ cạnh marker không khóa với group PNG và khả năng ghép chỉ do các vùng màu/mặt quyết định.
 - Vùng in Group Shirt dùng schema 2, lưu `color: wh|bl` cùng `side: front|back`, khóa tỷ lệ pixel `42×48` và hỗ trợ xoay trong biên.
 - Planner gom toàn bộ PNG cùng tên nhóm, phân loại theo bốn profile tag và chỉ chọn template có đúng các track màu/mặt tương thích.
 - Khi thiếu nguồn, planner chọn ngẫu nhiên trong đúng track/cùng nhóm; khi thừa nguồn, planner tạo trang mới rồi lấp phần còn thiếu đúng track.
@@ -612,3 +612,15 @@ Mốc QA local ngày 2026-08-07:
 - `app.asar` mang version 1.4.1 và chứa parser/helper đã sửa. Allowlist packaged `Input` chỉ có README/PDF mẫu; bốn JPG riêng local không bị sửa hoặc đóng gói.
 - Commit phát hành `acc696f01ae60838588e09182a1ee8b21b957600` và annotated tag `v1.4.1` đã được push atomically. Windows CI `32651080856` và Release Windows `32651080757` đều thành công.
 - Release ID `375260609` stable/public, không phải prerelease/draft và là `/releases/latest`; có đúng ba asset: Setup 104.369.276 byte (`F382B45BCC31F3B9B72156F17B805FA7ECE805585824E805985C62636FD042AF`), blockmap 109.480 byte (`038F33E8F5A97D091F0D886E3D397D0A751DC34CB32C46127FE71EFAC8B1A1B3`) và `latest.yml` 363 byte (`C2267E12FA5C30105E4D406D1D8C1C726F2AF9DA30E91AE169CC29271F88D9E3`).
+
+## 23. Bản v1.4.2 — nền `mgs` dùng chung theo vùng in
+
+- Bỏ hoàn toàn việc khóa ảnh nền Group Shirt theo `groupKey` lấy từ số/chữ cạnh marker `mgs`. `.mgs1`, `.mgs2`, `.mgs3`, `1 mgs` hoặc tên `mgs` khác đều là template dùng chung.
+- Với mỗi nhóm PNG, planner xét toàn bộ template `mgs`, sau đó chỉ giữ những nền có đúng track màu áo và mặt áo theo tên PNG cùng vùng in đã lưu. Template tương thích với nhiều nhóm được tái sử dụng cho từng nhóm; assignment không trộn PNG giữa các nhóm.
+- Renderer dùng cùng quy tắc với backend, khử trùng thống kê nền khớp và chỉ coi một nền là thừa khi nó không tương thích với bất kỳ nhóm PNG nào. Thông báo “Thiếu ảnh nền mgs cho <nhóm>” đã được thay bằng chẩn đoán vùng in không phù hợp.
+- Parser tiếp tục hỗ trợ các dạng tên cũ và nhận thêm `mgs.jpg`/`.mgs.png`. Group/variant parse từ tên nền chỉ còn là metadata tương thích, không tham gia matching.
+- Không đổi schema/key/fingerprint của store vùng in, nên thiết lập đã lưu cho các ảnh nền hiện có vẫn được giữ nguyên.
+- Version source/lockfile/installer local là `1.4.2`. Automated tests **121/121** đạt; Electron source và packaged smoke đều **21/21** đạt, gồm check runtime `v142SharedMgs`.
+- Build local tạo installer 104.370.063 byte, SHA-256 `463E3CC84528DD7A6ACEB8B64A17AF434AF9CCC6736F17994B80671D6DBCD1E9`; blockmap 109.635 byte, SHA-256 `A2F6C62EB881701CD05D7A49C7977EC00BEB5032DECD88E270F6F3879D4FD57B`; `latest.yml` 363 byte, SHA-256 `0165BEDB1992D0D4BF4C34B1A2A3D374DA9562654A97FABF6AE9A0DC02C78A2D`. Metadata updater khớp installer; Authenticode `NotSigned`.
+- `app.asar` v1.4.2 chứa planner/renderer shared-template và parser marker-only; packaged `Input` chỉ có `README.txt` cùng `Toystory HLW1.pdf`. Bốn JPG riêng local không bị sửa hoặc đóng gói.
+- Bản phát hành dùng commit/tag mới `v1.4.2`; trạng thái workflow, Release ID và asset remote sẽ được bổ sung sau khi GitHub hoàn tất.

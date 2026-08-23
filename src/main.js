@@ -536,6 +536,10 @@ function createWindow() {
             v140Api: typeof window.bundleApi?.selectGroupShirtTemplates === 'function' && typeof window.bundleApi?.renameGroupShirtPngFiles === 'function' && typeof window.bundleApi?.saveGroupShirtRegions === 'function' && typeof window.bundleApi?.renderGroupShirtPreview === 'function' && typeof window.bundleApi?.generateGroupShirtMockups === 'function',
             v140Controls: Boolean(document.querySelector('#mockupModeBundle') && document.querySelector('#mockupModeGroup') && document.querySelector('#chooseGroupTemplatesButton') && document.querySelector('#renamePngButton') && document.querySelector('#addFrontRegionButton') && document.querySelector('#addBackRegionButton') && document.querySelector('#groupRegionColorLight') && document.querySelector('#groupRegionColorDark')),
             v140SourceDirectory: typeof groupSourceDirectory === 'function' && groupSourceDirectory({ directory: 'C:/Group Source' }) === 'C:/Group Source',
+            v142SharedMgs: typeof analyzeGroupShirtSetup === 'function' &&
+              !analyzeGroupShirtSetup.toString().includes('templatesByGroup') &&
+              !analyzeGroupShirtSetup.toString().includes('missingTemplateGroups') &&
+              analyzeGroupShirtSetup.toString().includes('state.groupTemplates'),
             v140ModeSwitch: (() => {
               const bundle = document.querySelector('#mockupModeBundle');
               const group = document.querySelector('#mockupModeGroup');

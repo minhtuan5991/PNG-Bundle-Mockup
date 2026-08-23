@@ -4,7 +4,27 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
-Chưa có thay đổi sau v1.4.1.
+Chưa có thay đổi sau v1.4.2.
+
+## [1.4.2] - 2026-08-24
+
+### Changed
+
+- Mọi ảnh nền có marker `mgs` nay là template dùng chung cho tất cả nhóm PNG; số hoặc chữ cạnh `mgs` chỉ còn là nhãn tên file.
+- Planner và validation giao diện bỏ khóa exact group của template, xét toàn bộ nền `mgs` rồi chỉ lọc bằng các track màu áo/mặt áo trong vùng in đã lưu.
+- Tên chỉ có marker `mgs`, ví dụ `mgs.jpg`, cũng được nhận là ảnh nền Group Shirt hợp lệ.
+- Nâng version mã nguồn và bộ cài lên `1.4.2`; phát hành bằng tag mới, không ghi đè v1.4.1.
+
+### Compatibility
+
+- Không đổi schema hoặc khóa lưu vùng in; thiết lập đã lưu cho `.mgs1`, `.mgs2`, `.mgs3` tiếp tục được dùng.
+- Không thay đổi logic chia nhóm PNG, màu `.wh/.bl`, mặt `.f/.b`, lặp nguồn, tạo trang, Bundle, PDF Download hoặc mockup đơn.
+
+### QA
+
+- Automated tests **121/121** đạt; Electron source và packaged smoke đều **21/21** đạt.
+- Bổ sung test một nền dùng cho nhiều nhóm, cross-product nhóm × nền tương thích, không trộn nguồn giữa nhóm và tên output không trùng.
+- Build local tạo đủ Setup, blockmap và `latest.yml`; `app.asar` v1.4.2 chứa shared-template planner/renderer và packaged `Input` chỉ có hai file allowlist.
 
 ## [1.4.1] - 2026-08-23
 

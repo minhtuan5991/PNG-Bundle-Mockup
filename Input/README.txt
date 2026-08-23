@@ -1,4 +1,4 @@
-THU MUC INPUT - PNG BUNDLE MOCKUP v1.4.0
+THU MUC INPUT - PNG BUNDLE MOCKUP v1.4.2
 
 PDF DOWNLOAD
 - Chi dat dung 1 file PDF mau truc tiep vao day.
@@ -14,8 +14,8 @@ MOCKUP DON
 
 MOCKUP GROUP SHIRT
 - Anh nen Group Shirt duoc chon tu bat ky thu muc tren may, khong can dat trong Input.
-- Ten anh nen phai co marker "mgs", vi du: "1 mgs.jpg" hoac "1 mgs lifestyle.png".
-- Phan ten truoc "mgs" phai khop chinh xac ten nhom PNG truoc dau ngoac.
+- Ten anh nen chi can co marker "mgs", vi du: "mgs.jpg", ".mgs1.jpg" hoac "shirt mgs lifestyle.png".
+- So hoac chu nam canh "mgs" chi la ten file, khong khoa nen vao nhom PNG. Moi nhom se dung cac nen co vung in mau/mat phu hop.
 - Vung in Group Shirt co mau ao sang/toi, mat truoc/sau va luon giu ty le 42x48.
 
 BAO VE DU LIEU

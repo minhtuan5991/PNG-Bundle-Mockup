@@ -11,7 +11,7 @@
 - Nút **Loại bỏ PNG** dọn toàn bộ danh sách để bắt đầu bộ mới mà không xóa file PNG gốc.
 - Hai chế độ loại trừ nhau: **Mockup Bundle PNG** giữ nguyên luồng dàn lưới hiện có; **Mockup Group Shirt** ghép PNG theo nhóm, màu áo và mặt trước/sau.
 - Group Shirt nhận tên `1 (1).wh.f.png`, `1 (2).bl.b.png`; thiếu tag màu được hiểu là áo sáng và thiếu tag mặt được hiểu là mặt trước.
-- Chọn nhiều nền Group Shirt có marker `mgs`, ví dụ dạng chuẩn `1 mgs.jpg` hoặc dạng tương thích `.mgs1.jpg`; group key ở phía tương ứng của marker phải khớp chính xác nhóm PNG. Mỗi nền lưu được nhiều vùng in áo sáng/tối, mặt trước/sau theo tỷ lệ cố định `42×48`, có thể di chuyển, scale đúng tỷ lệ và xoay.
+- Chọn nhiều nền Group Shirt có marker `mgs`, ví dụ `mgs.jpg`, `.mgs1.jpg` hoặc `shirt mgs lifestyle.png`. Mọi nền là template dùng chung; số/chữ cạnh marker chỉ là tên file, còn vùng in quyết định nhóm PNG nào tương thích. Mỗi nền lưu được nhiều vùng in áo sáng/tối, mặt trước/sau theo tỷ lệ cố định `42×48`, có thể di chuyển, scale đúng tỷ lệ và xoay.
 - Công cụ **Đổi tên PNG** gắn `.wh/.bl` và `.f/.b` bằng thao tác đổi tên file thật, kiểm tra trùng tên và rollback toàn bộ nếu lỗi.
 - Chọn ảnh nền PNG/JPG/WEBP/TIFF.
 - Chia đều file: `30 / 2 → 15 + 15`, `31 / 2 → 16 + 15`.
@@ -51,7 +51,7 @@
 
 - PNG nguồn dùng dạng `<nhóm> (<số nguyên dương>)[.<tag>...].png`, ví dụ `1 (3).wh.f.png`. Tag màu `.wh/.bl` và tag mặt `.f/.b` có thể ở bất kỳ thứ tự nào; thiếu màu mặc định áo sáng, thiếu mặt mặc định mặt trước.
 - Tất cả PNG có cùng phần tên trước `(số)` thuộc một nhóm. Số thứ tự quyết định thứ tự ghép trong từng loại màu/mặt; `1 (01)` và `1 (1)` là cùng ordinal nên không thể cùng tồn tại trong một track.
-- Ảnh nền phải có đuôi thật PNG/JPG/WEBP/TIFF và tên chứa marker `mgs`. Dạng chuẩn là `<nhóm> mgs`, ví dụ `1 mgs.jpg` hoặc `1 mgs lifestyle.png`; app cũng nhận dạng tương thích `.mgs<nhóm>`, ví dụ `.mgs1.jpg`. Group key phải khớp chính xác: nhóm `1` không dùng nền `10 mgs` hoặc `.mgs10`.
+- Ảnh nền phải có đuôi thật PNG/JPG/WEBP/TIFF và tên chứa marker `mgs`, ví dụ `mgs.jpg`, `1 mgs lifestyle.png` hoặc `.mgs3.jpg`. Tất cả nền `mgs` là pool dùng chung: nhóm `1` có thể dùng `.mgs2`/`.mgs3` nếu các vùng in đã lưu phù hợp với tag màu/mặt của nhóm.
 - Mỗi vùng in lưu cả mặt (`front/back`) và màu áo (`wh/bl`). Hai checkbox **Áo sáng màu**/**Áo tối màu** loại trừ nhau; không chọn ô nào thì vùng mới mặc định là áo sáng. Bốn tổ hợp màu/mặt có màu, nhãn và kiểu viền riêng để phân biệt.
 - Vùng in luôn giữ tỷ lệ pixel `42×48` khi tạo, kéo scale, nhập rộng/cao hoặc xoay. Vùng sau xoay phải nằm trọn trong ảnh nền.
 - App chỉ dùng template có đúng các track màu/mặt phù hợp với nhóm nguồn:
@@ -60,7 +60,7 @@
   - Chỉ `.wh/.bl`: template không được có vùng mặt sau.
   - Có cả tag màu và mặt: template phải có cả vùng trước lẫn sau và đủ đúng các track được dùng.
 - Ảnh được ghép lần lượt theo thứ tự vùng đã lưu. Nếu một track thiếu PNG, app chọn ngẫu nhiên PNG trong đúng track của cùng nhóm để lấp đủ vùng. Nếu PNG thừa, app tạo trang mới, ghép phần còn lại rồi tiếp tục lấp các vùng thiếu bằng nguồn ngẫu nhiên đúng track.
-- Có thể chọn nhiều nền cùng group làm biến thể; mỗi nền tương thích tạo chuỗi trang riêng. Nền không tương thích được bỏ qua có cảnh báo; nếu một nhóm không còn nền tương thích, app dừng trước khi ghi output.
+- Có thể chọn nhiều nền `mgs`; mỗi nền tương thích tạo chuỗi trang riêng cho từng nhóm PNG. Nền không tương thích với bất kỳ nhóm nào được bỏ qua có cảnh báo; nếu một nhóm không có nền nào có vùng phù hợp, app dừng trước khi ghi output.
 - Tên output có dạng `group-shirt_<tên nền>_<trang 3 chữ số>.png`, ví dụ `group-shirt_1 mgs_001.png`. Nếu trùng tên, app dùng suffix collision-safe thay vì ghi đè.
 - Khi bật **Tạo mockup đơn** trong Group Shirt, app chỉ dùng template `bundle` trong `Input` và chọn ngẫu nhiên PNG áo sáng (`.wh` hoặc không có tag màu) trong các nhóm. Quy tắc một lần cho mỗi `Done` vẫn được giữ.
 - **Tạo PDF Download** dùng được ở cả Bundle và Group Shirt, với cùng quy tắc chỉ một PDF trong mỗi `Done`.
@@ -128,11 +128,11 @@ Khi bỏ chọn, app giữ metadata của ảnh nền trong khả năng định 
 2. Chạy bộ cài. Khi cài mới, bạn có thể chọn thư mục đích; nên chọn thư mục mà tài khoản hiện tại có quyền ghi để có thể thêm PDF/ảnh mẫu vào `Input`. Nếu chỉ chọn thư mục cha, bộ cài tự thêm thư mục con `PNG Bundle Mockup`. Khi nâng cấp, installer giữ nguyên chế độ/vị trí của bản hiện có, kể cả All Users/custom path, thay vì tạo app thứ hai. Với bản All Users cũ, installer chỉ cấp quyền Modify cho thư mục `Input` và dừng trước khi thay đổi bản cũ nếu bước kiểm tra quyền thất bại.
 3. Mở app bằng icon **PNG Bundle Mockup** trên Desktop hoặc Start Menu.
 
-Sau khi cài, dùng nút **Mở Input** để xác nhận thư mục `Input` nằm cạnh EXE và thêm PDF/ảnh mẫu của bạn. Mã nguồn và bản stable public mới nhất là [`v1.4.1`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.4.1).
+Sau khi cài, dùng nút **Mở Input** để xác nhận thư mục `Input` nằm cạnh EXE và thêm PDF/ảnh mẫu của bạn. Mã nguồn hiện tại là `1.4.2`; cho đến khi workflow phát hành hoàn tất, bản stable public mới nhất vẫn là [`v1.4.1`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.4.1).
 
 Bộ cài v1.2.3 thay thế giữ các file runtime Electron bắt buộc nhưng gắn thuộc tính **Hidden** để thư mục cài đặt gọn hơn. Mặc định File Explorer chỉ hiện `Input`, **PNG Bundle Mockup.exe** và **Uninstall PNG Bundle Mockup.exe**. Việc bật **Show hidden files** sẽ làm các file kỹ thuật xuất hiện lại; không xóa hoặc đổi tên chúng vì app cần chúng để chạy.
 
-Chủ dự án muốn phát hành bản tiếp theo xem [hướng dẫn cập nhật thủ công](docs/MANUAL-GITHUB-UPDATE.md). Sau khi v1.4.1 đã public, mọi thay đổi mới phải tăng lên `1.4.2` hoặc cao hơn.
+Quy trình phát hành `v1.4.2` được ghi trong [hướng dẫn cập nhật thủ công](docs/MANUAL-GITHUB-UPDATE.md). Không di chuyển tag hoặc ghi đè asset v1.4.1.
 
 Từ v1.2.4, uninstall thật giữ nguyên `Input` tại vị trí cài đặt nhưng xóa EXE/runtime, shortcut, registry, `%APPDATA%\png-bundle-mockup` và `%LOCALAPPDATA%\png-bundle-mockup-updater`. Các thư mục `Done`, PNG nguồn, mockup và PDF nằm ngoài thư mục cài đặt luôn được giữ nguyên. Luồng update không xóa dữ liệu người dùng và tiếp tục dùng backup/restore `Input`.
 

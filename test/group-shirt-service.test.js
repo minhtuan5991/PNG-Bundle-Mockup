@@ -367,6 +367,50 @@ test('service tích hợp planner: 6 mặt trước + 6 mặt sau trên 3+3 vùn
   assert.ok(result.outputPaths[1].endsWith('_002.png'));
 });
 
+test('service tái sử dụng một nền mgs cho nhiều nhóm và giữ tên output không trùng', async (t) => {
+  const directory = await createTempDirectory(t);
+  const outputDirectory = path.join(directory, 'Done');
+  const templatePath = path.join(directory, '.mgs3.png');
+  const firstSource = path.join(directory, '1 (1).png');
+  const secondSource = path.join(directory, 'a (1).png');
+  await Promise.all([
+    createTemplate(templatePath, { width: 300, height: 240 }),
+    createPaddedDesign(firstSource),
+    createPaddedDesign(secondSource, { color: { r: 20, g: 105, b: 225, alpha: 1 } }),
+  ]);
+  const regions = [
+    {
+      id: 'front-1', side: 'front', color: 'wh',
+      centerX: 0.3, centerY: 0.5, width: 0.14, height: 0.2, rotation: 0,
+    },
+    {
+      id: 'front-2', side: 'front', color: 'wh',
+      centerX: 0.7, centerY: 0.5, width: 0.14, height: 0.2, rotation: 0,
+    },
+  ];
+
+  const result = await generateGroupShirtMockups({
+    sourcePaths: [firstSource, secondSource],
+    templates: [{
+      path: templatePath,
+      name: path.basename(templatePath),
+      width: 300,
+      height: 240,
+      regions,
+    }],
+    outputDirectory,
+    removeMetadata: false,
+    random: () => 0,
+  });
+
+  assert.equal(result.outputCount, 2);
+  assert.deepEqual(result.outputs.map((output) => output.groupKey), ['1', 'a']);
+  assert.deepEqual(result.outputs.map((output) => output.assignmentCount), [2, 2]);
+  assert.equal(new Set(result.outputPaths).size, 2);
+  assert.match(path.basename(result.outputPaths[0]), /_001\.png$/);
+  assert.match(path.basename(result.outputPaths[1]), /_001_o02\.png$/);
+});
+
 test('preview dùng đúng outputIndex, giới hạn kích thước và báo tiến độ hoàn tất', async (t) => {
   const directory = await createTempDirectory(t);
   const firstTemplate = path.join(directory, '1 mgs.png');

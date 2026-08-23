@@ -85,7 +85,7 @@ test('từ chối tên PNG sai mẫu, ordinal 0, tag lặp hoặc tag mâu thu�
   );
 });
 
-test('ảnh nền cần marker mgs, giữ exact group và nhận tên variant phía sau', () => {
+test('ảnh nền cần marker mgs; phần tên quanh marker chỉ là nhãn template', () => {
   const base = parseGroupShirtTemplateName('1 mgs.png');
   assert.equal(base.groupKey, '1');
   assert.equal(base.marker, 'mgs');
@@ -112,10 +112,10 @@ test('ảnh nền cần marker mgs, giữ exact group và nhận tên variant ph
     () => parseGroupShirtTemplateName('1 background.png'),
     (error) => error.code === 'MISSING_GROUP_SHIRT_MGS_MARKER',
   );
-  assert.throws(
-    () => parseGroupShirtTemplateName('mgs.png'),
-    (error) => error.code === 'MISSING_GROUP_KEY',
-  );
+  const markerOnly = parseGroupShirtTemplateName('mgs.png');
+  assert.equal(markerOnly.group, 'mgs');
+  assert.equal(markerOnly.groupKey, 'mgs');
+  assert.equal(markerOnly.marker, 'mgs');
 });
 test('lập tên mới theo thứ tự chuẩn color rồi side và thay tag cùng loại', () => {
   const root = path.resolve('D:\\Mockups');

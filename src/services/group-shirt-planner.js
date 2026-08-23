@@ -371,36 +371,21 @@ async function createGroupShirtPlan(options = {}) {
   const groups = [...sourceBuckets.values()].map(buildSourceGroup).sort((left, right) =>
     localeCompare(left.group, right.group));
 
-  const templateBuckets = new Map();
-  for (const template of templates) {
-    if (!templateBuckets.has(template.groupKey)) templateBuckets.set(template.groupKey, []);
-    templateBuckets.get(template.groupKey).push(template);
-  }
-  for (const variants of templateBuckets.values()) {
-    variants.sort((left, right) => localeCompare(left.name, right.name));
-  }
-
-  const missingGroups = groups.filter((group) => !templateBuckets.has(group.groupKey));
-  if (missingGroups.length > 0) {
-    throw new GroupShirtPlanError(
-      `Không có ảnh nền mgs phù hợp cho: ${missingGroups.map((group) => group.group).join(', ')}.`,
-      'MISSING_MATCHING_GROUP_SHIRT_TEMPLATE',
-      { missing: missingGroups.map((group) => ({ group: group.group, groupKey: group.groupKey })) },
-    );
-  }
-
   const outputs = [];
   const warnings = [];
   const resolvedTemplateRegions = new Map();
   const usedTemplateIds = new Set();
   const groupSummaries = [];
+  const orderedTemplates = [...templates].sort((left, right) => localeCompare(left.name, right.name));
+  for (const template of orderedTemplates) {
+    const regions = await resolveRegions(template, options);
+    resolvedTemplateRegions.set(templateIdentity(template), regions);
+  }
   for (const group of groups) {
-    const candidates = templateBuckets.get(group.groupKey);
     const eligible = [];
     const incompatible = [];
-    for (const template of candidates) {
-      const regions = await resolveRegions(template, options);
-      resolvedTemplateRegions.set(templateIdentity(template), regions);
+    for (const template of orderedTemplates) {
+      const regions = resolvedTemplateRegions.get(templateIdentity(template));
       const compatibility = templateCompatibility(group, regions);
       if (compatibility.compatible) eligible.push({ template, regions });
       else incompatible.push({ template, reason: compatibility.reason });
