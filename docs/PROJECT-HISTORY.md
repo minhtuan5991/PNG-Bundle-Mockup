@@ -2,8 +2,8 @@
 
 > Cập nhật: 2026-08-23
 > Phiên bản mã nguồn hiện tại: `1.4.1`
-> Bản stable hiện có: `v1.4.0`
-> Trạng thái: v1.4.1 đang được chuẩn bị phát hành từ hotfix Group Shirt; stable public hiện tại vẫn là v1.4.0.
+> Bản stable hiện có: `v1.4.1`
+> Trạng thái: v1.4.1 đã phát hành stable/public và đang là `/releases/latest`.
 
 ## 1. Mục đích tài liệu
 
@@ -610,3 +610,5 @@ Mốc QA local ngày 2026-08-07:
 - Version source/lockfile đã tăng lên `1.4.1`. QA local: `node --check` đạt; automated tests **119/119** đạt; source và packaged Electron smoke đều **20/20** đạt, gồm kiểm tra runtime `v140SourceDirectory`.
 - Build local tạo installer 104.370.173 byte, SHA-256 `E492F13337D6BCD9D7282CA1D3AFDF4CA196F3B44B390C3804A86F46F29E19DC`; blockmap 109.494 byte, SHA-256 `73C896324FBA373FC4452CDD6385D2DF8C6651FB1DBA809BBD32561D2C824DD3`; `latest.yml` 363 byte, SHA-256 `3B6416E2AF7CB3313F5AC87A424FD6AC10FBBD7339105EF69E6D2AAE8639392A`. Metadata updater khớp installer; Authenticode `NotSigned`.
 - `app.asar` mang version 1.4.1 và chứa parser/helper đã sửa. Allowlist packaged `Input` chỉ có README/PDF mẫu; bốn JPG riêng local không bị sửa hoặc đóng gói.
+- Commit phát hành `acc696f01ae60838588e09182a1ee8b21b957600` và annotated tag `v1.4.1` đã được push atomically. Windows CI `32651080856` và Release Windows `32651080757` đều thành công.
+- Release ID `375260609` stable/public, không phải prerelease/draft và là `/releases/latest`; có đúng ba asset: Setup 104.369.276 byte (`F382B45BCC31F3B9B72156F17B805FA7ECE805585824E805985C62636FD042AF`), blockmap 109.480 byte (`038F33E8F5A97D091F0D886E3D397D0A751DC34CB32C46127FE71EFAC8B1A1B3`) và `latest.yml` 363 byte (`C2267E12FA5C30105E4D406D1D8C1C726F2AF9DA30E91AE169CC29271F88D9E3`).

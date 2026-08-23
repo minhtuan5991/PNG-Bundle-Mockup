@@ -4,7 +4,7 @@
 
 ## Trạng thái mốc
 
-- [x] QA local v1.4.1 ngày 2026-08-23: **119/119 test đạt**; source/package smoke **20/20**; NSIS/checksum/app.asar/Input allowlist đạt. GitHub Release đang chờ.
+- [x] QA/release v1.4.1 ngày 2026-08-23: **119/119 test đạt**; source/package smoke **20/20**; NSIS/checksum/app.asar/Input allowlist đạt; GitHub Release stable/public đã xác minh.
 - [x] QA v1.4.0 ngày 2026-08-23: **118/118 test đạt**; packaged smoke **19/19**; NSIS/checksum/app.asar/Input allowlist đạt. Cài tương tác và dữ liệu thật còn chờ.
 
 - [x] QA local v1.2.3 ngày 2026-08-07: **73/73 test đạt**; build sạch tạo đủ installer/blockmap/`latest.yml`, version/checksum/Input payload đạt. Kiểm thử cài mới custom path và nâng cấp tại chỗ trên máy/VM sạch còn chờ.
@@ -510,7 +510,7 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [x] `node --check`, `git diff --check`, **119/119** automated test và Electron source smoke **20/20** đạt.
 - [x] `package.json`, `package-lock.json` và package root cùng version `1.4.1`.
 - [x] Build local và packaged smoke đạt: Setup 104.370.173 byte (`E492F133…E19DC`), blockmap 109.494 byte (`73C89632…24DD3`), `latest.yml` 363 byte (`3B6416E2…9392A`); metadata khớp, `app.asar` v1.4.1 và Input allowlist đúng.
-- [ ] Push/tag/Release và xác minh ba asset public.
+- [x] Commit `acc696f01ae60838588e09182a1ee8b21b957600` và annotated tag `v1.4.1` đã push atomically; Windows CI `32651080856` và Release Windows `32651080757` success. Release ID `375260609` stable/public/latest có đúng ba asset: Setup 104.369.276 byte (`F382B45B…42AF`), blockmap 109.480 byte (`038F33E8…1A1B3`) và `latest.yml` 363 byte (`C2267E12…8D9E3`).
 
 ## F. Sign-off
 
@@ -535,6 +535,6 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 | v1.2.5 remove-PNG QA/release | Codex local QA + GitHub Actions | 2026-08-09 | 75/75 test; source/package smoke đạt; Release ID `367263645`, đúng ba asset tải ngược, updater metadata và `/releases/latest` đều được xác minh. |
 | v1.3.0 Group Shirt QA/release | Codex local QA + GitHub Actions | 2026-08-19 | 116/116 automated test; local NSIS payload/checksum đạt. Commit `2f652dd`, CI/Release workflow success; Release ID `372536307` stable/public có đúng ba asset và là `/releases/latest`. Electron smoke local bị chặn bởi GPU process; cài/nâng cấp VM vẫn còn chờ. |
 | v1.4.0 planner/installer QA/release | Codex local QA + GitHub Actions | 2026-08-23 | 118/118 automated test; packaged smoke 19/19; NSIS/checksum/app.asar/Input allowlist đạt. Commit `930b728`, CI/Release workflow success; Release ID `375169659` stable/public có đúng ba asset và là `/releases/latest`. Cài tương tác/VM và dữ liệu thật còn chờ. |
-| v1.4.1 Group Shirt hotfix QA | Codex local QA | 2026-08-23 | 119/119 test; source/package smoke 20/20; NSIS/checksum/app.asar/Input allowlist đạt. Push/tag/Release đang chờ. |
+| v1.4.1 Group Shirt hotfix QA/release | Codex local QA + GitHub Actions | 2026-08-23 | 119/119 test; source/package smoke 20/20; NSIS/checksum/app.asar/Input allowlist đạt. Commit `acc696f`, CI/Release workflow success; Release ID `375260609` stable/public có đúng ba asset và là `/releases/latest`. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.
