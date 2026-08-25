@@ -4,7 +4,24 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
-Chưa có thay đổi sau v1.4.3.
+Chưa có thay đổi sau v1.4.4.
+
+## [1.4.4] - 2026-08-25
+
+### Fixed
+
+- Popup **Đặt tên Group Shirt** không còn tự chọn toàn bộ PNG khi mở; chỉ thumbnail được người dùng chọn rõ ràng mới nằm trong payload đổi tên.
+
+### Changed
+
+- Popup bắt đầu ở trạng thái `0/N`; **Chọn tất cả đang hiện** vẫn cho phép bulk edit có chủ ý, còn tìm kiếm và bỏ chọn tiếp tục chỉ tác động gallery đang hiển thị.
+- Thumbnail đổi tên tăng từ `54×50 px` lên `80×76 px`; card cao tối thiểu `92 px` và cột gallery rộng tối thiểu `178 px` để nhận diện thiết kế rõ hơn mà không cắt ảnh.
+- Nâng version ứng dụng và bộ cài lên `1.4.4`; phát hành bằng tag mới, không ghi đè v1.4.3.
+
+### QA
+
+- Automated tests **124/124** đạt; Electron source và packaged smoke đều **23/23** đạt, gồm `renameSelectionOnly`.
+- ASAR v1.4.4 chứa đúng selection rỗng ban đầu, helper lọc path đã chọn và CSS thumbnail mới; updater metadata khớp installer, packaged `Input` chỉ giữ README/PDF mẫu.
 
 ## [1.4.3] - 2026-08-25
 

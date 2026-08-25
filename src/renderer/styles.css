@@ -1951,21 +1951,21 @@ input:disabled {
 .rename-png-grid {
   height: 100%;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(138px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
   align-content: start;
-  gap: 10px;
+  gap: 12px;
   padding: 16px 18px;
   overflow-y: auto;
 }
 
 .rename-png-tile {
   min-width: 0;
-  min-height: 64px;
+  min-height: 92px;
   display: grid;
-  grid-template-columns: 54px minmax(0, 1fr);
+  grid-template-columns: 80px minmax(0, 1fr);
   align-items: center;
-  gap: 9px;
-  padding: 7px;
+  gap: 10px;
+  padding: 8px;
   border: 1px solid var(--line);
   border-radius: 11px;
   color: inherit;
@@ -1986,8 +1986,8 @@ input:disabled {
 }
 
 .rename-png-tile img {
-  width: 54px;
-  height: 50px;
+  width: 80px;
+  height: 76px;
   object-fit: contain;
   border-radius: 8px;
   background-color: #e5e7eb;

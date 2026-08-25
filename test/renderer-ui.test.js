@@ -105,3 +105,35 @@ test('popup Group Shirt có đổi tên giữ mở, đổi tên và đóng, cùn
   assert.match(script, /renamePngCancel\.addEventListener\('click', closeRenamePngDialog\)/);
   assert.doesNotMatch(closeSource, /renameGroupShirtPngFiles|applyRenamePngFiles/);
 });
+
+test('popup Group Shirt chỉ đổi tên các thumbnail được chọn rõ ràng', () => {
+  const script = fs.readFileSync(path.join(rendererDirectory, 'app.js'), 'utf8');
+  const openStart = script.indexOf('function openRenamePngDialog()');
+  const openEnd = script.indexOf('\nfunction closeRenamePngDialog()', openStart);
+  const applyStart = script.indexOf('async function applyRenamePngFiles');
+  const applyEnd = script.indexOf('\nfunction commitSourcePicker()', applyStart);
+  const openSource = script.slice(openStart, openEnd);
+  const applySource = script.slice(applyStart, applyEnd);
+
+  assert.match(openSource, /selected:\s*new Set\(\)/);
+  assert.doesNotMatch(openSource, /new Set\(files\.map/);
+  assert.match(script, /function selectedRenameFiles\(\)[\s\S]*?renamePicker\.selected\.has\(file\.path\)/);
+  assert.match(script, /next\.textContent = !checked[\s\S]*?'Không đổi tên'/);
+  assert.match(applySource, /const filePaths = selectedRenameFiles\(\)\.map\(\(file\) => file\.path\);/);
+  assert.match(applySource, /renameGroupShirtPngFiles\(\{ filePaths, color, side \}\)/);
+});
+
+test('thumbnail đổi tên Group Shirt đủ lớn để nhận diện ảnh rõ hơn', () => {
+  const css = fs.readFileSync(path.join(rendererDirectory, 'styles.css'), 'utf8');
+  const gridRule = cssRuleBody(css, '.rename-png-grid');
+  const tileRule = cssRuleBody(css, '.rename-png-tile');
+  const imageRule = cssRuleBody(css, '.rename-png-tile img');
+
+  assert.match(gridRule, /minmax\(178px,\s*1fr\)/);
+  assert.match(gridRule, /gap\s*:\s*12px\s*;/);
+  assert.match(tileRule, /grid-template-columns\s*:\s*80px\s+minmax\(0,\s*1fr\)\s*;/);
+  assert.match(tileRule, /min-height\s*:\s*92px\s*;/);
+  assert.match(imageRule, /width\s*:\s*80px\s*;/);
+  assert.match(imageRule, /height\s*:\s*76px\s*;/);
+  assert.match(imageRule, /object-fit\s*:\s*contain\s*;/);
+});

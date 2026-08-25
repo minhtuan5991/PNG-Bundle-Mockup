@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
 > Cập nhật: 2026-08-25
-> Phiên bản mã nguồn hiện tại: `1.4.3`
+> Phiên bản mã nguồn hiện tại: `1.4.4`
 > Bản stable hiện có: `v1.4.3`
-> Trạng thái: v1.4.3 đã phát hành stable/public và `/releases/latest` đang trỏ đúng Release này.
+> Trạng thái: v1.4.4 đã đạt QA local và đang chờ workflow tag phát hành; `/releases/latest` vẫn trỏ v1.4.3.
 
 ## 1. Mục đích tài liệu
 
@@ -21,7 +21,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.4.3` |
+| Phiên bản mã nguồn | `1.4.4` |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
@@ -635,3 +635,14 @@ Mốc QA local ngày 2026-08-07:
 - `app.asar` v1.4.3 chứa đủ hai nhánh giữ mở/đóng; packaged `Input` chỉ có `README.txt` cùng `Toystory HLW1.pdf`. Bốn JPG riêng local không bị sửa hoặc đóng gói.
 - Commit phát hành `9f63ff7113f9cb73d8d3d750d3b9fde25077930f` và annotated tag `v1.4.3` đã được push atomically. Windows CI `32858769735` và Release Windows `32858769967` đều thành công.
 - Release ID `376464636` stable/public, không phải prerelease/draft và là `/releases/latest`; có đúng ba asset: Setup 104.369.372 byte (`C2CACA02FB9B8CD338E184F32192BA3AC71175AFEF252B0856D5D0EF60971119`), blockmap 109.436 byte (`3C1D2402841E648BF2745500C5DA899AC89DFDE0B9B19627889481C37A3784C9`) và `latest.yml` 363 byte (`BFF1B8218C4687CEBC1E9A24B654F706702686C246575E3CCB7EEB82DF5D2D10`).
+
+## 25. Bản v1.4.4 — chỉ đổi tên PNG được chọn và thumbnail rõ hơn
+
+- Nguyên nhân việc đổi tên lan sang toàn bộ PNG là `openRenamePngDialog()` đã khởi tạo `renamePicker.selected` bằng tất cả file đang chọn ở bước 1. Backend/IPC vốn chỉ xử lý `payload.filePaths`; lỗi nằm ở selection mặc định của popup.
+- Popup nay khởi tạo `selected: new Set()`, hiển thị `0/N` và khóa hai nút lưu cho tới khi người dùng chọn thumbnail cùng ít nhất một tag. Helper `selectedRenameFiles()` là nguồn duy nhất cho phần đếm, validation và payload đổi tên; thumbnail chưa chọn hiển thị rõ **Không đổi tên**.
+- **Chọn tất cả đang hiện** và **Bỏ chọn đang hiện** tiếp tục chỉ tác động kết quả tìm kiếm đang hiển thị. Các thumbnail từng được chọn chủ động nhưng tạm ẩn bởi tìm kiếm vẫn giữ selection, tránh mất thao tác bulk edit.
+- Thumbnail trong gallery tăng từ `54×50 px` lên `80×76 px`, card cao tối thiểu `92 px`, grid tối thiểu `178 px` và vẫn dùng `object-fit: contain` để không cắt thiết kế.
+- Version source/lockfile/installer local là `1.4.4`. `node --check` đạt; automated tests **124/124** đạt; Electron source và packaged smoke đều **23/23** đạt, gồm runtime check `renameSelectionOnly`.
+- Build local tạo installer 104.369.855 byte, SHA-256 `DC1A21668AF8360A8E215B41DA1238E121784BED3A01197D09512508DB6D5CFD`; blockmap 109.413 byte, SHA-256 `58D232D48F7059D3D8F9878BB676685E94CE52F1CEEB0D8A1BB5CF9BDAD16769`; `latest.yml` 363 byte, SHA-256 `4CE8B606EB7C1A2A8F0A501644A21802373E70609F6E7931563247C4781656DA`. Metadata updater khớp installer; Authenticode `NotSigned`.
+- `app.asar` v1.4.4 chứa selection rỗng ban đầu, helper lọc path và CSS thumbnail mới. Packaged `Input` chỉ có `README.txt` cùng `Toystory HLW1.pdf`; bốn JPG riêng local không bị sửa hoặc đóng gói.
+- Commit/tag, GitHub Actions và Release public sẽ được bổ sung sau khi workflow phát hành hoàn tất.

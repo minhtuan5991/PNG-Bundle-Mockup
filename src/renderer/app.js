@@ -953,6 +953,11 @@ function renameSelectionFiles() {
   return selectedFiles().filter((file) => !query || file.name.toLocaleLowerCase().includes(query));
 }
 
+function selectedRenameFiles() {
+  if (!state.renamePicker) return [];
+  return selectedFiles().filter((file) => state.renamePicker.selected.has(file.path));
+}
+
 function selectedRenameCategory() {
   const color = elements.renameColorLight.checked
     ? 'wh'
@@ -994,9 +999,11 @@ function renderRenamePngDialog() {
     name.textContent = file.name;
     const next = document.createElement('small');
     const parsed = parseGroupSourceName(file.name);
-    next.textContent = parsed.valid
-      ? rewriteGroupPngName(file.name, color, side)
-      : `Không thể đổi: ${parsed.error}`;
+    next.textContent = !checked
+      ? 'Không đổi tên'
+      : parsed.valid
+        ? rewriteGroupPngName(file.name, color, side)
+        : `Không thể đổi: ${parsed.error}`;
     copy.append(name, next);
     tile.append(image, copy);
     tile.addEventListener('click', () => {
@@ -1008,7 +1015,7 @@ function renderRenamePngDialog() {
     });
     elements.renamePngGrid.append(tile);
   }
-  const selectedFilesForRename = selectedFiles().filter((file) => state.renamePicker.selected.has(file.path));
+  const selectedFilesForRename = selectedRenameFiles();
   elements.renamePngCount.textContent = `Đã chọn ${selectedFilesForRename.length}/${selectedFiles().length} PNG để đổi tên`;
   elements.renamePngPreview.textContent = selectedFilesForRename.length === 0
     ? 'Chọn ít nhất một PNG.'
@@ -1047,13 +1054,12 @@ function renderRenamePngDialog() {
 
 function openRenamePngDialog() {
   if (state.mockupMode !== 'group-shirt' || state.busy || state.regionEditor) return;
-  const files = selectedFiles();
-  if (files.length === 0) {
+  if (selectedFiles().length === 0) {
     showError(new Error('Hãy chọn PNG trước khi đổi tên.'));
     return;
   }
   state.renamePicker = {
-    selected: new Set(files.map((file) => file.path)),
+    selected: new Set(),
     saving: false,
     closeAfterSave: false,
     error: '',
@@ -1073,9 +1079,7 @@ function closeRenamePngDialog() {
 async function applyRenamePngFiles(closeAfterSave = false) {
   if (!state.renamePicker || state.renamePicker.saving) return;
   const picker = state.renamePicker;
-  const filePaths = selectedFiles()
-    .filter((file) => picker.selected.has(file.path))
-    .map((file) => file.path);
+  const filePaths = selectedRenameFiles().map((file) => file.path);
   const { color, side } = selectedRenameCategory();
   if (filePaths.length === 0) return;
   if (!color && !side) {

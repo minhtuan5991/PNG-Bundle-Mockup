@@ -12,7 +12,7 @@
 - Hai chế độ loại trừ nhau: **Mockup Bundle PNG** giữ nguyên luồng dàn lưới hiện có; **Mockup Group Shirt** ghép PNG theo nhóm, màu áo và mặt trước/sau.
 - Group Shirt nhận tên `1 (1).wh.f.png`, `1 (2).bl.b.png`; thiếu tag màu được hiểu là áo sáng và thiếu tag mặt được hiểu là mặt trước.
 - Chọn nhiều nền Group Shirt có marker `mgs`, ví dụ `mgs.jpg`, `.mgs1.jpg` hoặc `shirt mgs lifestyle.png`. Mọi nền là template dùng chung; số/chữ cạnh marker chỉ là tên file, còn vùng in quyết định nhóm PNG nào tương thích. Mỗi nền lưu được nhiều vùng in áo sáng/tối, mặt trước/sau theo tỷ lệ cố định `42×48`, có thể di chuyển, scale đúng tỷ lệ và xoay.
-- Công cụ **Đổi tên PNG** gắn `.wh/.bl` và `.f/.b` bằng thao tác đổi tên file thật, kiểm tra trùng tên và rollback toàn bộ nếu lỗi.
+- Công cụ **Đổi tên PNG** gắn `.wh/.bl` và `.f/.b` bằng thao tác đổi tên file thật, kiểm tra trùng tên và rollback toàn bộ nếu lỗi. Popup mở với `0/N`; chỉ thumbnail được chọn mới đổi tên, và thumbnail `80×76 px` giúp nhìn thiết kế rõ hơn.
 - Chọn ảnh nền PNG/JPG/WEBP/TIFF.
 - Chia đều file: `30 / 2 → 15 + 15`, `31 / 2 → 16 + 15`.
 - Chỉ dùng bounding box của pixel có alpha lớn hơn ngưỡng; canvas trong suốt không làm thiết kế bị thu nhỏ.
@@ -128,7 +128,7 @@ Khi bỏ chọn, app giữ metadata của ảnh nền trong khả năng định 
 2. Chạy bộ cài. Khi cài mới, bạn có thể chọn thư mục đích; nên chọn thư mục mà tài khoản hiện tại có quyền ghi để có thể thêm PDF/ảnh mẫu vào `Input`. Nếu chỉ chọn thư mục cha, bộ cài tự thêm thư mục con `PNG Bundle Mockup`. Khi nâng cấp, installer giữ nguyên chế độ/vị trí của bản hiện có, kể cả All Users/custom path, thay vì tạo app thứ hai. Với bản All Users cũ, installer chỉ cấp quyền Modify cho thư mục `Input` và dừng trước khi thay đổi bản cũ nếu bước kiểm tra quyền thất bại.
 3. Mở app bằng icon **PNG Bundle Mockup** trên Desktop hoặc Start Menu.
 
-Sau khi cài, dùng nút **Mở Input** để xác nhận thư mục `Input` nằm cạnh EXE và thêm PDF/ảnh mẫu của bạn. Mã nguồn và bản stable public mới nhất hiện là [`v1.4.3`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.4.3).
+Sau khi cài, dùng nút **Mở Input** để xác nhận thư mục `Input` nằm cạnh EXE và thêm PDF/ảnh mẫu của bạn. Mã nguồn hiện là `v1.4.4`; bản stable public vẫn là [`v1.4.3`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.4.3) cho tới khi workflow phát hành v1.4.4 hoàn tất.
 
 Bộ cài v1.2.3 thay thế giữ các file runtime Electron bắt buộc nhưng gắn thuộc tính **Hidden** để thư mục cài đặt gọn hơn. Mặc định File Explorer chỉ hiện `Input`, **PNG Bundle Mockup.exe** và **Uninstall PNG Bundle Mockup.exe**. Việc bật **Show hidden files** sẽ làm các file kỹ thuật xuất hiện lại; không xóa hoặc đổi tên chúng vì app cần chúng để chạy.
 
