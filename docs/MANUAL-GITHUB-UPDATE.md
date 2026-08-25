@@ -5,8 +5,8 @@ Tài liệu này dùng khi chủ dự án muốn tự phát hành bản Windows 
 ## 1. Quy tắc phiên bản
 
 - `v1.2.5` đã là Release public và không được ghi đè asset hoặc di chuyển tag.
-- `v1.4.3` là bản stable/public và không được di chuyển tag hoặc ghi đè asset.
-- Phiên bản tiếp theo bắt đầu từ `v1.4.4`. Dùng đúng tag mới theo version trong `package.json`; không tái sử dụng tag cũ.
+- `v1.4.4` là bản stable/public và không được di chuyển tag hoặc ghi đè asset.
+- Phiên bản tiếp theo bắt đầu từ `v1.4.5`. Dùng đúng tag mới theo version trong `package.json`; không tái sử dụng tag cũ.
 - Mỗi Release chỉ có đúng ba asset:
   - `PNG-Bundle-Mockup-Setup-X.Y.Z.exe`
   - `PNG-Bundle-Mockup-Setup-X.Y.Z.exe.blockmap`

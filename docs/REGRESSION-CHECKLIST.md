@@ -4,7 +4,7 @@
 
 ## Trạng thái mốc
 
-- [x] QA local v1.4.4 ngày 2026-08-25: **124/124 test đạt**; source/package smoke **23/23**; ASAR/updater metadata/Input allowlist đạt; GitHub Release đang chờ workflow tag.
+- [x] QA/release v1.4.4 ngày 2026-08-25: **124/124 test đạt**; source/package smoke **23/23**; ASAR/updater metadata/Input allowlist và GitHub Release stable/public đã xác minh.
 - [x] QA/release v1.4.3 ngày 2026-08-25: **122/122 test đạt**; source/package smoke **22/22**; ASAR/updater metadata/Input allowlist đạt; GitHub Release stable/public đã xác minh.
 - [x] QA/release v1.4.2 ngày 2026-08-24: **121/121 test đạt**; source/package smoke **21/21**; shared-mgs planner/renderer, NSIS/checksum/app.asar/Input allowlist đạt; GitHub Release stable/public đã xác minh.
 - [x] QA/release v1.4.1 ngày 2026-08-23: **119/119 test đạt**; source/package smoke **20/20**; NSIS/checksum/app.asar/Input allowlist đạt; GitHub Release stable/public đã xác minh.
@@ -555,7 +555,7 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [x] Electron source và packaged smoke **23/23** đạt, gồm `renameSelectionOnly`.
 - [x] Build local: Setup 104.369.855 byte (`DC1A2166…6D5CFD`), blockmap 109.413 byte (`58D232D4…D16769`), `latest.yml` 363 byte (`4CE8B606…1656DA`); metadata khớp, Authenticode NotSigned.
 - [x] `app.asar` v1.4.4 chứa bản sửa; packaged Input đúng hai file allowlist và bốn JPG riêng không được đóng gói.
-- [ ] Commit/tag, Windows CI, Release Windows và Release stable/public v1.4.4 đang chờ thực hiện.
+- [x] Commit `a304de91711ba2e7106841922d5c2ee9c3188cb2`/tag `v1.4.4`, Windows CI `32864082887`, Release Windows `32864083130` và Release ID `376502312` stable/public/latest có đúng ba asset tải ngược đã xác minh.
 
 ## F. Sign-off
 
@@ -583,6 +583,6 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 | v1.4.1 Group Shirt hotfix QA/release | Codex local QA + GitHub Actions | 2026-08-23 | 119/119 test; source/package smoke 20/20; NSIS/checksum/app.asar/Input allowlist đạt. Commit `acc696f`, CI/Release workflow success; Release ID `375260609` stable/public có đúng ba asset và là `/releases/latest`. |
 | v1.4.2 shared mgs QA/release | Codex local QA + GitHub Actions | 2026-08-24 | 121/121 test; source/package smoke 21/21; shared-template planner/renderer, NSIS/checksum/app.asar/Input allowlist đạt. Commit `b8c4486`, CI/Release workflow success; Release ID `375273484` stable/public có đúng ba asset và là `/releases/latest`. |
 | v1.4.3 rename popup QA/release | Codex local QA + GitHub Actions | 2026-08-25 | 122/122 test; source/package smoke 22/22; ba hành vi Hủy/giữ mở/lưu và đóng, ASAR/checksum/updater metadata/Input allowlist đạt. Commit `9f63ff7`, CI/Release workflow success; Release ID `376464636` stable/public có đúng ba asset và là `/releases/latest`. |
-| v1.4.4 rename selection/thumbnail QA | Codex local QA | 2026-08-25 | 124/124 test; source/package smoke 23/23; selection-only, thumbnail lớn, ASAR/checksum/updater metadata/Input allowlist đạt. GitHub tag/Release đang chờ. |
+| v1.4.4 rename selection/thumbnail QA/release | Codex local QA + GitHub Actions | 2026-08-25 | 124/124 test; source/package smoke 23/23; selection-only, thumbnail lớn, ASAR/checksum/updater metadata/Input allowlist đạt. Commit `a304de9`, CI/Release workflow success; Release ID `376502312` stable/public/latest có đúng ba asset tải ngược đã xác minh. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.

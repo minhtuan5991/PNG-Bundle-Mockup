@@ -2,8 +2,8 @@
 
 > Cập nhật: 2026-08-25
 > Phiên bản mã nguồn hiện tại: `1.4.4`
-> Bản stable hiện có: `v1.4.3`
-> Trạng thái: v1.4.4 đã đạt QA local và đang chờ workflow tag phát hành; `/releases/latest` vẫn trỏ v1.4.3.
+> Bản stable hiện có: `v1.4.4`
+> Trạng thái: v1.4.4 đã phát hành stable/public và `/releases/latest` đang trỏ đúng Release này.
 
 ## 1. Mục đích tài liệu
 
@@ -645,4 +645,5 @@ Mốc QA local ngày 2026-08-07:
 - Version source/lockfile/installer local là `1.4.4`. `node --check` đạt; automated tests **124/124** đạt; Electron source và packaged smoke đều **23/23** đạt, gồm runtime check `renameSelectionOnly`.
 - Build local tạo installer 104.369.855 byte, SHA-256 `DC1A21668AF8360A8E215B41DA1238E121784BED3A01197D09512508DB6D5CFD`; blockmap 109.413 byte, SHA-256 `58D232D48F7059D3D8F9878BB676685E94CE52F1CEEB0D8A1BB5CF9BDAD16769`; `latest.yml` 363 byte, SHA-256 `4CE8B606EB7C1A2A8F0A501644A21802373E70609F6E7931563247C4781656DA`. Metadata updater khớp installer; Authenticode `NotSigned`.
 - `app.asar` v1.4.4 chứa selection rỗng ban đầu, helper lọc path và CSS thumbnail mới. Packaged `Input` chỉ có `README.txt` cùng `Toystory HLW1.pdf`; bốn JPG riêng local không bị sửa hoặc đóng gói.
-- Commit/tag, GitHub Actions và Release public sẽ được bổ sung sau khi workflow phát hành hoàn tất.
+- Commit phát hành `a304de91711ba2e7106841922d5c2ee9c3188cb2` và annotated tag `v1.4.4` đã được push atomically. Windows CI `32864082887` và Release Windows `32864083130` đều thành công.
+- Release ID `376502312` stable/public, không phải prerelease/draft và là `/releases/latest`; tải ngược xác minh đúng ba asset: Setup 104.369.504 byte (`1BC68EF402BF27DA487945CD5156E7A3E7F35FAEB536F602455D87A90D3A4675`), blockmap 109.346 byte (`8D57E217DBAD20DC721EB3A0F30F952A90847F91F55704254614EC5482C1F374`) và `latest.yml` 363 byte (`34611298DC9E107668F8F5B5DFA971FD036EB379C1D0D0C421002C9F6567353E`). Updater metadata remote khớp installer remote.
