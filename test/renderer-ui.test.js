@@ -86,3 +86,22 @@ test('nút Loại bỏ PNG xóa sạch phiên làm việc PNG nhưng giữ nguy�
   );
   assert.doesNotMatch(clearSource, /unlink|rmSync|removeItem/i);
 });
+
+test('popup Group Shirt có đổi tên giữ mở, đổi tên và đóng, cùng hủy không lưu', () => {
+  const html = fs.readFileSync(path.join(rendererDirectory, 'index.html'), 'utf8');
+  const script = fs.readFileSync(path.join(rendererDirectory, 'app.js'), 'utf8');
+  const closeStart = script.indexOf('function closeRenamePngDialog()');
+  const closeEnd = script.indexOf('\nasync function applyRenamePngFiles', closeStart);
+  const closeSource = script.slice(closeStart, closeEnd);
+
+  assert.match(html, /id="renamePngCancel"[^>]*>Hủy<\/button>/);
+  assert.match(html, /id="renamePngApply"[^>]*>Đổi Tên<\/button>/);
+  assert.match(html, /id="renamePngConfirm"[^>]*>Đổi tên và Đóng<\/button>/);
+  assert.match(script, /async function applyRenamePngFiles\(closeAfterSave = false\)/);
+  assert.match(script, /renamePngApply\.addEventListener\('click', \(\) => applyRenamePngFiles\(false\)\)/);
+  assert.match(script, /renamePngConfirm\.addEventListener\('click', \(\) => applyRenamePngFiles\(true\)\)/);
+  assert.match(script, /if \(closeAfterSave\) closeRenamePngDialog\(\);/);
+  assert.match(script, /picker\.selected = new Set\(\[\.\.\.picker\.selected\]\.map/);
+  assert.match(script, /renamePngCancel\.addEventListener\('click', closeRenamePngDialog\)/);
+  assert.doesNotMatch(closeSource, /renameGroupShirtPngFiles|applyRenamePngFiles/);
+});

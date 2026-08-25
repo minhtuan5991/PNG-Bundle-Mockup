@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
-> Cập nhật: 2026-08-24
-> Phiên bản mã nguồn hiện tại: `1.4.2`
+> Cập nhật: 2026-08-25
+> Phiên bản mã nguồn hiện tại: `1.4.3`
 > Bản stable hiện có: `v1.4.2`
-> Trạng thái: v1.4.2 đã phát hành stable/public và `/releases/latest` đang trỏ đúng Release này.
+> Trạng thái: v1.4.3 đang được chuẩn bị phát hành; stable public `/releases/latest` vẫn là v1.4.2 cho đến khi workflow hoàn tất.
 
 ## 1. Mục đích tài liệu
 
@@ -21,7 +21,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.4.2` |
+| Phiên bản mã nguồn | `1.4.3` |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
@@ -625,3 +625,12 @@ Mốc QA local ngày 2026-08-07:
 - `app.asar` v1.4.2 chứa planner/renderer shared-template và parser marker-only; packaged `Input` chỉ có `README.txt` cùng `Toystory HLW1.pdf`. Bốn JPG riêng local không bị sửa hoặc đóng gói.
 - Commit phát hành `b8c44860213eaa1a17e58e34e08beee6400332ec` và annotated tag `v1.4.2` đã được push atomically. Windows CI `32653936792` và Release Windows `32653936827` đều thành công.
 - Release ID `375273484` stable/public, không phải prerelease/draft và là `/releases/latest`; có đúng ba asset: Setup 104.369.203 byte (`62A5495726F6FBA8BFF996AC324D709CE6D061CF91109689A512D1090046693D`), blockmap 109.581 byte (`6F69BD556D58F560EDB1F89040AF2F1CAD722AEC3A53EA97CF42DBE8FF442AFE`) và `latest.yml` 363 byte (`60D2A96A003B90424BAF96BBFBEC57D855D715E6E87B002EDFF899087E54A155`).
+## 24. Bản v1.4.3 — đổi tên liên tiếp trong popup Group Shirt
+
+- Popup **Đặt tên Group Shirt** có ba đường thoát rõ ràng: **Đổi Tên** lưu file và giữ popup mở; **Đổi tên và Đóng** lưu rồi đóng; **Hủy**, dấu × và Esc đóng mà không áp dụng lựa chọn chưa lưu.
+- Trong lúc ghi file, cả hai nút lưu cùng các control liên quan bị khóa và nút được bấm hiển thị trạng thái **Đang đổi tên…**.
+- Sau thao tác giữ popup mở, `state.files`, `state.selected` và `renamePicker.selected` đều được ánh xạ sang đường dẫn mới, tránh tham chiếu tên cũ ở lượt tiếp theo.
+- Version source/lockfile/installer local là `1.4.3`. Automated tests **122/122** đạt; Electron source và packaged smoke đều **22/22** đạt, gồm check runtime `renameDialogActions`.
+- Build local tạo installer 104.370.304 byte, SHA-256 `2E712A0E5BEDCCB3348BBC4432D2C02E9AAEB3F1324B5DB8F3DD6E8E95ABAA11`; blockmap 109.428 byte, SHA-256 `83BF9E9C750249597A840F2EE81499F508902BE24E42B3924E9B9D8CF54CA010`; `latest.yml` 363 byte, SHA-256 `7D6B250F7C35AE3B7F5915793D2CAA92C39D73DE0A9C607F951EAA388E0A5C36`. Metadata updater khớp installer; Authenticode `NotSigned`.
+- `app.asar` v1.4.3 chứa đủ hai nhánh giữ mở/đóng; packaged `Input` chỉ có `README.txt` cùng `Toystory HLW1.pdf`. Bốn JPG riêng local không bị sửa hoặc đóng gói.
+- Bản phát hành dùng commit/tag mới `v1.4.3`; trạng thái workflow, Release ID và asset remote sẽ được bổ sung sau khi GitHub hoàn tất.

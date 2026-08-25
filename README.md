@@ -128,11 +128,11 @@ Khi bỏ chọn, app giữ metadata của ảnh nền trong khả năng định 
 2. Chạy bộ cài. Khi cài mới, bạn có thể chọn thư mục đích; nên chọn thư mục mà tài khoản hiện tại có quyền ghi để có thể thêm PDF/ảnh mẫu vào `Input`. Nếu chỉ chọn thư mục cha, bộ cài tự thêm thư mục con `PNG Bundle Mockup`. Khi nâng cấp, installer giữ nguyên chế độ/vị trí của bản hiện có, kể cả All Users/custom path, thay vì tạo app thứ hai. Với bản All Users cũ, installer chỉ cấp quyền Modify cho thư mục `Input` và dừng trước khi thay đổi bản cũ nếu bước kiểm tra quyền thất bại.
 3. Mở app bằng icon **PNG Bundle Mockup** trên Desktop hoặc Start Menu.
 
-Sau khi cài, dùng nút **Mở Input** để xác nhận thư mục `Input` nằm cạnh EXE và thêm PDF/ảnh mẫu của bạn. Mã nguồn và bản stable public mới nhất hiện là [`v1.4.2`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.4.2).
+Sau khi cài, dùng nút **Mở Input** để xác nhận thư mục `Input` nằm cạnh EXE và thêm PDF/ảnh mẫu của bạn. Mã nguồn hiện tại là `1.4.3`; cho đến khi workflow phát hành hoàn tất, bản stable public mới nhất vẫn là [`v1.4.2`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.4.2).
 
 Bộ cài v1.2.3 thay thế giữ các file runtime Electron bắt buộc nhưng gắn thuộc tính **Hidden** để thư mục cài đặt gọn hơn. Mặc định File Explorer chỉ hiện `Input`, **PNG Bundle Mockup.exe** và **Uninstall PNG Bundle Mockup.exe**. Việc bật **Show hidden files** sẽ làm các file kỹ thuật xuất hiện lại; không xóa hoặc đổi tên chúng vì app cần chúng để chạy.
 
-Quy trình phát hành phiên bản tiếp theo (từ `v1.4.3`) được ghi trong [hướng dẫn cập nhật thủ công](docs/MANUAL-GITHUB-UPDATE.md). Không di chuyển tag hoặc ghi đè asset v1.4.2.
+Quy trình phát hành `v1.4.3` được ghi trong [hướng dẫn cập nhật thủ công](docs/MANUAL-GITHUB-UPDATE.md). Không di chuyển tag hoặc ghi đè asset v1.4.2.
 
 Từ v1.2.4, uninstall thật giữ nguyên `Input` tại vị trí cài đặt nhưng xóa EXE/runtime, shortcut, registry, `%APPDATA%\png-bundle-mockup` và `%LOCALAPPDATA%\png-bundle-mockup-updater`. Các thư mục `Done`, PNG nguồn, mockup và PDF nằm ngoài thư mục cài đặt luôn được giữ nguyên. Luồng update không xóa dữ liệu người dùng và tiếp tục dùng backup/restore `Input`.
 

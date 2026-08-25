@@ -4,6 +4,8 @@
 
 ## Trạng thái mốc
 
+- [x] QA/release candidate v1.4.3 ngày 2026-08-25: **122/122 test đạt**; source/package smoke **22/22**; ASAR/updater metadata/Input allowlist đạt. Push/tag/Release đang chờ.
+
 - [x] QA/release v1.4.2 ngày 2026-08-24: **121/121 test đạt**; source/package smoke **21/21**; shared-mgs planner/renderer, NSIS/checksum/app.asar/Input allowlist đạt; GitHub Release stable/public đã xác minh.
 - [x] QA/release v1.4.1 ngày 2026-08-23: **119/119 test đạt**; source/package smoke **20/20**; NSIS/checksum/app.asar/Input allowlist đạt; GitHub Release stable/public đã xác minh.
 - [x] QA v1.4.0 ngày 2026-08-23: **118/118 test đạt**; packaged smoke **19/19**; NSIS/checksum/app.asar/Input allowlist đạt. Cài tương tác và dữ liệu thật còn chờ.
@@ -529,6 +531,18 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 - [x] `app.asar` v1.4.2 chứa shared-template logic; packaged Input đúng hai file allowlist và bốn JPG riêng không được đóng gói.
 - [x] Commit `b8c44860213eaa1a17e58e34e08beee6400332ec`/tag `v1.4.2`, Windows CI `32653936792`, Release Windows `32653936827` và Release ID `375273484` stable/public có đúng ba asset đã xác minh.
 
+## E13. v1.4.3 — đổi tên liên tiếp trong popup Group Shirt
+
+- [x] `package.json`, `package-lock.json` và package root cùng version `1.4.3`.
+- [x] Popup có đúng ba nút **Hủy**, **Đổi Tên**, **Đổi tên và Đóng**; chỉ một nút dùng style primary.
+- [x] **Đổi Tên** gọi rename với `closeAfterSave=false`; **Đổi tên và Đóng** gọi với `true`.
+- [x] Sau rename giữ mở, cả gallery, selection toàn app và selection trong popup dùng đường dẫn mới.
+- [x] Hủy/dấu ×/Esc không gọi API ghi file; khi đang ghi, control bị khóa và có phản hồi **Đang đổi tên…**.
+- [x] `node --check`, `git diff --check` và automated tests **122/122** đạt.
+- [x] Electron source và packaged smoke **22/22** đạt, gồm `renameDialogActions`.
+- [x] Build local: Setup 104.370.304 byte (`2E712A0E…BAA11`), blockmap 109.428 byte (`83BF9E9C…CA010`), `latest.yml` 363 byte (`7D6B250F…A5C36`); metadata khớp, Authenticode NotSigned.
+- [x] `app.asar` v1.4.3 chứa đủ hai nhánh giữ/đóng; packaged Input đúng hai file allowlist và bốn JPG riêng không được đóng gói.
+- [ ] Commit/tag `v1.4.3`, Windows CI, Release Windows và ba asset public đã xác minh.
 ## F. Sign-off
 
 | Hạng mục | Người kiểm tra | Ngày | Kết quả/Ghi chú |
@@ -554,5 +568,7 @@ Các mục `[x]` hiện có là bằng chứng lịch sử của phiên bản đ
 | v1.4.0 planner/installer QA/release | Codex local QA + GitHub Actions | 2026-08-23 | 118/118 automated test; packaged smoke 19/19; NSIS/checksum/app.asar/Input allowlist đạt. Commit `930b728`, CI/Release workflow success; Release ID `375169659` stable/public có đúng ba asset và là `/releases/latest`. Cài tương tác/VM và dữ liệu thật còn chờ. |
 | v1.4.1 Group Shirt hotfix QA/release | Codex local QA + GitHub Actions | 2026-08-23 | 119/119 test; source/package smoke 20/20; NSIS/checksum/app.asar/Input allowlist đạt. Commit `acc696f`, CI/Release workflow success; Release ID `375260609` stable/public có đúng ba asset và là `/releases/latest`. |
 | v1.4.2 shared mgs QA/release | Codex local QA + GitHub Actions | 2026-08-24 | 121/121 test; source/package smoke 21/21; shared-template planner/renderer, NSIS/checksum/app.asar/Input allowlist đạt. Commit `b8c4486`, CI/Release workflow success; Release ID `375273484` stable/public có đúng ba asset và là `/releases/latest`. |
+
+| v1.4.3 rename popup release candidate | Codex local QA | 2026-08-25 | 122/122 test; source/package smoke 22/22; ba hành vi Hủy/giữ mở/lưu và đóng, ASAR/checksum/updater metadata/Input allowlist đạt. Push/tag/Release đang chờ. |
 
 Chỉ tạo tag stable khi tất cả mục bắt buộc đã hoàn tất hoặc mọi ngoại lệ đã được ghi rõ trong release notes và được chấp thuận.

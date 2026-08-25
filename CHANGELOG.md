@@ -4,7 +4,24 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
-Chưa có thay đổi sau v1.4.2.
+Chưa có thay đổi sau v1.4.3.
+
+## [1.4.3] - 2026-08-25
+
+### Added
+
+- Popup **Đặt tên Group Shirt** có thêm nút **Đổi Tên** để lưu tên file nhưng giữ popup mở, thuận tiện xử lý liên tiếp nhiều nhóm/tag.
+
+### Changed
+
+- Nút lưu và đóng được đặt tên rõ là **Đổi tên và Đóng**; nút **Hủy**, dấu × và phím Esc chỉ đóng popup mà không áp dụng thay đổi chưa lưu.
+- Sau khi dùng **Đổi Tên**, gallery và tập file đang chọn được chuyển sang đường dẫn mới để tiếp tục đổi tag mà không tham chiếu tên cũ.
+- Nâng version ứng dụng và bộ cài lên `1.4.3`; phát hành bằng tag mới, không ghi đè v1.4.2.
+
+### QA
+
+- Automated tests **122/122** đạt; Electron source và packaged smoke đều **22/22** đạt.
+- ASAR v1.4.3 chứa đủ ba hành vi nút; updater metadata khớp installer và packaged `Input` chỉ giữ README/PDF mẫu.
 
 ## [1.4.2] - 2026-08-24
 

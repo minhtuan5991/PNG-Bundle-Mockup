@@ -85,6 +85,7 @@ test('allowlist và fingerprint bảo vệ source/template theo từng renderer'
   assert.match(main, /v140Controls:\s*Boolean\(document\.querySelector\('#mockupModeBundle'\)/);
   assert.match(main, /v140SourceDirectory:[\s\S]*?groupSourceDirectory/);
   assert.match(main, /v142SharedMgs:[\s\S]*?!analyzeGroupShirtSetup[\s\S]*?state\.groupTemplates/);
+  assert.match(main, /renameDialogActions:[\s\S]*?#renamePngApply[\s\S]*?Đổi tên và Đóng/);
   assert.match(main, /v140ModeSwitch:[\s\S]*?!pdfBlock\.classList\.contains\('is-hidden'\)/);
   assert.match(main, /const authorizedSourcePaths\s*=\s*new Map\(\)/);
   assert.match(main, /const authorizedGroupTemplatePaths\s*=\s*new Map\(\)/);
@@ -204,10 +205,10 @@ test('vùng Group Shirt scale khóa đúng tỷ lệ pixel 42×48 và tối thi�
   assert.match(drag, /pixelWidth\s*=\s*pixelHeight\s*\*\s*aspectRatio/);
 });
 
-test('package và lockfile cùng mang version 1.4.2', () => {
+test('package và lockfile cùng mang version 1.4.3', () => {
   const manifest = JSON.parse(read('package.json'));
   const lockfile = JSON.parse(read('package-lock.json'));
-  assert.equal(manifest.version, '1.4.2');
-  assert.equal(lockfile.version, '1.4.2');
-  assert.equal(lockfile.packages[''].version, '1.4.2');
+  assert.equal(manifest.version, '1.4.3');
+  assert.equal(lockfile.version, '1.4.3');
+  assert.equal(lockfile.packages[''].version, '1.4.3');
 });

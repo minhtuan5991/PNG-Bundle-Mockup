@@ -540,6 +540,9 @@ function createWindow() {
               !analyzeGroupShirtSetup.toString().includes('templatesByGroup') &&
               !analyzeGroupShirtSetup.toString().includes('missingTemplateGroups') &&
               analyzeGroupShirtSetup.toString().includes('state.groupTemplates'),
+            renameDialogActions: Boolean(document.querySelector('#renamePngApply') &&
+              document.querySelector('#renamePngConfirm')?.textContent === 'Đổi tên và Đóng' &&
+              document.querySelector('#renamePngCancel')?.textContent === 'Hủy'),
             v140ModeSwitch: (() => {
               const bundle = document.querySelector('#mockupModeBundle');
               const group = document.querySelector('#mockupModeGroup');

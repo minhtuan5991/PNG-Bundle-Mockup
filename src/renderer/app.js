@@ -129,6 +129,7 @@ const elements = {
   renamePngPreview: document.querySelector('#renamePngPreview'),
   renamePngError: document.querySelector('#renamePngError'),
   renamePngCancel: document.querySelector('#renamePngCancel'),
+  renamePngApply: document.querySelector('#renamePngApply'),
   renamePngConfirm: document.querySelector('#renamePngConfirm'),
   resultDialog: document.querySelector('#resultDialog'),
   dialogTitle: document.querySelector('#dialogTitle'),
@@ -1019,9 +1020,16 @@ function renderRenamePngDialog() {
     ? `${invalid.name}: ${parseGroupSourceName(invalid.name).error}`
     : duplicate ? `Tên đích bị trùng: ${duplicate}` : '';
   elements.renamePngError.textContent = state.renamePicker.error || validationError;
-  elements.renamePngConfirm.textContent = saving ? 'Đang đổi tên…' : 'Áp dụng và đổi tên';
-  elements.renamePngConfirm.disabled =
+  const submitDisabled =
     saving || selectedFilesForRename.length === 0 || Boolean(validationError) || (!color && !side);
+  elements.renamePngApply.textContent = saving && !state.renamePicker.closeAfterSave
+    ? 'Đang đổi tên…'
+    : 'Đổi Tên';
+  elements.renamePngConfirm.textContent = saving && state.renamePicker.closeAfterSave
+    ? 'Đang đổi tên…'
+    : 'Đổi tên và Đóng';
+  elements.renamePngApply.disabled = submitDisabled;
+  elements.renamePngConfirm.disabled = submitDisabled;
   elements.renamePngSelectAll.disabled = saving || visible.length === 0;
   elements.renamePngSelectNone.disabled = saving || state.renamePicker.selected.size === 0;
   elements.renamePngSearch.disabled = saving;
@@ -1047,6 +1055,7 @@ function openRenamePngDialog() {
   state.renamePicker = {
     selected: new Set(files.map((file) => file.path)),
     saving: false,
+    closeAfterSave: false,
     error: '',
   };
   elements.renamePngSearch.value = '';
@@ -1061,7 +1070,7 @@ function closeRenamePngDialog() {
   if (elements.renamePngDialog.open) elements.renamePngDialog.close();
 }
 
-async function applyRenamePngFiles() {
+async function applyRenamePngFiles(closeAfterSave = false) {
   if (!state.renamePicker || state.renamePicker.saving) return;
   const picker = state.renamePicker;
   const filePaths = selectedFiles()
@@ -1075,18 +1084,23 @@ async function applyRenamePngFiles() {
   }
   if (!window.confirm(`Đổi tên thật ${filePaths.length} file PNG trên máy? App sẽ kiểm tra trùng tên trước khi thay đổi.`)) return;
   picker.saving = true;
+  picker.closeAfterSave = closeAfterSave;
   picker.error = '';
   renderRenamePngDialog();
   try {
     const result = unwrap(await api.renameGroupShirtPngFiles({ filePaths, color, side }));
     const mappings = new Map((result.mappings || []).map((item) => [normalizePath(item.oldPath), item.file]));
+    picker.selected = new Set([...picker.selected].map((filePath) => {
+      const renamed = mappings.get(normalizePath(filePath));
+      return renamed ? renamed.path : filePath;
+    }));
     state.files = state.files.map((file) => mappings.get(normalizePath(file.path)) || file);
     state.selected = new Set([...state.selected].map((filePath) => {
       const renamed = mappings.get(normalizePath(filePath));
       return renamed ? renamed.path : filePath;
     }));
     picker.saving = false;
-    closeRenamePngDialog();
+    if (closeAfterSave) closeRenamePngDialog();
     renderFileList();
     updateSelectionState();
     renderGroupReadiness();
@@ -1097,6 +1111,7 @@ async function applyRenamePngFiles() {
   } finally {
     if (state.renamePicker === picker) {
       picker.saving = false;
+      picker.closeAfterSave = false;
       renderRenamePngDialog();
     }
   }
@@ -3218,7 +3233,8 @@ for (const input of [
   if (state.renamePicker) state.renamePicker.error = '';
   renderRenamePngDialog();
 });
-elements.renamePngConfirm.addEventListener('click', applyRenamePngFiles);
+elements.renamePngApply.addEventListener('click', () => applyRenamePngFiles(false));
+elements.renamePngConfirm.addEventListener('click', () => applyRenamePngFiles(true));
 elements.renamePngCancel.addEventListener('click', closeRenamePngDialog);
 elements.renamePngClose.addEventListener('click', closeRenamePngDialog);
 elements.renamePngDialog.addEventListener('cancel', (event) => {
