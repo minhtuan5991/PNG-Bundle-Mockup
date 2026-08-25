@@ -5,8 +5,8 @@ Tài liệu này dùng khi chủ dự án muốn tự phát hành bản Windows 
 ## 1. Quy tắc phiên bản
 
 - `v1.2.5` đã là Release public và không được ghi đè asset hoặc di chuyển tag.
-- `v1.4.2` là bản stable/public và không được di chuyển tag hoặc ghi đè asset.
-- `v1.4.3` là phiên bản đang chuẩn bị phát hành. Dùng đúng tag mới `v1.4.3`; không tái sử dụng tag cũ.
+- `v1.4.3` là bản stable/public và không được di chuyển tag hoặc ghi đè asset.
+- Phiên bản tiếp theo bắt đầu từ `v1.4.4`. Dùng đúng tag mới theo version trong `package.json`; không tái sử dụng tag cũ.
 - Mỗi Release chỉ có đúng ba asset:
   - `PNG-Bundle-Mockup-Setup-X.Y.Z.exe`
   - `PNG-Bundle-Mockup-Setup-X.Y.Z.exe.blockmap`
@@ -26,7 +26,7 @@ node -p "require('./package.json').version"
 
 Sau đó:
 
-1. Tạo release notes đúng version mới, ví dụ `docs/RELEASE-NOTES-1.4.3.md`, và ghi rõ thay đổi, QA cùng giới hạn còn lại.
+1. Tạo release notes đúng version mới, ví dụ `docs/RELEASE-NOTES-1.4.4.md`, và ghi rõ thay đổi, QA cùng giới hạn còn lại.
 2. Cập nhật `CHANGELOG.md`, `README.md`, `docs/PROJECT-HISTORY.md` và `docs/REGRESSION-CHECKLIST.md` nếu cần.
 3. Kiểm tra `package.json`, `package-lock.json` và package root trong lockfile cùng mang version mới.
 
@@ -64,7 +64,7 @@ git add -- test/group-shirt-regions.test.js test/group-shirt-service.test.js
 git add -- test/packaging-config.test.js test/path-preferences.test.js
 git add -- test/renderer-ui.test.js test/v140-integration.test.js
 git add -- test/single-mockup-service.test.js
-git add -- docs/MANUAL-GITHUB-UPDATE.md docs/RELEASE-NOTES-1.4.3.md
+git add -- docs/MANUAL-GITHUB-UPDATE.md docs/RELEASE-NOTES-1.4.4.md
 git add -- docs/PROJECT-HISTORY.md docs/REGRESSION-CHECKLIST.md
 git status --short
 ```
