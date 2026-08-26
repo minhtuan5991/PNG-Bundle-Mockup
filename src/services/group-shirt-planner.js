@@ -7,10 +7,16 @@ const {
   parseGroupShirtTemplateName,
 } = require('./group-shirt-filenames');
 const {
-  normalizeGroupShirtColor,
-  normalizeGroupShirtSide,
   validateGroupShirtRegions,
 } = require('./group-shirt-regions');
+const {
+  groupShirtProfile,
+  sourcePoolKey,
+  regionPoolKey,
+  poolLabel,
+  matchGroupShirtTemplate,
+  missingSourcePoolKeys,
+} = require('../shared/group-shirt-matching');
 
 class GroupShirtPlanError extends Error {
   constructor(message, code, details = {}) {
@@ -235,71 +241,47 @@ function validateNoDuplicateTemplates(templates) {
 }
 
 function profileFromSources(sources) {
-  const hasColor = sources.some((source) => source.explicitColor);
-  const hasSide = sources.some((source) => source.explicitSide);
-  if (hasColor && hasSide) return 'color-side';
-  if (hasColor) return 'color-only';
-  if (hasSide) return 'side-only';
-  return 'plain';
+  return groupShirtProfile(sources);
 }
 
 function buildSourceGroup(groupSources) {
   const first = groupSources[0];
+  const profile = profileFromSources(groupSources);
   const tracks = new Map();
+  const pools = new Map();
   for (const source of groupSources) {
-    const key = trackKey(source.color, source.side);
-    if (!tracks.has(key)) tracks.set(key, []);
-    tracks.get(key).push(source);
+    const track = trackKey(source.color, source.side);
+    if (!tracks.has(track)) tracks.set(track, []);
+    tracks.get(track).push(source);
+
+    const pool = sourcePoolKey(profile, source);
+    if (!pools.has(pool)) pools.set(pool, []);
+    pools.get(pool).push(source);
   }
   for (const [key, items] of tracks) tracks.set(key, sortedSources(items));
+  for (const [key, items] of pools) pools.set(key, sortedSources(items));
   return {
     group: first.group,
     groupKey: first.groupKey,
-    profile: profileFromSources(groupSources),
+    profile,
     sources: sortedSources(groupSources),
     tracks,
+    pools,
   };
 }
 
-function countRegionsByTrack(regions) {
+function countRegionsByPool(profile, regions) {
   const counts = new Map();
   for (const region of regions) {
-    const key = trackKey(normalizeGroupShirtColor(region.color), normalizeGroupShirtSide(region.side));
+    const key = regionPoolKey(profile, region);
+    if (!key) continue;
     counts.set(key, (counts.get(key) || 0) + 1);
   }
   return counts;
 }
 
 function templateCompatibility(group, regions) {
-  if (regions.length === 0) return { compatible: false, reason: 'không có vùng in' };
-  const regionTracks = countRegionsByTrack(regions);
-  const sourceTrackKeys = new Set(group.tracks.keys());
-  const regionTrackKeys = new Set(regionTracks.keys());
-  const missingTrack = [...sourceTrackKeys].find((key) => !regionTrackKeys.has(key));
-  if (missingTrack) {
-    return { compatible: false, reason: 'thiếu vùng đúng màu hoặc mặt của PNG' };
-  }
-  const extraTrack = [...regionTrackKeys].find((key) => !sourceTrackKeys.has(key));
-  if (extraTrack) {
-    return { compatible: false, reason: 'có vùng màu hoặc mặt không có PNG tương ứng' };
-  }
-
-  const frontCount = regions.filter((region) => region.side === 'front').length;
-  const backCount = regions.filter((region) => region.side === 'back').length;
-  const darkCount = regions.filter((region) => region.color === 'bl').length;
-  if (group.profile === 'plain' && (backCount > 0 || darkCount > 0)) {
-    return { compatible: false, reason: 'nhóm không tag chỉ dùng vùng trước áo sáng' };
-  }
-  if (group.profile === 'side-only' && (darkCount > 0 || frontCount === 0 || backCount === 0)) {
-    return { compatible: false, reason: 'nhóm chỉ tag mặt cần vùng trước và sau áo sáng' };
-  }
-  if (group.profile === 'color-only' && backCount > 0) {
-    return { compatible: false, reason: 'nhóm chỉ tag màu không dùng nền có vùng mặt sau' };
-  }
-  if (group.profile === 'color-side' && (frontCount === 0 || backCount === 0)) {
-    return { compatible: false, reason: 'nhóm đủ tag màu/mặt cần nền có cả vùng trước và sau' };
-  }
-  return { compatible: true, regionTracks };
+  return matchGroupShirtTemplate(group.profile, group.sources, regions);
 }
 
 function randomIndex(maxExclusive, random) {
@@ -314,11 +296,18 @@ function randomIndex(maxExclusive, random) {
 }
 
 function makeAssignments(regions, group, batchIndex, random) {
-  const capacities = countRegionsByTrack(regions);
+  const capacities = countRegionsByPool(group.profile, regions);
   const slotIndexes = new Map();
   return regions.map((region, regionIndex) => {
-    const key = trackKey(region.color, region.side);
-    const sources = group.tracks.get(key);
+    const key = regionPoolKey(group.profile, region);
+    const sources = key ? group.pools.get(key) : null;
+    if (!sources?.length) {
+      throw new GroupShirtPlanError(
+        'Không tìm thấy PNG phù hợp với vùng in Group Shirt.',
+        'MISSING_GROUP_SHIRT_ASSIGNMENT_POOL',
+        { group, region },
+      );
+    }
     const slotIndex = slotIndexes.get(key) || 0;
     slotIndexes.set(key, slotIndex + 1);
     const sourceIndex = batchIndex * capacities.get(key) + slotIndex;
@@ -337,10 +326,12 @@ function makeAssignments(regions, group, batchIndex, random) {
 }
 
 function batchCountFor(group, regions) {
-  const capacities = countRegionsByTrack(regions);
+  const capacities = countRegionsByPool(group.profile, regions);
   let count = 1;
-  for (const [key, sources] of group.tracks) {
-    count = Math.max(count, Math.ceil(sources.length / capacities.get(key)));
+  for (const [key, capacity] of capacities) {
+    const sources = group.pools.get(key);
+    if (!sources?.length) continue;
+    count = Math.max(count, Math.ceil(sources.length / capacity));
   }
   return count;
 }
@@ -385,16 +376,32 @@ async function createGroupShirtPlan(options = {}) {
     const eligible = [];
     const incompatible = [];
     for (const template of orderedTemplates) {
-      const regions = resolvedTemplateRegions.get(templateIdentity(template));
-      const compatibility = templateCompatibility(group, regions);
-      if (compatibility.compatible) eligible.push({ template, regions });
-      else incompatible.push({ template, reason: compatibility.reason });
+      const allRegions = resolvedTemplateRegions.get(templateIdentity(template));
+      const compatibility = templateCompatibility(group, allRegions);
+      if (compatibility.compatible) {
+        eligible.push({
+          template,
+          regions: compatibility.regions,
+          compatibility,
+        });
+      } else {
+        incompatible.push({ template, reason: compatibility.reason, compatibility });
+      }
     }
-    if (eligible.length === 0) {
+
+    const missingPools = missingSourcePoolKeys(
+      group.profile,
+      group.sources,
+      eligible.map((item) => item.compatibility),
+    );
+    if (eligible.length === 0 || missingPools.length > 0) {
+      const missingDescription = missingPools.length > 0
+        ? ` Thiếu ảnh nền cho ${missingPools.map(poolLabel).join(', ')}.`
+        : '';
       throw new GroupShirtPlanError(
-        `Không có ảnh nền mgs có vùng in phù hợp cho nhóm “${group.group}”.`,
+        `Không có ảnh nền mgs có vùng in phù hợp cho nhóm “${group.group}”.${missingDescription}`,
         'NO_COMPATIBLE_GROUP_SHIRT_TEMPLATE',
-        { group, incompatible },
+        { group, incompatible, missingPoolKeys: missingPools },
       );
     }
     for (const item of incompatible) {
@@ -430,12 +437,15 @@ async function createGroupShirtPlan(options = {}) {
 
     const trackCounts = {};
     for (const [key, items] of group.tracks) trackCounts[key.replace('\0', '.')] = items.length;
+    const poolCounts = {};
+    for (const [key, items] of group.pools) poolCounts[key] = items.length;
     groupSummaries.push({
       group: group.group,
       groupKey: group.groupKey,
       profile: group.profile,
       sourceCount: group.sources.length,
       trackCounts,
+      poolCounts,
       templateCount: eligible.length,
     });
   }

@@ -4,7 +4,22 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
-Chưa có thay đổi sau v1.4.4.
+Chưa có thay đổi sau v1.4.5.
+
+## [1.4.5] - 2026-08-26
+
+### Changed
+
+- Mockup Group Shirt nay dùng routing pool theo kiểu tag PNG thay cho điều kiện vùng in phải khớp chính xác toàn bộ. PNG không tag dùng mọi vùng mặt trước; .f/.b wildcard màu; .wh/.bl khớp màu ở mặt trước; đủ tag khớp chính xác màu và mặt.
+- Ảnh nền chỉ phủ một phần track phù hợp vẫn được dùng theo vùng có thể ghép. App kiểm tra độ phủ của toàn bộ nền được chọn để không làm mất một pool PNG mà không báo lỗi.
+- Ảnh nguồn mặt trước hoặc mặt sau đơn lẻ được lặp trong đúng pool khi thiếu ảnh, kể cả qua các trang tạo thêm do ảnh còn thừa.
+- Preflight renderer và planner backend dùng chung module matching, loại bỏ chênh lệch giữa cảnh báo UI và kết quả render.
+- Nâng version ứng dụng và bộ cài lên 1.4.5; phát hành bằng tag mới, không ghi đè v1.4.4.
+
+### QA
+
+- Automated tests **132/132** đạt, bao gồm ma trận cho năm quy tắc Group Shirt, wildcard màu/mặt, coverage pool và lặp nguồn đúng pool.
+- Đối chiếu planner read-only với 42 PNG của Custom Name, 8 nền mgs và vùng in đã lưu: cả bốn nhóm đều tạo được kế hoạch hợp lệ.
 
 ## [1.4.4] - 2026-08-25
 

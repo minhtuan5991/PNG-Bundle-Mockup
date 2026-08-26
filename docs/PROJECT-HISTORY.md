@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
-> Cập nhật: 2026-08-25
-> Phiên bản mã nguồn hiện tại: `1.4.4`
-> Bản stable hiện có: `v1.4.4`
-> Trạng thái: v1.4.4 đã phát hành stable/public và `/releases/latest` đang trỏ đúng Release này.
+> Cập nhật: 2026-08-26
+> Phiên bản mã nguồn hiện tại: `1.4.5`
+> Bản stable phát hành: `v1.4.5`
+> Trạng thái: đang chuẩn bị phát hành v1.4.5 bằng tag mới; không ghi đè v1.4.4.
 
 ## 1. Mục đích tài liệu
 
@@ -21,7 +21,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.4.4` |
+| Phiên bản mã nguồn | `1.4.5` |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
@@ -647,3 +647,13 @@ Mốc QA local ngày 2026-08-07:
 - `app.asar` v1.4.4 chứa selection rỗng ban đầu, helper lọc path và CSS thumbnail mới. Packaged `Input` chỉ có `README.txt` cùng `Toystory HLW1.pdf`; bốn JPG riêng local không bị sửa hoặc đóng gói.
 - Commit phát hành `a304de91711ba2e7106841922d5c2ee9c3188cb2` và annotated tag `v1.4.4` đã được push atomically. Windows CI `32864082887` và Release Windows `32864083130` đều thành công.
 - Release ID `376502312` stable/public, không phải prerelease/draft và là `/releases/latest`; tải ngược xác minh đúng ba asset: Setup 104.369.504 byte (`1BC68EF402BF27DA487945CD5156E7A3E7F35FAEB536F602455D87A90D3A4675`), blockmap 109.346 byte (`8D57E217DBAD20DC721EB3A0F30F952A90847F91F55704254614EC5482C1F374`) và `latest.yml` 363 byte (`34611298DC9E107668F8F5B5DFA971FD036EB379C1D0D0C421002C9F6567353E`). Updater metadata remote khớp installer remote.
+
+## 26. Bản v1.4.5 — routing linh hoạt cho Mockup Group Shirt
+
+- Planner chuyển từ so khớp track exact-set sang routing pool theo bốn kiểu tag: không tag dùng chung mọi vùng mặt trước; chỉ mặt wildcard màu; chỉ màu khớp màu tại mặt trước; đủ tag khớp chính xác màu và mặt.
+- Nền chỉ phủ một phần màu/mặt được dùng cho phần PNG tương ứng. Độ phủ được kiểm tra trên toàn bộ các nền đã chọn để không bỏ sót pool PNG.
+- Với nhóm chỉ tag mặt, một ảnh mặt trước hoặc mặt sau vẫn được lặp trong đúng pool qua mọi vùng và các trang tạo thêm; không có trộn sai front/back.
+- Renderer preflight và service planner cùng dùng module shared group-shirt-matching, nên cảnh báo UI khớp chính xác với kế hoạch render.
+- Đã thêm test quy tắc 1–5, template subset, coverage pool, singleton repeat và regression theo bộ Custom Name.
+- Version source/lockfile/installer là 1.4.5; automated tests 132/132 đạt. Kết quả artifact/checksum local sẽ được ghi trong release notes sau build.
+- Các JPG riêng trong Input tiếp tục không nằm trong commit và không được đóng gói.

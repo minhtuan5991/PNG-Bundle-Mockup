@@ -1,6 +1,11 @@
 'use strict';
 
 const api = window.bundleApi;
+const groupShirtMatching = window.groupShirtMatching;
+
+if (!groupShirtMatching) {
+  throw new Error('Không thể nạp bộ quy tắc ghép Mockup Group Shirt.');
+}
 
 const elements = {
   appTitle: document.querySelector('#appTitle'),
@@ -274,43 +279,18 @@ function groupSourceDirectory(file) {
 }
 
 function groupProfile(descriptors) {
-  const hasColor = descriptors.some((item) => Boolean(item.parsed.explicitColor));
-  const hasSide = descriptors.some((item) => Boolean(item.parsed.explicitSide));
-  if (hasColor && hasSide) return 'color-side';
-  if (hasColor) return 'color-only';
-  if (hasSide) return 'side-only';
-  return 'plain';
+  return groupShirtMatching.groupShirtProfile(
+    descriptors.map((item) => item.parsed),
+  );
 }
 
 function groupTemplateCompatibility(group, template) {
   const regions = Array.isArray(template.regions) ? template.regions : [];
-  if (regions.length === 0) return 'chưa có vùng in';
-  const sourceTracks = new Set(group.descriptors.map((item) =>
-    groupRegionTrackKey(item.parsed.color, item.parsed.side)));
-  const regionTracks = new Set(regions.map((region) =>
-    groupRegionTrackKey(region.color || 'wh', region.side)));
-  if ([...sourceTracks].some((key) => !regionTracks.has(key))) {
-    return 'thiếu vùng đúng màu hoặc mặt của PNG';
-  }
-  if ([...regionTracks].some((key) => !sourceTracks.has(key))) {
-    return 'có vùng màu hoặc mặt không có PNG tương ứng';
-  }
-  const frontCount = regions.filter((region) => region.side === 'front').length;
-  const backCount = regions.filter((region) => region.side === 'back').length;
-  const darkCount = regions.filter((region) => (region.color || 'wh') === 'bl').length;
-  if (group.profile === 'plain' && (backCount > 0 || darkCount > 0)) {
-    return 'nhóm không tag chỉ dùng vùng trước áo sáng';
-  }
-  if (group.profile === 'side-only' && (darkCount > 0 || frontCount === 0 || backCount === 0)) {
-    return 'nhóm chỉ tag mặt cần vùng trước và sau áo sáng';
-  }
-  if (group.profile === 'color-only' && backCount > 0) {
-    return 'nhóm chỉ tag màu không dùng nền có vùng mặt sau';
-  }
-  if (group.profile === 'color-side' && (frontCount === 0 || backCount === 0)) {
-    return 'nhóm đủ tag màu/mặt cần nền có cả vùng trước và sau';
-  }
-  return null;
+  return groupShirtMatching.matchGroupShirtTemplate(
+    group.profile,
+    group.descriptors.map((item) => item.parsed),
+    regions,
+  );
 }
 
 function analyzeGroupShirtSetup() {
@@ -347,17 +327,31 @@ function analyzeGroupShirtSetup() {
     const compatible = [];
     const incompatible = [];
     for (const template of state.groupTemplates) {
-      const message = groupTemplateCompatibility(group, template);
-      if (message) incompatible.push({ template, group, message });
-      else compatible.push(template);
+      const match = groupTemplateCompatibility(group, template);
+      if (match.compatible) compatible.push({ template, match });
+      else incompatible.push({ template, group, message: match.reason, match });
     }
-    for (const template of compatible) matchedTemplateSet.add(template);
-    if (state.groupTemplates.length > 0 && compatible.length === 0) {
+    for (const item of compatible) matchedTemplateSet.add(item.template);
+
+    const groupSources = group.descriptors.map((item) => item.parsed);
+    const missingPoolKeys = groupShirtMatching.missingSourcePoolKeys(
+      group.profile,
+      groupSources,
+      compatible.map((item) => item.match),
+    );
+    if (
+      state.groupTemplates.length > 0 &&
+      (compatible.length === 0 || missingPoolKeys.length > 0)
+    ) {
+      const missingMessage = missingPoolKeys.length > 0
+        ? `thiếu ảnh nền cho ${missingPoolKeys.map(groupShirtMatching.poolLabel).join(', ')}`
+        : null;
       regionIssues.push({
         group,
-        template: incompatible[0]?.template || null,
-        message: incompatible[0]?.message || 'không có vùng in phù hợp',
+        template: incompatible[0]?.template || compatible[0]?.template || null,
+        message: missingMessage || incompatible[0]?.message || 'không có vùng in phù hợp',
         incompatible,
+        missingPoolKeys,
       });
     }
   }

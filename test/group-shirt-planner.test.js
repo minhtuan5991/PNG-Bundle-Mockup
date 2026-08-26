@@ -237,7 +237,7 @@ test('chỉ vùng in quyết định template phù hợp và template dùng bở
   await assert.rejects(
     createGroupShirtPlan({
       sources: [source('11', 1)],
-      templates: [template('.mgs9.png', [region('dark', 'front', 'bl')])],
+      templates: [template('.mgs9.png', [region('back-only', 'back', 'bl')])],
     }),
     (error) => error instanceof GroupShirtPlanError &&
       error.code === 'NO_COMPATIBLE_GROUP_SHIRT_TEMPLATE',
