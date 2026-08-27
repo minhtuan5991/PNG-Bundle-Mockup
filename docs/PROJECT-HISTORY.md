@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
-> Cập nhật: 2026-08-26
-> Phiên bản mã nguồn hiện tại: `1.4.5`
-> Bản stable phát hành: `v1.4.5`
-> Trạng thái: đang chuẩn bị phát hành v1.4.5 bằng tag mới; không ghi đè v1.4.4.
+> Cập nhật: 2026-08-27
+> Phiên bản mã nguồn hiện tại: `1.4.6`
+> Kênh stable: GitHub Releases `/releases/latest`
+> Thay đổi mới nhất: tên đầu ra Group Shirt theo nhóm PNG, tên mockup và số thứ tự; phát hành bằng tag mới, không ghi đè v1.4.5.
 
 ## 1. Mục đích tài liệu
 
@@ -21,7 +21,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.4.5` |
+| Phiên bản mã nguồn | `1.4.6` |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
@@ -70,6 +70,7 @@ Không đổi `appId`, `productName` hoặc tên shortcut theo từng phiên b�
 - Lưu kết quả bundle vào thư mục `Done` bên trong thư mục PNG nguồn chính. Các output bổ sung của cùng lượt dùng chung thư mục này.
 - Không ghi đè kết quả cũ; tên mới được thêm hậu tố khi cần.
 - Không giữ file tạm khi thao tác bị hủy hoặc gặp lỗi.
+- Từ v1.4.6, ảnh Group Shirt có tên `[Tên nhóm PNG]_Tên mockup_001.png`. Số thứ tự tính riêng theo cặp nhóm/nền và tăng khi trùng file có sẵn; dấu ngoặc tránh xung đột nhận diện `single_*.png`. Tên ảnh cũ không bị thay đổi.
 
 ### 3.4 Watermark
 

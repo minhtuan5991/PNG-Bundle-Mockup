@@ -10,10 +10,12 @@ const {
   GroupShirtError,
   GroupShirtCancelledError,
   normalizedRegion,
+  chooseGroupShirtOutputPaths,
   renderGroupShirtOutputToBuffer,
   renderGroupShirtPreview,
   generateGroupShirtMockups,
 } = require('../src/services/group-shirt-service');
+const { findExistingSingleMockupOutputs } = require('../src/services/single-mockup-service');
 
 async function createTempDirectory(t, prefix = 'group-shirt-service-') {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), prefix));
@@ -139,11 +141,95 @@ function plannedOutput(templatePath, assignments, options = {}) {
       color: options.color || 'wh',
     },
     groupKey: options.groupKey || '1',
+    group: options.group,
+    displayGroup: options.displayGroup,
     color: options.color || 'wh',
     pageIndex: options.pageIndex ?? 0,
     assignments,
   };
 }
+
+test('tên output gồm nhóm PNG, tên mockup và số thứ tự riêng cho từng cặp tên', async (t) => {
+  const directory = await createTempDirectory(t);
+  const first = plannedOutput(path.join(directory, 'Áo trắng.mgs.jpg'), [], {
+    groupKey: 'gia đình', displayGroup: 'Gia Đình', pageIndex: 9,
+  });
+  const otherGroup = { ...first, groupKey: 'friends', displayGroup: 'Friends' };
+  const otherTemplate = plannedOutput(path.join(directory, 'Áo đen.mgs.png'), [], {
+    groupKey: 'gia đình', group: 'Gia Đình',
+  });
+  const sameTemplateName = {
+    ...first,
+    template: { path: path.join(directory, 'other', 'Áo trắng.mgs.png') },
+  };
+  const paths = await chooseGroupShirtOutputPaths(directory, [
+    first, otherGroup, otherTemplate, first, sameTemplateName, otherGroup,
+  ]);
+
+  assert.deepEqual(paths.map((filePath) => path.basename(filePath)), [
+    '[Gia Đình]_Áo trắng.mgs_001.png',
+    '[Friends]_Áo trắng.mgs_001.png',
+    '[Gia Đình]_Áo đen.mgs_001.png',
+    '[Gia Đình]_Áo trắng.mgs_002.png',
+    '[Gia Đình]_Áo trắng.mgs_003.png',
+    '[Friends]_Áo trắng.mgs_002.png',
+  ]);
+});
+
+test('tên output tăng số khi Done đã có ảnh mà không đổi số của nhóm khác', async (t) => {
+  const directory = await createTempDirectory(t);
+  const output = plannedOutput(path.join(directory, 'chambray.mgs.jpg'), [], {
+    displayGroup: 'Family',
+  });
+  const existingNames = ['[Family]_chambray.mgs_001.png', '[Family]_chambray.mgs_003.png'];
+  for (const name of existingNames) await fs.writeFile(path.join(directory, name), name);
+  const paths = await chooseGroupShirtOutputPaths(directory, [
+    output, output, { ...output, displayGroup: 'Friends' },
+  ]);
+
+  assert.deepEqual(paths.map((filePath) => path.basename(filePath)), [
+    '[Family]_chambray.mgs_002.png',
+    '[Family]_chambray.mgs_004.png',
+    '[Friends]_chambray.mgs_001.png',
+  ]);
+  for (const name of existingNames) {
+    assert.equal(await fs.readFile(path.join(directory, name), 'utf8'), name);
+  }
+});
+
+test('tên output an toàn trên Windows và không trùng sau chuẩn hóa tên', async (t) => {
+  const directory = await createTempDirectory(t);
+  const first = plannedOutput(path.join(directory, 'mgs:Ivory.png'), [], {
+    displayGroup: 'Gia/đình',
+  });
+  const second = {
+    ...first,
+    displayGroup: 'gia\\đình'.normalize('NFD'),
+    template: { path: path.join(directory, 'other', 'mgs?Ivory.png') },
+  };
+  const paths = await chooseGroupShirtOutputPaths(directory, [first, second]);
+
+  assert.deepEqual(paths.map((filePath) => path.basename(filePath)), [
+    '[Gia-đình]_mgs-Ivory_001.png',
+    '[gia-đình]_mgs-Ivory_002.png',
+  ]);
+  assert.ok(paths.every((filePath) => path.dirname(filePath) === directory));
+});
+
+test('nhóm PNG tên single không làm ảnh Group Shirt bị nhận nhầm là mockup đơn', async (t) => {
+  const directory = await createTempDirectory(t);
+  const templatePath = path.join(directory, 'chambray.mgs.png');
+  const paths = await chooseGroupShirtOutputPaths(directory, [
+    plannedOutput(templatePath, [], { displayGroup: 'single' }),
+    plannedOutput(templatePath, [], { displayGroup: 'single_Family' }),
+  ]);
+  for (const filePath of paths) await fs.writeFile(filePath, 'group shirt');
+  assert.deepEqual(await findExistingSingleMockupOutputs(directory), []);
+
+  const singlePath = path.join(directory, 'single_shirt_bundle.png');
+  await fs.writeFile(singlePath, 'single mockup');
+  assert.deepEqual(await findExistingSingleMockupOutputs(directory), [singlePath]);
+});
 
 test('compositor crop alpha, xoay quanh tâm và giữ PNG trong đúng vùng in', async (t) => {
   const directory = await createTempDirectory(t);
@@ -290,8 +376,15 @@ test('generate hỗ trợ nhiều variant, xóa metadata cuối, giữ metadata 
     ...second.outputPaths,
     ...preserved.outputPaths,
   ]).size, 6);
-  assert.ok(second.outputPaths.every((filePath) => /_2\.png$/i.test(filePath)));
-  assert.ok(preserved.outputPaths.every((filePath) => /_3\.png$/i.test(filePath)));
+  assert.deepEqual(first.outputPaths.map((filePath) => path.basename(filePath)), [
+    '[1]_1 mgs_001.png', '[1]_1 mgs alternative_001.png',
+  ]);
+  assert.deepEqual(second.outputPaths.map((filePath) => path.basename(filePath)), [
+    '[1]_1 mgs_002.png', '[1]_1 mgs alternative_002.png',
+  ]);
+  assert.deepEqual(preserved.outputPaths.map((filePath) => path.basename(filePath)), [
+    '[1]_1 mgs_003.png', '[1]_1 mgs alternative_003.png',
+  ]);
   assert.deepEqual(first.removedMetadataGroups, [
     'Comment', 'EXIF', 'XMP', 'EXIF thumbnail', 'IPTC', 'ICC profile',
   ]);
@@ -363,8 +456,9 @@ test('service tích hợp planner: 6 mặt trước + 6 mặt sau trên 3+3 vùn
   assert.equal(result.outputCount, 2);
   assert.deepEqual(result.outputs.map((output) => output.assignmentCount), [6, 6]);
   assert.deepEqual(result.outputs.map((output) => output.batchIndex), [0, 1]);
-  assert.ok(result.outputPaths[0].endsWith('_001.png'));
-  assert.ok(result.outputPaths[1].endsWith('_002.png'));
+  assert.deepEqual(result.outputs.map((output) => output.name), [
+    '[1]_1 mgs_001.png', '[1]_1 mgs_002.png',
+  ]);
 });
 
 test('service tái sử dụng một nền mgs cho nhiều nhóm và giữ tên output không trùng', async (t) => {
@@ -372,7 +466,7 @@ test('service tái sử dụng một nền mgs cho nhiều nhóm và giữ tên 
   const outputDirectory = path.join(directory, 'Done');
   const templatePath = path.join(directory, '.mgs3.png');
   const firstSource = path.join(directory, '1 (1).png');
-  const secondSource = path.join(directory, 'a (1).png');
+  const secondSource = path.join(directory, 'Family (1).png');
   await Promise.all([
     createTemplate(templatePath, { width: 300, height: 240 }),
     createPaddedDesign(firstSource),
@@ -404,11 +498,12 @@ test('service tái sử dụng một nền mgs cho nhiều nhóm và giữ tên 
   });
 
   assert.equal(result.outputCount, 2);
-  assert.deepEqual(result.outputs.map((output) => output.groupKey), ['1', 'a']);
+  assert.deepEqual(result.outputs.map((output) => output.groupKey), ['1', 'family']);
   assert.deepEqual(result.outputs.map((output) => output.assignmentCount), [2, 2]);
   assert.equal(new Set(result.outputPaths).size, 2);
-  assert.match(path.basename(result.outputPaths[0]), /_001\.png$/);
-  assert.match(path.basename(result.outputPaths[1]), /_001_o02\.png$/);
+  assert.deepEqual(result.outputs.map((output) => output.name), [
+    '[1]_.mgs3_001.png', '[Family]_.mgs3_001.png',
+  ]);
 });
 
 test('preview dùng đúng outputIndex, giới hạn kích thước và báo tiến độ hoàn tất', async (t) => {

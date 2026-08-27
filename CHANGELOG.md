@@ -4,7 +4,20 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
-Chưa có thay đổi sau v1.4.5.
+Chưa có thay đổi sau v1.4.6.
+
+## [1.4.6] - 2026-08-27
+
+### Changed
+
+- Đổi tên ảnh đầu ra Mockup Group Shirt thành `[Tên nhóm PNG]_Tên mockup_001.png`; giữ tên nhóm hiển thị và tên ảnh nền không kèm đuôi định dạng.
+- Số thứ tự tính riêng cho từng cặp nhóm PNG và tên mockup, tăng khi tên đã tồn tại trong `Done` để không ghi đè ảnh cũ.
+- Dấu ngoặc quanh tên nhóm tránh ảnh Group Shirt bị nhận nhầm là mockup đơn khi nhóm có tên `single` hoặc bắt đầu bằng `single_`.
+- Nâng version ứng dụng và bộ cài lên 1.4.6; không đổi các thiết lập, cách ghép ảnh, Bundle, mockup đơn, PDF, watermark hoặc metadata.
+
+### QA
+
+- Automated tests **136/136** đạt, gồm kiểm thử đặt tên theo nhóm/nền, trùng tên, chuẩn hóa Unicode, tên an toàn trên Windows và tương thích nhận diện mockup đơn.
 
 ## [1.4.5] - 2026-08-26
 

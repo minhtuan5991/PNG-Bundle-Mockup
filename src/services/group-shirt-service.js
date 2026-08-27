@@ -521,66 +521,49 @@ async function renderGroupShirtOutputToBuffer(options = {}) {
   }
 }
 
-function outputBaseStems(outputs, prefix) {
-  const safePrefix = sanitizeFileStem(prefix, GROUP_SHIRT_OUTPUT_PREFIX);
-  const templateOccurrences = new Map();
-  const stemIdentities = new Map();
-  for (const output of outputs) {
-    const key = fileSystemKey(templatePathFromOutput(output));
-    if (!stemIdentities.has(key)) {
-      const templateName = output.template?.name || path.basename(templatePathFromOutput(output));
-      const stem = sanitizeFileStem(
-        path.basename(templateName, path.extname(templateName)),
-        'template',
-      );
-      stemIdentities.set(key, { stem, ordinal: stemIdentities.size + 1 });
-    }
-  }
-  const duplicateStemCounts = new Map();
-  for (const descriptor of stemIdentities.values()) {
-    const key = descriptor.stem.toLocaleLowerCase('en-US');
-    duplicateStemCounts.set(key, (duplicateStemCounts.get(key) || 0) + 1);
-  }
-
-  const usedBases = new Map();
+function outputBaseStems(outputs) {
   return outputs.map((output) => {
-    const key = fileSystemKey(templatePathFromOutput(output));
-    const descriptor = stemIdentities.get(key);
-    const occurrence = (templateOccurrences.get(key) || 0) + 1;
-    templateOccurrences.set(key, occurrence);
-    const explicitIndex = Number(output.pageIndex ?? output.batchIndex);
-    const pageNumber = Number.isInteger(explicitIndex) && explicitIndex >= 0
-      ? explicitIndex + 1
-      : occurrence;
-    const duplicateSuffix = duplicateStemCounts.get(descriptor.stem.toLocaleLowerCase('en-US')) > 1
-      ? `_t${String(descriptor.ordinal).padStart(2, '0')}`
-      : '';
-    let base = `${safePrefix}_${descriptor.stem}${duplicateSuffix}_${String(pageNumber).padStart(3, '0')}`;
-    const baseKey = base.toLocaleLowerCase('en-US');
-    const repeated = (usedBases.get(baseKey) || 0) + 1;
-    usedBases.set(baseKey, repeated);
-    if (repeated > 1) base = `${base}_o${String(repeated).padStart(2, '0')}`;
-    return base;
+    const groupStem = sanitizeFileStem(output.displayGroup || output.group || output.groupKey, 'group');
+    const templateName = output.template?.name || path.basename(templatePathFromOutput(output));
+    const templateStem = sanitizeFileStem(
+      path.basename(templateName, path.extname(templateName)),
+      'template',
+    );
+    // Delimit the group so even a group named "single" cannot be mistaken for
+    // a single_*.png output by the existing single-mockup skip check.
+    return `[${groupStem}]_${templateStem}`;
   });
 }
 
 async function chooseGroupShirtOutputPaths(outputDirectory, outputs, options = {}) {
   const resolvedDirectory = path.resolve(String(outputDirectory));
-  const bases = outputBaseStems(outputs, options.prefix || GROUP_SHIRT_OUTPUT_PREFIX);
+  const bases = outputBaseStems(outputs);
   const fsImpl = options.fsImpl || fs;
-  for (let revision = 1; revision <= MAX_OUTPUT_REVISIONS; revision += 1) {
-    const revisionSuffix = revision === 1 ? '' : `_${revision}`;
-    const candidates = bases.map((base) => path.join(
-      resolvedDirectory,
-      `${base}${revisionSuffix}.png`,
-    ));
-    const collisions = await Promise.all(candidates.map((candidate) => pathExists(candidate, fsImpl)));
-    if (collisions.every((collision) => !collision)) return candidates;
+  const nextOrdinals = new Map();
+  const candidates = [];
+  for (const base of bases) {
+    // Share a counter for the final group/template name, including names that
+    // become identical after sanitizing or differ only by case on Windows.
+    const key = base.toLocaleLowerCase('en-US');
+    let ordinal = nextOrdinals.get(key) || 1;
+    let candidate;
+    for (let attempt = 0; attempt < MAX_OUTPUT_REVISIONS; attempt += 1, ordinal += 1) {
+      const candidatePath = path.join(resolvedDirectory, `${base}_${String(ordinal).padStart(3, '0')}.png`);
+      if (!await pathExists(candidatePath, fsImpl)) {
+        candidate = candidatePath;
+        break;
+      }
+    }
+    if (!candidate) {
+      throw new GroupShirtError(
+        'Không thể tìm tên file Group Shirt còn trống trong thư mục Done.',
+        'GROUP_SHIRT_OUTPUT_NAME_EXHAUSTED',
+      );
+    }
+    nextOrdinals.set(key, ordinal + 1);
+    candidates.push(candidate);
   }
-  throw new GroupShirtError(
-    'Không thể tìm tên file Group Shirt còn trống trong thư mục Done.',
-    'GROUP_SHIRT_OUTPUT_NAME_EXHAUSTED',
-  );
+  return candidates;
 }
 
 async function renderGroupShirtPreview(options = {}) {
@@ -680,9 +663,7 @@ async function generateGroupShirtMockups(options = {}) {
   try {
     throwIfCancelled(options.isCancelled);
     await fs.mkdir(outputDir, { recursive: true });
-    const finalPaths = await chooseGroupShirtOutputPaths(outputDir, outputs, {
-      prefix: options.prefix || GROUP_SHIRT_OUTPUT_PREFIX,
-    });
+    const finalPaths = await chooseGroupShirtOutputPaths(outputDir, outputs);
 
     const uniqueSources = [];
     const sourceKeys = new Set();

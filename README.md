@@ -61,7 +61,7 @@
   - Có cả tag màu và mặt: template phải có cả vùng trước lẫn sau và đủ đúng các track được dùng.
 - Ảnh được ghép lần lượt theo thứ tự vùng đã lưu. Nếu một track thiếu PNG, app chọn ngẫu nhiên PNG trong đúng track của cùng nhóm để lấp đủ vùng. Nếu PNG thừa, app tạo trang mới, ghép phần còn lại rồi tiếp tục lấp các vùng thiếu bằng nguồn ngẫu nhiên đúng track.
 - Có thể chọn nhiều nền `mgs`; mỗi nền tương thích tạo chuỗi trang riêng cho từng nhóm PNG. Nền không tương thích với bất kỳ nhóm nào được bỏ qua có cảnh báo; nếu một nhóm không có nền nào có vùng phù hợp, app dừng trước khi ghi output.
-- Tên output có dạng `group-shirt_<tên nền>_<trang 3 chữ số>.png`, ví dụ `group-shirt_1 mgs_001.png`. Nếu trùng tên, app dùng suffix collision-safe thay vì ghi đè.
+- Tên output có dạng `[<tên nhóm PNG>]_<tên mockup>_<số thứ tự 3 chữ số>.png`, ví dụ `[Family]_chambray.mgs_001.png`. Tên mockup giữ nguyên tên ảnh nền, bỏ đuôi định dạng ảnh. Số thứ tự tính riêng cho mỗi cặp nhóm PNG và tên mockup; khi tên đã tồn tại trong `Done`, app tăng số để không ghi đè ảnh cũ. Dấu ngoặc quanh tên nhóm tránh nhầm với tiền tố `single_` của mockup đơn.
 - Khi bật **Tạo mockup đơn** trong Group Shirt, app chỉ dùng template `bundle` trong `Input` và chọn ngẫu nhiên PNG áo sáng (`.wh` hoặc không có tag màu) trong các nhóm. Quy tắc một lần cho mỗi `Done` vẫn được giữ.
 - **Tạo PDF Download** dùng được ở cả Bundle và Group Shirt, với cùng quy tắc chỉ một PDF trong mỗi `Done`.
 - Nền JPEG/TIFF có EXIF Orientation được xoay theo chiều nhìn thấy trước khi tính vùng in và xuất PNG.
@@ -128,11 +128,11 @@ Khi bỏ chọn, app giữ metadata của ảnh nền trong khả năng định 
 2. Chạy bộ cài. Khi cài mới, bạn có thể chọn thư mục đích; nên chọn thư mục mà tài khoản hiện tại có quyền ghi để có thể thêm PDF/ảnh mẫu vào `Input`. Nếu chỉ chọn thư mục cha, bộ cài tự thêm thư mục con `PNG Bundle Mockup`. Khi nâng cấp, installer giữ nguyên chế độ/vị trí của bản hiện có, kể cả All Users/custom path, thay vì tạo app thứ hai. Với bản All Users cũ, installer chỉ cấp quyền Modify cho thư mục `Input` và dừng trước khi thay đổi bản cũ nếu bước kiểm tra quyền thất bại.
 3. Mở app bằng icon **PNG Bundle Mockup** trên Desktop hoặc Start Menu.
 
-Sau khi cài, dùng nút **Mở Input** để xác nhận thư mục `Input` nằm cạnh EXE và thêm PDF/ảnh mẫu của bạn. Mã nguồn và bản stable public mới nhất hiện là [`v1.4.5`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.4.5).
+Sau khi cài, dùng nút **Mở Input** để xác nhận thư mục `Input` nằm cạnh EXE và thêm PDF/ảnh mẫu của bạn. Mã nguồn hiện tại là `v1.4.6`; xem [ghi chú v1.4.6](docs/RELEASE-NOTES-1.4.6.md) và tải bản stable từ [GitHub Releases](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/latest).
 
 Bộ cài v1.2.3 thay thế giữ các file runtime Electron bắt buộc nhưng gắn thuộc tính **Hidden** để thư mục cài đặt gọn hơn. Mặc định File Explorer chỉ hiện `Input`, **PNG Bundle Mockup.exe** và **Uninstall PNG Bundle Mockup.exe**. Việc bật **Show hidden files** sẽ làm các file kỹ thuật xuất hiện lại; không xóa hoặc đổi tên chúng vì app cần chúng để chạy.
 
-Quy trình phát hành phiên bản tiếp theo (từ `v1.4.6`) được ghi trong [hướng dẫn cập nhật thủ công](docs/MANUAL-GITHUB-UPDATE.md). Không di chuyển tag hoặc ghi đè asset v1.4.5.
+Quy trình phát hành được ghi trong [hướng dẫn cập nhật thủ công](docs/MANUAL-GITHUB-UPDATE.md). Sau `v1.4.6`, dùng patch version mới; không di chuyển tag hoặc ghi đè asset đã public.
 
 Từ v1.2.4, uninstall thật giữ nguyên `Input` tại vị trí cài đặt nhưng xóa EXE/runtime, shortcut, registry, `%APPDATA%\png-bundle-mockup` và `%LOCALAPPDATA%\png-bundle-mockup-updater`. Các thư mục `Done`, PNG nguồn, mockup và PDF nằm ngoài thư mục cài đặt luôn được giữ nguyên. Luồng update không xóa dữ liệu người dùng và tiếp tục dùng backup/restore `Input`.
 

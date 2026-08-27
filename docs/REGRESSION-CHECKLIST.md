@@ -4,6 +4,9 @@
 
 ## Trạng thái mốc
 
+- [x] QA mã nguồn v1.4.6 ngày 2026-08-27: **136/136 test đạt**, bao gồm tên Group Shirt theo nhóm/nền, đánh số riêng, trùng tên/Unicode và tương thích mockup đơn.
+- [x] QA bộ cài local v1.4.6: NSIS x64 thành công, packaged basic smoke **23/23**, ASAR/version khớp mã nguồn, updater checksum/size đúng và `Input` chỉ chứa README/PDF mẫu.
+- [ ] Cài mới/nâng cấp tương tác v1.4.6 trên máy hoặc VM sạch chưa được kiểm thử trong lượt phát hành này.
 - [x] QA/release v1.4.4 ngày 2026-08-25: **124/124 test đạt**; source/package smoke **23/23**; ASAR/updater metadata/Input allowlist và GitHub Release stable/public đã xác minh.
 - [x] QA/release v1.4.3 ngày 2026-08-25: **122/122 test đạt**; source/package smoke **22/22**; ASAR/updater metadata/Input allowlist đạt; GitHub Release stable/public đã xác minh.
 - [x] QA/release v1.4.2 ngày 2026-08-24: **121/121 test đạt**; source/package smoke **21/21**; shared-mgs planner/renderer, NSIS/checksum/app.asar/Input allowlist đạt; GitHub Release stable/public đã xác minh.
