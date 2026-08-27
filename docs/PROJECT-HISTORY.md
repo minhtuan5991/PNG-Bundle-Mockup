@@ -3,6 +3,7 @@
 > Cập nhật: 2026-08-27
 > Phiên bản mã nguồn hiện tại: `1.4.6`
 > Kênh stable: GitHub Releases `/releases/latest`
+> Bản stable đã xác minh: `v1.4.6`, phát hành ngày 2026-08-27; CI và workflow phát hành thành công.
 > Thay đổi mới nhất: tên đầu ra Group Shirt theo nhóm PNG, tên mockup và số thứ tự; phát hành bằng tag mới, không ghi đè v1.4.5.
 
 ## 1. Mục đích tài liệu
@@ -658,3 +659,23 @@ Mốc QA local ngày 2026-08-07:
 - Đã thêm test quy tắc 1–5, template subset, coverage pool, singleton repeat và regression theo bộ Custom Name.
 - Version source/lockfile/installer là 1.4.5; automated tests 132/132 đạt. Kết quả artifact/checksum local sẽ được ghi trong release notes sau build.
 - Các JPG riêng trong Input tiếp tục không nằm trong commit và không được đóng gói.
+
+## 27. Bản v1.4.6 — tên ảnh Group Shirt theo nhóm PNG và mockup
+
+- Tên ảnh đầu ra mới là `[Tên nhóm PNG]_Tên mockup_001.png`. Số thứ tự tính riêng theo mỗi cặp nhóm/nền và bỏ qua tên đã có; không đổi tên ảnh cũ.
+- Giữ cách viết tên nhóm hiển thị, bỏ đuôi định dạng của tên nền và chuẩn hóa ký tự không hợp lệ trên Windows. Các nền cùng tên ở thư mục hoặc định dạng khác nhau dùng chung bộ đếm.
+- Dấu ngoặc quanh nhóm ngăn tên nhóm `single` hoặc `single_*` làm Group Shirt bị nhận nhầm là mockup đơn. Không thay đổi logic ghép ảnh, vùng in, cài đặt, Bundle, mockup đơn, PDF, watermark hoặc metadata.
+- Automated tests **136/136** đạt. Build NSIS local thành công; packaged basic smoke **23/23**, ASAR khớp mã nguồn và `Input` chỉ có README/PDF mẫu. Các file riêng trong `Input` và `reviews/` không được đưa vào commit.
+- Commit phát hành `2d2977321833ea5b26533f61b21480de211d8f09`, annotated tag `v1.4.6`; Windows CI [33046593681](https://github.com/minhtuan5991/PNG-Bundle-Mockup/actions/runs/33046593681) và Release Windows [33046710361](https://github.com/minhtuan5991/PNG-Bundle-Mockup/actions/runs/33046710361) đều thành công.
+- [Release v1.4.6](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.4.6) đã public ngày 2026-08-27 lúc 06:42:04 UTC, không phải draft/prerelease và được xác nhận là `/releases/latest`.
+- Đã tải lại đúng ba asset, kiểm tra size/SHA-256 với metadata GitHub và đối chiếu version/path/size/SHA-512 của `latest.yml` với installer tải xuống.
+
+Checksum SHA-256 dưới đây thuộc các asset public do GitHub Actions build, khác build local được ghi trong release notes:
+
+| Asset public | Kích thước (byte) | SHA-256 |
+| --- | ---: | --- |
+| `PNG-Bundle-Mockup-Setup-1.4.6.exe` | 104370753 | `1cdcb836a4460fca529f8a1f57796ff2dcf78824d78c8424195bfab379ed3a6d` |
+| `PNG-Bundle-Mockup-Setup-1.4.6.exe.blockmap` | 109276 | `c8b84933a8a564a9f12a1fe40901e6a599bf1fb4aa9349716ab9fbaa3db85dab` |
+| `latest.yml` | 363 | `46e04fa7681bd42201ad118639b76c8da636d3324da0179513ef41321901761c` |
+
+Giới hạn còn lại: chưa kiểm thử cài mới/nâng cấp tương tác trên máy hoặc VM sạch trong lượt phát hành này; bộ cài chưa ký số. Không đánh dấu các mục này đạt từ smoke test hoặc xác minh checksum.
