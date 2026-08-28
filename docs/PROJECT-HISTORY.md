@@ -3,8 +3,8 @@
 > Cập nhật: 2026-08-28
 > Phiên bản mã nguồn hiện tại: `1.4.7`
 > Kênh stable: GitHub Releases `/releases/latest`
-> Bản stable đã xác minh: `v1.4.6`, phát hành ngày 2026-08-27; CI và workflow phát hành thành công.
-> Thay đổi mới nhất: chuẩn bị v1.4.7 giữ toàn bộ canvas PNG trong vùng in 42×48 và nhóm không hậu tố chỉ ghép mặt trước trên cả áo sáng/tối.
+> Bản stable đã xác minh: `v1.4.7`, phát hành ngày 2026-08-28; CI và workflow phát hành thành công.
+> Thay đổi mới nhất: v1.4.7 giữ toàn bộ canvas PNG trong vùng in 42×48 và nhóm không hậu tố chỉ ghép mặt trước trên cả áo sáng/tối.
 
 ## 1. Mục đích tài liệu
 
@@ -689,5 +689,14 @@ Giới hạn còn lại: chưa kiểm thử cài mới/nâng cấp tương tác 
 - Automated tests của snapshot sạch v1.4.7 sau `npm ci` đạt **142/142**, gồm matching browser/backend và kiểm tra pixel preview/ảnh xuất.
 - NSIS x64 build từ snapshot sạch thành công; packaged basic smoke **23/23** với hồ sơ QA riêng, không chạm bản cài đang dùng. Toàn bộ 23 file `src`/`assets` trong ASAR khớp byte với snapshot; `Input` chỉ có README/PDF mẫu đã track.
 - Bộ cài local trong `release/v1.4.7`: 104371222 byte, SHA-256 `4d7c794f03ed69329345832d665b90c140b6c187f82f0080aa911d4af610c66a`; `latest.yml` khớp version/path/size/SHA-512. Chi tiết ba artifact local nằm trong release notes.
-- Phát hành GitHub đang được chuẩn bị; sẽ ghi trạng thái và checksum public sau khi tải lại xác minh.
+- Commit phát hành `dfca5255155e08bda6cbc5d3f6801ea4f1f53013`, annotated tag `v1.4.7`; Windows CI [33141831962](https://github.com/minhtuan5991/PNG-Bundle-Mockup/actions/runs/33141831962) và Release Windows [33141936831](https://github.com/minhtuan5991/PNG-Bundle-Mockup/actions/runs/33141936831) đều thành công.
+- [Release v1.4.7](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.4.7), ID `378261091`, public ngày 2026-08-28 lúc 04:32:00 UTC; stable/latest, không phải draft/prerelease. Đã tải lại đúng ba asset, xác minh size/SHA-256 với GitHub và version/path/size/SHA-512 của `latest.yml`.
 - Không kiểm thử cài mới/nâng cấp tương tác trong lượt này; không cài đè hoặc gỡ bản đang dùng trên máy người dùng.
+
+Checksum SHA-256 dưới đây thuộc asset public do GitHub Actions build, khác artifact QA local:
+
+| Asset public | Kích thước (byte) | SHA-256 |
+| --- | ---: | --- |
+| `PNG-Bundle-Mockup-Setup-1.4.7.exe` | 104371148 | `4188da16e3ed4845876ec367921920e9f28ee0db645d45b821b8c5a4805ed4d3` |
+| `PNG-Bundle-Mockup-Setup-1.4.7.exe.blockmap` | 109430 | `dad98bd0c1049c39b221646031f1799dc8ce961afef1bb1ede94d063be45e742` |
+| `latest.yml` | 363 | `bee29e0af23f07d17deaa2ff2208c91f6218be00394a8c9f1209e4701c8ec898` |
