@@ -51,6 +51,7 @@
     const profile = normalizeProfile(profileValue);
     const side = normalizeSide(region?.side);
     const color = normalizeColor(region?.color);
+    // Untagged groups share one source pool across both colors, on the front only.
     if (profile === PROFILES.PLAIN) return side === 'front' ? 'all' : null;
     if (profile === PROFILES.SIDE_ONLY) return `side:${side}`;
     if (profile === PROFILES.COLOR_ONLY) {
@@ -64,7 +65,7 @@
   }
 
   function poolLabel(key) {
-    if (key === 'all') return 'mặt trước áo sáng hoặc tối';
+    if (key === 'all') return 'mặt trước của áo sáng hoặc tối';
     if (key === 'side:front') return 'mặt trước';
     if (key === 'side:back') return 'mặt sau';
     if (key === 'color:wh') return 'áo sáng mặt trước';
@@ -97,13 +98,6 @@
     if (regions.length === 0) return incompatible('không có vùng in', sourceKeys);
 
     const hasBackRegion = regions.some((region) => normalizeSide(region?.side) === 'back');
-    if (profile === PROFILES.PLAIN && hasBackRegion) {
-      return incompatible(
-        'nhóm không tag chỉ dùng nền có vùng mặt trước',
-        sourceKeys,
-        { regionCount: regions.length },
-      );
-    }
     if (profile === PROFILES.COLOR_ONLY && hasBackRegion) {
       return incompatible(
         'nhóm chỉ tag màu chỉ dùng nền có vùng mặt trước',

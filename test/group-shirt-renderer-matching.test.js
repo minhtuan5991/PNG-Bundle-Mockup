@@ -4,10 +4,41 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
+const backendMatching = require('../src/shared/group-shirt-matching');
 
 function read(relativePath) {
   return fs.readFileSync(path.resolve(__dirname, '..', relativePath), 'utf8');
 }
+
+test('matching ở browser và backend chỉ ghép PNG không tag vào mặt trước cả hai màu', () => {
+  const browserContext = {};
+  vm.runInNewContext(read('src/shared/group-shirt-matching.js'), browserContext);
+  const sources = [{ color: 'wh', side: 'f', explicitColor: null, explicitSide: null }];
+  const regions = [
+    { id: 'wh-f', color: 'wh', side: 'front' },
+    { id: 'bl-f', color: 'bl', side: 'front' },
+    { id: 'wh-b', color: 'wh', side: 'back' },
+    { id: 'bl-b', color: 'bl', side: 'back' },
+  ];
+
+  for (const matching of [backendMatching, browserContext.groupShirtMatching]) {
+    const profile = matching.groupShirtProfile(sources);
+    const match = matching.matchGroupShirtTemplate(profile, sources, regions);
+    assert.equal(profile, 'plain');
+    assert.equal(match.compatible, true);
+    assert.deepEqual(Array.from(match.regions, (region) => region.id), ['wh-f', 'bl-f']);
+    assert.deepEqual(Array.from(match.coveredPoolKeys), ['all']);
+    assert.equal(match.ignoredRegionCount, 2);
+    assert.equal(matching.missingSourcePoolKeys(profile, sources, [match]).length, 0);
+
+    const backOnly = matching.matchGroupShirtTemplate(profile, sources, [regions[3]]);
+    assert.equal(backOnly.compatible, false);
+    assert.equal(backOnly.regions.length, 0);
+    assert.deepEqual(Array.from(matching.missingSourcePoolKeys(profile, sources, [backOnly])), ['all']);
+    assert.equal(matching.matchGroupShirtTemplate(profile, sources, []).compatible, false);
+  }
+});
 
 test('renderer nạp matching dùng chung trước app và không giữ predicate exact-set cũ', () => {
   const html = read('src/renderer/index.html');

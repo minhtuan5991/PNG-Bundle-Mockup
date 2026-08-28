@@ -4,6 +4,10 @@
 
 ## Trạng thái mốc
 
+- [x] QA mã nguồn v1.4.7 ngày 2026-08-28: snapshot sạch sau `npm ci`, **142/142 test đạt**; nhóm không hậu tố chỉ ghép mặt trước cả hai màu và giữ canvas PNG trong vùng in.
+- [x] QA bộ cài local v1.4.7: NSIS x64 từ snapshot sạch thành công, packaged basic smoke **23/23**; 23 file src/assets trong ASAR khớp snapshot, updater metadata/size/SHA-512 đúng và Input chỉ có README/PDF đã track.
+- [ ] GitHub v1.4.7: chờ CI, workflow phát hành và xác minh ba asset tải xuống.
+- [ ] Cài mới/nâng cấp tương tác v1.4.7 trên máy hoặc VM sạch chưa được kiểm thử trong lượt phát hành này.
 - [x] QA mã nguồn v1.4.6 ngày 2026-08-27: **136/136 test đạt**, bao gồm tên Group Shirt theo nhóm/nền, đánh số riêng, trùng tên/Unicode và tương thích mockup đơn.
 - [x] QA bộ cài local v1.4.6: NSIS x64 thành công, packaged basic smoke **23/23**, ASAR/version khớp mã nguồn, updater checksum/size đúng và `Input` chỉ chứa README/PDF mẫu.
 - [x] GitHub v1.4.6 đã xác minh ngày 2026-08-27: commit `2d29773`, Windows CI `33046593681` và Release Windows `33046710361` thành công; Release stable/public/latest có đúng ba asset. File tải lại khớp size/SHA-256 của GitHub và version/path/size/SHA-512 trong `latest.yml`.

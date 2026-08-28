@@ -378,18 +378,14 @@ async function renderSingleMockupToFile(options) {
   } = options;
   throwIfCancelled(isCancelled);
   const pixelRegion = calculatePixelPrintRegion(region, template);
-  const bounds = await findAlphaBounds(sourcePath, alphaThreshold);
+  // Keep the existing visibility validation, but never crop the PNG canvas
+  // when mapping it into a fixed 42×48 print region.
+  await findAlphaBounds(sourcePath, alphaThreshold);
   throwIfCancelled(isCancelled);
 
   let designBuffer;
   try {
     designBuffer = await sharp(sourcePath, { failOn: 'error', limitInputPixels: false })
-      .extract({
-        left: bounds.left,
-        top: bounds.top,
-        width: bounds.width,
-        height: bounds.height,
-      })
       .resize(pixelRegion.width, pixelRegion.height, {
         fit: 'contain',
         position: 'centre',

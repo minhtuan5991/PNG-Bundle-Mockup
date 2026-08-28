@@ -66,33 +66,33 @@ async function createTemplateWithMetadata(filePath) {
     .toFile(filePath);
 }
 
-async function createPaddedDesign(filePath) {
+async function createPaddedDesign(filePath, options = {}) {
   const content = await sharp({
     create: {
-      width: 20,
-      height: 40,
+      width: options.width || 20,
+      height: options.height || 40,
       channels: 4,
       background: { r: 230, g: 20, b: 30, alpha: 1 },
     },
   }).png().toBuffer();
   await sharp({
     create: {
-      width: 100,
-      height: 100,
+      width: options.canvasWidth || 100,
+      height: options.canvasHeight || 100,
       channels: 4,
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     },
   })
-    .composite([{ input: content, left: 70, top: 30 }])
+    .composite([{ input: content, left: options.left ?? 70, top: options.top ?? 30 }])
     .png()
     .toFile(filePath);
 }
 
-async function createWatermark(filePath) {
+async function createWatermark(filePath, options = {}) {
   const mark = await sharp({
     create: {
-      width: 20,
-      height: 20,
+      width: options.width || 20,
+      height: options.height || 20,
       channels: 4,
       background: { r: 15, g: 45, b: 230, alpha: 1 },
     },
@@ -105,7 +105,7 @@ async function createWatermark(filePath) {
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     },
   })
-    .composite([{ input: mark, left: 45, top: 50 }])
+    .composite([{ input: mark, left: options.left ?? 45, top: options.top ?? 50 }])
     .png()
     .toFile(filePath);
 }
@@ -316,6 +316,36 @@ test('lưu lại các template hiện có không xóa vùng in của template t�
   assert.deepEqual(Object.keys(diskDocument.templates).sort(), ['cup.png', 'shirt.png']);
 });
 
+test('mockup đơn giữ kích thước và vị trí thiết kế trên canvas PNG 4200×4800', async (t) => {
+  const directory = await createTempDirectory(t, 'single-mockup-full-canvas-');
+  const templatePath = path.join(directory, 'shirt bundle.png');
+  const sourcePath = path.join(directory, 'Family (1).png');
+  await Promise.all([
+    createSolidImage(templatePath, 'png'),
+    createPaddedDesign(sourcePath, {
+      canvasWidth: 4200, canvasHeight: 4800,
+      width: 1200, height: 1800, left: 2400, top: 600,
+    }),
+  ]);
+  const originalSource = await fs.readFile(sourcePath);
+  const template = { path: templatePath, name: path.basename(templatePath), width: 200, height: 200 };
+  const result = await generateSingleMockups({
+    sourcePaths: [sourcePath],
+    templates: [template],
+    regions: { [template.name]: { x: 0.1, y: 0.1, width: 0.35, height: 0.4 } },
+    sourceDirectory: directory,
+    random: () => 0,
+  });
+  const outputPath = result.outputPaths[0];
+
+  // The canvas fits 70×80 at (20,20); the design stays 20×30 at (60,30).
+  assert.deepEqual(await rgbaAt(outputPath, 70, 45), [230, 20, 30, 255]);
+  for (const [x, y] of [[55, 60], [55, 45], [85, 45], [70, 25], [70, 65]]) {
+    assert.deepEqual(await rgbaAt(outputPath, x, y), [245, 245, 245, 255]);
+  }
+  assert.deepEqual(await fs.readFile(sourcePath), originalSource);
+});
+
 test('generateSingleMockups chỉ tạo một lần trong Done và bỏ qua các lượt sau', async (t) => {
   const directory = await createTempDirectory(t, 'single-mockup-generate-');
   const inputDirectory = path.join(directory, 'Input');
@@ -350,7 +380,8 @@ test('generateSingleMockups chỉ tạo một lần trong Done và bỏ qua các
   assert.deepEqual(first.outputPaths.map((filePath) => path.basename(filePath)), ['single_shirt.png']);
   assert.deepEqual(first.assignments[0].pixelRegion, { left: 20, top: 20, width: 70, height: 80 });
   assert.deepEqual(await rgbaAt(first.outputPaths[0], 23, 60), [245, 245, 245, 255]);
-  assert.deepEqual(await rgbaAt(first.outputPaths[0], 55, 60), [230, 20, 30, 255]);
+  assert.deepEqual(await rgbaAt(first.outputPaths[0], 55, 60), [245, 245, 245, 255]);
+  assert.deepEqual(await rgbaAt(first.outputPaths[0], 75, 60), [230, 20, 30, 255]);
   assert.deepEqual(await rgbaAt(first.outputPaths[0], 100, 60), [245, 245, 245, 255]);
 
   const second = await generateSingleMockups(options);
@@ -363,7 +394,7 @@ test('generateSingleMockups chỉ tạo một lần trong Done và bỏ qua các
   assert.deepEqual(await fs.readdir(path.join(directory, 'Done')), ['single_shirt.png']);
 
   const watermarkPath = path.join(directory, 'watermark.png');
-  await createWatermark(watermarkPath);
+  await createWatermark(watermarkPath, { left: 72, top: 50, height: 10 });
   const withWatermark = await generateSingleMockups({
     ...options,
     outputDirectory: path.join(directory, 'Done-watermark'),
@@ -375,8 +406,8 @@ test('generateSingleMockups chỉ tạo một lần trong Done và bỏ qua các
   );
   assert.equal(withWatermark.watermarkApplied, true);
   assert.equal(withWatermark.watermarkName, 'watermark.png');
-  assert.deepEqual(await rgbaAt(withWatermark.outputPaths[0], 55, 60), [15, 45, 230, 255]);
-  assert.deepEqual(await rgbaAt(withWatermark.outputPaths[0], 40, 60), [230, 20, 30, 255]);
+  assert.deepEqual(await rgbaAt(withWatermark.outputPaths[0], 75, 55), [15, 45, 230, 255]);
+  assert.deepEqual(await rgbaAt(withWatermark.outputPaths[0], 75, 66), [230, 20, 30, 255]);
   assert.deepEqual(
     (await fs.readdir(path.join(directory, 'Done'))).filter((name) => name.endsWith('.tmp')),
     [],

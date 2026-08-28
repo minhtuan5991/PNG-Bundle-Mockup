@@ -41,7 +41,7 @@ function regionsForTrack(prefix, count, side = 'front', color = 'wh', y = 0.5) {
     region(`${prefix}-${index + 1}`, side, color, (index + 1) / (count + 1), y));
 }
 
-test('nhóm không tag chỉ dùng vùng trước áo sáng và lặp ngẫu nhiên khi thiếu', async () => {
+test('nhóm không tag dùng các vùng đã chọn và lặp ngẫu nhiên khi thiếu', async () => {
   const regions = regionsForTrack('wh-f', 6);
   const plan = await createGroupShirtPlan({
     sources: [source('1', 1), source('1', 2)],
@@ -227,16 +227,29 @@ test('chỉ vùng in quyết định template phù hợp và template dùng bở
     random: () => 0,
   });
 
-  assert.equal(plan.outputs.length, 2);
+  assert.equal(plan.outputs.length, 3);
   assert.equal(plan.unusedTemplates.length, 0);
-  assert.equal(plan.outputs.find((output) => output.groupKey === '1').template.name, '.mgs1.png');
+  assert.deepEqual(plan.outputs.filter((output) => output.groupKey === '1')
+    .map((output) => output.template.name), ['.mgs1.png', '.mgs3.png']);
   assert.equal(plan.outputs.find((output) => output.groupKey === '2').template.name, '.mgs3.png');
+  assert.ok(plan.outputs.every((output) =>
+    output.assignments.every((item) => item.source.groupKey === output.groupKey)));
   assert.ok(plan.warnings.some((warning) =>
     warning.code === 'INCOMPATIBLE_GROUP_SHIRT_TEMPLATE'));
 
   await assert.rejects(
     createGroupShirtPlan({
       sources: [source('11', 1)],
+      templates: [template('.mgs9.png', [region('back-only', 'back', 'bl')])],
+    }),
+    (error) => error instanceof GroupShirtPlanError &&
+      error.code === 'NO_COMPATIBLE_GROUP_SHIRT_TEMPLATE' &&
+      error.missingPoolKeys.includes('all'),
+  );
+
+  await assert.rejects(
+    createGroupShirtPlan({
+      sources: [source('11', 1, 'wh')],
       templates: [template('.mgs9.png', [region('back-only', 'back', 'bl')])],
     }),
     (error) => error instanceof GroupShirtPlanError &&

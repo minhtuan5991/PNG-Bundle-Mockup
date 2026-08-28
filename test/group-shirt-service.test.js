@@ -16,6 +16,7 @@ const {
   generateGroupShirtMockups,
 } = require('../src/services/group-shirt-service');
 const { findExistingSingleMockupOutputs } = require('../src/services/single-mockup-service');
+const { createGroupShirtPlan } = require('../src/services/group-shirt-planner');
 
 async function createTempDirectory(t, prefix = 'group-shirt-service-') {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), prefix));
@@ -231,33 +232,129 @@ test('nhóm PNG tên single không làm ảnh Group Shirt bị nhận nhầm là
   assert.deepEqual(await findExistingSingleMockupOutputs(directory), [singlePath]);
 });
 
-test('compositor crop alpha, xoay quanh tâm và giữ PNG trong đúng vùng in', async (t) => {
+test('preview và ảnh xuất giữ toàn bộ PNG 4200×4800 trong vùng in 42×48', async (t) => {
+  const directory = await createTempDirectory(t);
+  const templatePath = path.join(directory, 'shirt mgs.png');
+  const sourcePath = path.join(directory, 'Family (1).png');
+  await Promise.all([
+    createTemplate(templatePath),
+    createPaddedDesign(sourcePath, {
+      canvasWidth: 4200, canvasHeight: 4800,
+      width: 1200, height: 1800, left: 2400, top: 600,
+    }),
+  ]);
+  const originalSource = await fs.readFile(sourcePath);
+  const plan = { outputs: [plannedOutput(templatePath, [assignment(sourcePath)])] };
+
+  const preview = await renderGroupShirtPreview({ plan, maxWidth: 100, maxHeight: 100 });
+  const result = await generateGroupShirtMockups({ plan, sourceDirectory: directory });
+  const outputPath = result.outputPaths[0];
+
+  // The full 4200×4800 canvas maps to 70×80 at (65,60), so the off-centre
+  // 1200×1800 design must occupy only 20×30 at (105,70), not fill the region.
+  assert.deepEqual(await rgbaAt(outputPath, 115, 85), [230, 25, 35, 255]);
+  for (const [x, y] of [[100, 100], [100, 85], [130, 85], [115, 65], [115, 105]]) {
+    assert.deepEqual(await rgbaAt(outputPath, x, y), [245, 245, 245, 255]);
+  }
+  assert.deepEqual(preview.preview, { width: 100, height: 100 });
+  assert.deepEqual(await rgbaAt(preview.buffer, 57, 42), [230, 25, 35, 255]);
+  assert.deepEqual(await rgbaAt(preview.buffer, 50, 50), [245, 245, 245, 255]);
+  assert.deepEqual(await fs.readFile(sourcePath), originalSource);
+});
+
+test('preview và ảnh xuất: không tag chỉ ghép mặt trước, .f/.b giữ đúng mặt trên cả hai màu', async (t) => {
+  const directory = await createTempDirectory(t);
+  const templatePath = path.join(directory, 'all sides mgs.png');
+  const plainPath = path.join(directory, 'Plain (1).png');
+  const frontPath = path.join(directory, 'Sides (1).f.png');
+  const backPath = path.join(directory, 'Sides (1).b.png');
+  const red = { r: 230, g: 25, b: 35, alpha: 1 };
+  const green = { r: 25, g: 210, b: 40, alpha: 1 };
+  const blue = { r: 20, g: 45, b: 225, alpha: 1 };
+  const design = {
+    canvasWidth: 420, canvasHeight: 480,
+    width: 120, height: 180, left: 240, top: 60,
+  };
+  await Promise.all([
+    createTemplate(templatePath),
+    createPaddedDesign(plainPath, { ...design, color: red }),
+    createPaddedDesign(frontPath, { ...design, color: green }),
+    createPaddedDesign(backPath, { ...design, color: blue }),
+  ]);
+  const regions = [
+    { id: 'wh-f', side: 'front', color: 'wh', centerX: 0.25, centerY: 0.25 },
+    { id: 'bl-f', side: 'front', color: 'bl', centerX: 0.75, centerY: 0.25 },
+    { id: 'wh-b', side: 'back', color: 'wh', centerX: 0.25, centerY: 0.75 },
+    { id: 'bl-b', side: 'back', color: 'bl', centerX: 0.75, centerY: 0.75 },
+  ].map((region) => assignment(plainPath, region).region);
+  const plan = await createGroupShirtPlan({
+    sources: [plainPath, frontPath, backPath],
+    templates: [{ path: templatePath, width: 200, height: 200, regions }],
+    random: () => 0,
+  });
+  assert.equal(plan.outputCount, 2);
+  assert.deepEqual(plan.warnings, []);
+  const result = await generateGroupShirtMockups({ plan, sourceDirectory: directory });
+
+  for (const [pageIndex, output] of plan.outputs.entries()) {
+    const preview = await renderGroupShirtPreview({ plan, pageIndex, maxWidth: 200, maxHeight: 200 });
+    assert.equal(preview.assignmentCount, output.profile === 'plain' ? 2 : 4);
+    for (const region of regions) {
+      const color = output.profile === 'plain' ? red : (region.side === 'front' ? green : blue);
+      const expected = output.profile === 'plain' && region.side === 'back'
+        ? [245, 245, 245, 255]
+        : [color.r, color.g, color.b, 255];
+      const x = Math.round(region.centerX * 200);
+      const y = Math.round(region.centerY * 200);
+      for (const input of [preview.buffer, result.outputPaths[pageIndex]]) {
+        assert.deepEqual(await rgbaAt(input, x + 15, y - 15), expected, `${output.group}: ${region.id}`);
+        assert.deepEqual(await rgbaAt(input, x, y), [245, 245, 245, 255]);
+      }
+    }
+  }
+});
+
+test('compositor giữ canvas PNG và xoay quanh tâm vùng in', async (t) => {
   const directory = await createTempDirectory(t);
   const templatePath = path.join(directory, '1 mgs.png');
   const sourcePath = path.join(directory, '1 (1).wh.f.png');
   await createTemplate(templatePath);
   await createPaddedDesign(sourcePath, {
-    width: 10,
-    height: 40,
-    left: 73,
-    top: 19,
+    canvasWidth: 420,
+    canvasHeight: 480,
+    width: 120,
+    height: 180,
+    left: 240,
+    top: 60,
     color: { r: 225, g: 25, b: 35, alpha: 1 },
   });
 
-  const output = plannedOutput(templatePath, [assignment(sourcePath, {
-    id: 'front-1',
-    centerX: 0.5,
-    centerY: 0.5,
-    width: 0.35,
-    height: 0.4,
-    rotation: 90,
-  })]);
-  const rendered = await renderGroupShirtOutputToBuffer({ output });
+  for (const [rotation, designX, designY, width, height] of [
+    [0, 115, 85, 70, 80],
+    [90, 115, 115, 80, 70],
+    [-90, 85, 85, 80, 70],
+    [180, 85, 115, 70, 80],
+  ]) {
+    const output = plannedOutput(templatePath, [assignment(sourcePath, {
+      id: 'front-1', rotation,
+    })]);
+    const composites = [];
+    const rendered = await renderGroupShirtOutputToBuffer({
+      output,
+      onItem: (_current, _total, composite) => composites.push(composite),
+    });
 
-  assert.deepEqual(await rgbaAt(rendered.buffer, 125, 100), [225, 25, 35, 255]);
-  assert.deepEqual(await rgbaAt(rendered.buffer, 100, 135), [245, 245, 245, 255]);
-  assert.equal(rendered.template.width, 200);
-  assert.equal(rendered.template.height, 200);
+    assert.deepEqual(
+      [composites[0].renderedWidth, composites[0].renderedHeight],
+      [width, height],
+      `Canvas sau khi xoay ${rotation}° phải giữ đúng kích thước vùng in`,
+    );
+    assert.deepEqual(await rgbaAt(rendered.buffer, designX, designY), [225, 25, 35, 255]);
+    assert.deepEqual(await rgbaAt(rendered.buffer, 100, 100), [245, 245, 245, 255]);
+    assert.deepEqual(await rgbaAt(rendered.buffer, 145, 145), [245, 245, 245, 255]);
+    assert.equal(rendered.template.width, 200);
+    assert.equal(rendered.template.height, 200);
+  }
 });
 
 test('watermark luôn là lớp trên cùng sau tất cả vùng in', async (t) => {

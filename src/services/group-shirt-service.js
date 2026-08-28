@@ -272,6 +272,8 @@ async function inspectSourceDescriptor(rawSource, alphaThreshold, sourceCache, i
       }
       let bounds;
       try {
+        // Validate visibility at the requested threshold only. These bounds
+        // must not determine placement inside a fixed 42×48 print region.
         bounds = await findAlphaBounds(sourcePath, alphaThreshold);
       } catch (error) {
         throw new GroupShirtError(
@@ -368,28 +370,30 @@ async function createDesignComposite(assignment, options) {
 
   let result;
   try {
-    let pipeline = sharp(source.path, { failOn: 'error', limitInputPixels: false })
-      .extract({
-        left: source.bounds.left,
-        top: source.bounds.top,
-        width: source.bounds.width,
-        height: source.bounds.height,
-      })
+    // Resize the entire PNG canvas, including transparent margins, so the
+    // design keeps its original size and position relative to the print area.
+    result = await sharp(source.path, { failOn: 'error', limitInputPixels: false })
       .resize(region.pixelWidth, region.pixelHeight, {
         fit: 'contain',
         position: 'centre',
         background: { r: 0, g: 0, b: 0, alpha: 0 },
         kernel: sharp.kernel.lanczos3,
-      });
-    if (Math.abs(region.rotation) > 1e-9) {
-      pipeline = pipeline.rotate(region.rotation, {
-        background: { r: 0, g: 0, b: 0, alpha: 0 },
-      });
-    }
-    result = await pipeline
+      })
       .png({ compressionLevel: 9, adaptiveFiltering: true })
       .toBuffer({ resolveWithObject: true });
+    if (Math.abs(region.rotation) > 1e-9) {
+      throwIfCancelled(isCancelled);
+      // Materialize the resized canvas before rotation: Sharp can otherwise
+      // apply 90° rotations before contain-padding and change the frame size.
+      result = await sharp(result.data, { failOn: 'error', limitInputPixels: false })
+        .rotate(region.rotation, {
+          background: { r: 0, g: 0, b: 0, alpha: 0 },
+        })
+        .png({ compressionLevel: 9, adaptiveFiltering: true })
+        .toBuffer({ resolveWithObject: true });
+    }
   } catch (error) {
+    if (error instanceof GroupShirtCancelledError) throw error;
     throw new GroupShirtError(
       `Không thể xử lý PNG “${path.basename(source.path)}”: ${error.message}`,
       'PROCESS_GROUP_SHIRT_SOURCE_FAILED',

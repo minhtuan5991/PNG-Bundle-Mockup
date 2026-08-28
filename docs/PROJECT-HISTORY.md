@@ -1,10 +1,10 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
-> Cập nhật: 2026-08-27
-> Phiên bản mã nguồn hiện tại: `1.4.6`
+> Cập nhật: 2026-08-28
+> Phiên bản mã nguồn hiện tại: `1.4.7`
 > Kênh stable: GitHub Releases `/releases/latest`
 > Bản stable đã xác minh: `v1.4.6`, phát hành ngày 2026-08-27; CI và workflow phát hành thành công.
-> Thay đổi mới nhất: tên đầu ra Group Shirt theo nhóm PNG, tên mockup và số thứ tự; phát hành bằng tag mới, không ghi đè v1.4.5.
+> Thay đổi mới nhất: chuẩn bị v1.4.7 giữ toàn bộ canvas PNG trong vùng in 42×48 và nhóm không hậu tố chỉ ghép mặt trước trên cả áo sáng/tối.
 
 ## 1. Mục đích tài liệu
 
@@ -22,7 +22,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.4.6` |
+| Phiên bản mã nguồn | `1.4.7` |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
@@ -50,7 +50,7 @@ Không đổi `appId`, `productName` hoặc tên shortcut theo từng phiên b�
 - Báo rõ file hỏng hoặc file không thể đọc.
 - Tự loại ảnh nền và watermark khỏi danh sách thiết kế nếu chúng nằm trong thư mục nguồn.
 
-### 3.2 Bố cục mockup
+### 3.2 Bố cục mockup Bundle
 
 - Chia đều số PNG vào số mockup do người dùng chọn.
 - Phần dư được phân bổ lần lượt vào các nhóm đầu, ví dụ `31 / 2 = 16 + 15`.
@@ -679,3 +679,15 @@ Checksum SHA-256 dưới đây thuộc các asset public do GitHub Actions build
 | `latest.yml` | 363 | `46e04fa7681bd42201ad118639b76c8da636d3324da0179513ef41321901761c` |
 
 Giới hạn còn lại: chưa kiểm thử cài mới/nâng cấp tương tác trên máy hoặc VM sạch trong lượt phát hành này; bộ cài chưa ký số. Không đánh dấu các mục này đạt từ smoke test hoặc xác minh checksum.
+
+## 28. Bản v1.4.7 — canvas PNG nguyên vẹn và nhóm không hậu tố chỉ ghép mặt trước
+
+- Group Shirt và mockup đơn resize toàn bộ canvas PNG bằng `contain`, không cắt alpha trước khi đặt vào vùng in. PNG `4200×4800` giữ đúng tỷ lệ, lề trong suốt và vị trí thiết kế trong vùng `42×48`.
+- Group Shirt materialize ảnh đã resize trước khi xoay, tránh sai kích thước khung ở góc `90°`/`-90°`; alpha bounds chỉ còn dùng để kiểm tra PNG hợp lệ/có nội dung.
+- Nhóm không có hậu tố `.f`, `.b`, `.wh`, `.bl` chỉ ghép vào mặt trước của cả áo sáng/tối. Nền có cả trước/sau vẫn dùng được, nhưng giữ nguyên vùng sau; nền chỉ có sau bị bỏ qua. Số trang chỉ tính theo vùng mặt trước.
+- Nhóm chỉ `.f/.b` vẫn dùng cả hai màu và giữ đúng mặt; không đổi các quy tắc nhóm có tag màu, lặp nguồn, tên output, dữ liệu đã lưu, Bundle, PDF, watermark và metadata.
+- Automated tests của snapshot sạch v1.4.7 sau `npm ci` đạt **142/142**, gồm matching browser/backend và kiểm tra pixel preview/ảnh xuất.
+- NSIS x64 build từ snapshot sạch thành công; packaged basic smoke **23/23** với hồ sơ QA riêng, không chạm bản cài đang dùng. Toàn bộ 23 file `src`/`assets` trong ASAR khớp byte với snapshot; `Input` chỉ có README/PDF mẫu đã track.
+- Bộ cài local trong `release/v1.4.7`: 104371222 byte, SHA-256 `4d7c794f03ed69329345832d665b90c140b6c187f82f0080aa911d4af610c66a`; `latest.yml` khớp version/path/size/SHA-512. Chi tiết ba artifact local nằm trong release notes.
+- Phát hành GitHub đang được chuẩn bị; sẽ ghi trạng thái và checksum public sau khi tải lại xác minh.
+- Không kiểm thử cài mới/nâng cấp tương tác trong lượt này; không cài đè hoặc gỡ bản đang dùng trên máy người dùng.

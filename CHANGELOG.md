@@ -4,7 +4,25 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
-Chưa có thay đổi sau v1.4.6.
+Chưa có thay đổi sau v1.4.7.
+
+## [1.4.7] - 2026-08-28
+
+### Changed
+
+- Nhóm PNG không có hậu tố `.f`, `.b`, `.wh`, `.bl` chỉ ghép vào mặt trước trên cả áo sáng/tối. Nền có cả trước/sau vẫn được dùng nhưng giữ nguyên vùng sau; nền chỉ có vùng sau được bỏ qua. Preview và lập kế hoạch xuất ảnh dùng cùng quy tắc.
+- Nhóm chỉ có `.f/.b` tiếp tục dùng cả áo sáng/tối và giữ đúng mặt; không đổi quy tắc nhóm có tag màu, phân trang, lặp nguồn khi thiếu hoặc cách đặt tên output.
+
+### Fixed
+
+- Group Shirt (preview và ảnh xuất) và mockup đơn dùng toàn bộ canvas PNG, kể cả phần trong suốt, để đặt vào vùng in `42×48`; không crop alpha làm phóng hoặc lệch thiết kế đã chuẩn bị sẵn trên PNG `4200×4800`.
+- Group Shirt resize toàn bộ canvas trước rồi mới xoay quanh tâm vùng in, giữ đúng kích thước khung cả ở góc `90°` và `-90°`.
+- Giữ nguyên cách dàn lưới/crop của Bundle PNG, cấu hình vùng in đã lưu, cách đặt tên, watermark, metadata và kiểm tra ảnh rỗng/hỏng.
+
+### QA
+
+- Automated tests **142/142** đạt trên snapshot sạch sau `npm ci`; packaged basic smoke **23/23** đạt với hồ sơ QA riêng.
+- Build NSIS x64 và kiểm tra ASAR, Input allowlist, version/path/size/SHA-512 của updater đạt. Chưa kiểm thử cài mới/nâng cấp tương tác; bộ cài chưa ký số.
 
 ## [1.4.6] - 2026-08-27
 
