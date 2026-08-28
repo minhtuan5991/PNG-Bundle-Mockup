@@ -1,9 +1,9 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
 > Cập nhật: 2026-08-28
-> Phiên bản mã nguồn hiện tại: `1.4.8` (đang chuẩn bị phát hành GitHub)
+> Phiên bản mã nguồn hiện tại: `1.4.8`
 > Kênh stable: GitHub Releases `/releases/latest`
-> Bản stable đã xác minh: `v1.4.7`, phát hành ngày 2026-08-28; CI và workflow phát hành thành công.
+> Bản stable đã xác minh: `v1.4.8`, phát hành ngày 2026-08-28; CI và workflow phát hành thành công.
 > Thay đổi mới nhất: v1.4.8 xét màu theo từng PNG trong nhóm trộn tag và lọc nền có mặt sau khi nhóm không có PNG mặt sau.
 
 ## 1. Mục đích tài liệu
@@ -701,7 +701,7 @@ Checksum SHA-256 dưới đây thuộc asset public do GitHub Actions build, kh�
 | `PNG-Bundle-Mockup-Setup-1.4.7.exe.blockmap` | 109430 | `dad98bd0c1049c39b221646031f1799dc8ce961afef1bb1ede94d063be45e742` |
 | `latest.yml` | 363 | `bee29e0af23f07d17deaa2ff2208c91f6218be00394a8c9f1209e4701c8ec898` |
 
-## 29. Bản vá local v1.4.8 — wildcard màu theo từng PNG và lọc nền mặt sau
+## 29. Bản vá v1.4.8 — wildcard màu theo từng PNG và lọc nền mặt sau
 
 - PNG thiếu `.wh/.bl` là wildcard màu theo từng file, kể cả khi cùng nhóm có nguồn `.wh/.bl`; `.f/.b` và mặt trước mặc định vẫn được giữ. Nguồn màu cố định được dành đúng vùng trước khi hàng đợi wildcard chung cho hai màu được dùng.
 - Planner dùng một cursor wildcard chung qua cả màu sáng/tối, tính capacity từng pool cùng tổng số nguồn theo mặt, nên không nhân đôi hoặc bỏ sót PNG và chỉ lặp sau khi hết nguồn chưa dùng trên từng nền.
@@ -709,4 +709,13 @@ Checksum SHA-256 dưới đây thuộc asset public do GitHub Actions build, kh�
 - Automated tests trên snapshot sạch đạt **152/152**; audit production 0 lỗ hổng. Kiểm tra đúng dữ liệu đã lưu cho thấy nhóm 3 dùng sáu `.f` trên `mgs5` (2 trang) và `mgs7` (1 trang), còn nhóm 1 bỏ `mgs4/mgs5` và dùng sáu nền chỉ có mặt trước.
 - NSIS local trong `release/v1.4.8` build từ tree `984aa134f8f7657df4b1bf2e9e4cda63b9054521`; packaged smoke **23/23**, ASAR version `1.4.8`, 23 file `src/assets` khớp snapshot, updater metadata đạt và `Input` trước smoke chỉ có README/PDF mẫu.
 - Installer local 104371611 byte, SHA-256 `599853ea49c55a55336c022831348945bd4f1b3e8898d0c2a3c0818725ba1e0f`. Bộ cài chưa ký số; chưa cài/nâng cấp tương tác.
-- Chủ dự án đã yêu cầu phát hành GitHub v1.4.8 sau khi QA local hoàn tất; chờ CI/workflow và xác minh tải lại artifact trước khi ghi nhận stable mới.
+- Commit phát hành `56c2ba66b0ed6e8e9c4e0192c65ae0c8527e972c`, annotated tag `v1.4.8` (tag object `b047517272ec2929772403aba3e3aa8c2b1b84c2`); Windows CI [33150064113](https://github.com/minhtuan5991/PNG-Bundle-Mockup/actions/runs/33150064113) và Release Windows [33150223710](https://github.com/minhtuan5991/PNG-Bundle-Mockup/actions/runs/33150223710) đều thành công.
+- [Release v1.4.8](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.4.8), ID `378312944`, public lúc `2026-08-28T07:07:52Z`; stable/latest, không draft/prerelease. Đã tải lại đúng ba artifact và xác minh kích thước/SHA-256 với GitHub, cùng version/path/size/SHA-512 của updater.
+
+Checksum bên dưới thuộc artifact public do GitHub Actions build lại, khác bộ cài QA local:
+
+| Artifact public | Kích thước (byte) | SHA-256 |
+| --- | ---: | --- |
+| `PNG-Bundle-Mockup-Setup-1.4.8.exe` | 104371538 | `53cfee983bbead3b4fc1b675aaa70a73ebce31cae62248502a6a34d2d865bbc1` |
+| `PNG-Bundle-Mockup-Setup-1.4.8.exe.blockmap` | 109303 | `0e025d7a2d3e7ad975d031367372e2eba6e010b36c0350041903d0b41f2f7532` |
+| `latest.yml` | 363 | `4f0ecf7cb2244abf1107d0d88c9533fddb4dcdb480d9390617429a8578c07218` |

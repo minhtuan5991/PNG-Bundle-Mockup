@@ -7,8 +7,8 @@ Tài liệu này dùng khi chủ dự án muốn tự phát hành bản Windows 
 - `v1.2.5` đã là Release public và không được ghi đè asset hoặc di chuyển tag.
 - `v1.4.5` là bản stable/public và không được di chuyển tag hoặc ghi đè asset.
 - Bộ cài `v1.4.6` đã phát hành stable/public ngày 2026-08-27; không di chuyển tag hoặc ghi đè asset.
-- Bộ cài `v1.4.7` đã phát hành stable/public ngày 2026-08-28. Lần phát hành tiếp theo dùng patch version mới từ `v1.4.8`; dùng đúng tag theo version trong `package.json`, không tái sử dụng tag cũ hoặc ghi đè asset đã public.
-- Bản vá `1.4.8` đã QA local và được chủ dự án yêu cầu phát hành GitHub. Chờ CI thành công trước khi đẩy tag mới; không ghi đè artifact public.
+- Bộ cài `v1.4.7` đã phát hành stable/public ngày 2026-08-28; không tái sử dụng tag cũ hoặc ghi đè asset đã public.
+- Bản vá `v1.4.8` đã phát hành stable/public/latest ngày 2026-08-28, Release ID `378312944`; ba artifact tải lại đã xác minh. Lần tiếp theo dùng version mới từ `1.4.9`, không di chuyển tag hoặc ghi đè artifact public.
 - Mỗi Release chỉ có đúng ba asset:
   - `PNG-Bundle-Mockup-Setup-X.Y.Z.exe`
   - `PNG-Bundle-Mockup-Setup-X.Y.Z.exe.blockmap`
