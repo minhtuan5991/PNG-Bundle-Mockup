@@ -41,7 +41,7 @@ function templateNames(plan) {
   return [...new Set(plan.outputs.map((output) => output.template.name))];
 }
 
-test('quy tắc 1: PNG không tag chỉ dùng vùng trước trên áo sáng/tối, bỏ qua vùng sau', async () => {
+test('quy tắc 1: PNG không tag dùng mặt trước trên áo sáng/tối, bỏ qua toàn bộ nền có mặt sau', async () => {
   const plan = await createGroupShirtPlan({
     sources: [source('plain', 1), source('plain', 2)],
     templates: [
@@ -71,10 +71,9 @@ test('quy tắc 1: PNG không tag chỉ dùng vùng trước trên áo sáng/t�
 
   assert.equal(plan.groups[0].profile, 'plain');
   assert.deepEqual(templateNames(plan), [
-    'all sides mgs.png', 'back mgs.png',
     'dark mgs.png', 'light mgs.png', 'mixed mgs.png',
   ]);
-  assert.equal(plan.outputCount, 6);
+  assert.equal(plan.outputCount, 3);
   for (const output of plan.outputs) {
     assert.deepEqual(
       output.assignments.map((item) => item.region.id),
@@ -84,21 +83,20 @@ test('quy tắc 1: PNG không tag chỉ dùng vùng trước trên áo sáng/t�
   }
   const mixed = plan.outputs.find((output) => output.template.name === 'mixed mgs.png');
   assert.deepEqual(mixed.assignments.map((assignment) => assignment.source.ordinal), [1, 2]);
-  const allSides = plan.outputs.find((output) => output.template.name === 'all sides mgs.png');
-  assert.deepEqual(allSides.assignments.map((item) => item.source.ordinal), [1, 2]);
-  assert.deepEqual(allSides.assignments.map((item) => item.repeated), [false, false]);
-  assert.deepEqual(plan.warnings.map((item) => item.template.name), ['back only mgs.png']);
-  assert.deepEqual(plan.unusedTemplates.map((item) => item.name), ['back only mgs.png']);
+  assert.deepEqual(plan.warnings.map((item) => item.template.name), [
+    'all sides mgs.png', 'back mgs.png', 'back only mgs.png',
+  ]);
+  assert.deepEqual(plan.unusedTemplates.map((item) => item.name), [
+    'back mgs.png', 'back only mgs.png', 'all sides mgs.png',
+  ]);
 });
 
-test('PNG không tag chỉ tính vùng trước khi chia trang và không bỏ sót nguồn', async () => {
+test('PNG không tag chia trang trên nền mặt trước trộn màu và không bỏ sót nguồn', async () => {
   const plan = await createGroupShirtPlan({
     sources: Array.from({ length: 7 }, (_, index) => source('plain pages', index + 1)),
-    templates: [template('all sides mgs.png', [
+    templates: [template('fronts mgs.png', [
       region('wh-f', 'front', 'wh', 0.3, 0.3),
       region('bl-f', 'front', 'bl', 0.7, 0.3),
-      region('wh-b', 'back', 'wh', 0.3, 0.7),
-      region('bl-b', 'back', 'bl', 0.7, 0.7),
     ])],
     random: () => 0.99,
   });
@@ -160,18 +158,25 @@ test('nhóm chỉ .f hoặc chỉ .b dùng cả hai màu nhưng không chuyển 
   for (const [tag, side] of [['f', 'front'], ['b', 'back']]) {
     const plan = await createGroupShirtPlan({
       sources: [source('one side', 1, null, tag)],
-      templates: [template('all sides mgs.png', [
-        region('wh-f', 'front', 'wh', 0.3, 0.3),
-        region('bl-f', 'front', 'bl', 0.7, 0.3),
-        region('wh-b', 'back', 'wh', 0.3, 0.7),
-        region('bl-b', 'back', 'bl', 0.7, 0.7),
-      ])],
+      templates: [
+        template('fronts mgs.png', [
+          region('wh-f', 'front', 'wh', 0.3, 0.3),
+          region('bl-f', 'front', 'bl', 0.7, 0.3),
+        ]),
+        template('all sides mgs.png', [
+          region('wh-f', 'front', 'wh', 0.3, 0.3),
+          region('bl-f', 'front', 'bl', 0.7, 0.3),
+          region('wh-b', 'back', 'wh', 0.3, 0.7),
+          region('bl-b', 'back', 'bl', 0.7, 0.7),
+        ]),
+      ],
       random: () => 0,
     });
 
     const assignments = plan.outputs[0].assignments;
     assert.equal(plan.groups[0].profile, 'side-only');
     assert.equal(plan.outputCount, 1);
+    assert.equal(plan.outputs[0].template.name, tag === 'f' ? 'fronts mgs.png' : 'all sides mgs.png');
     assert.deepEqual(assignments.map((item) => item.color), ['wh', 'bl']);
     assert.ok(assignments.every((item) => item.side === side && item.source.side === tag));
     assert.deepEqual(assignments.map((item) => item.repeated), [false, true]);
@@ -274,7 +279,7 @@ test('quy tắc 5 đối xứng: một ảnh trước được lặp khi ảnh s
   assert.deepEqual(consumedBack, [1, 2, 3, 4, 5, 6, 7]);
 });
 
-test('nhóm tag hỗn hợp như thư mục Custom Name vẫn dùng các nền phủ đúng ba pool hiện có', async () => {
+test('nhóm tag hỗn hợp dùng PNG .f không tag màu trên cả áo sáng/tối, giữ riêng màu PNG .b', async () => {
   const plan = await createGroupShirtPlan({
     sources: [
       source('3', 1, 'wh', 'b'),
@@ -298,11 +303,11 @@ test('nhóm tag hỗn hợp như thư mục Custom Name vẫn dùng các nền p
 
   assert.deepEqual(
     templateNames(plan),
-    ['bl sides mgs.png', 'wh front mgs.png', 'wh sides mgs.png'],
+    ['bl front mgs.png', 'bl sides mgs.png', 'wh front mgs.png', 'wh sides mgs.png'],
   );
-  assert.ok(plan.warnings.some((warning) => warning.template.name === 'bl front mgs.png'));
+  assert.deepEqual(plan.warnings, []);
   for (const assignment of plan.outputs.flatMap((output) => output.assignments)) {
-    assert.equal(assignment.source.color, assignment.region.color);
+    if (assignment.source.explicitColor) assert.equal(assignment.source.color, assignment.region.color);
     assert.equal(assignment.source.side === 'b' ? 'back' : 'front', assignment.region.side);
   }
 });

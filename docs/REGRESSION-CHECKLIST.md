@@ -4,6 +4,11 @@
 
 ## Trạng thái mốc
 
+- [x] QA mã nguồn local v1.4.8 ngày 2026-08-28: snapshot sạch sau `npm ci`, **152/152 test đạt**, audit production 0 lỗ hổng; nhóm trộn tag dùng wildcard màu theo từng PNG và nhóm không có PNG back bỏ toàn bộ nền có back.
+- [x] Kiểm tra dữ liệu người dùng v1.4.8 ở chế độ chỉ-đọc: nhóm 3 dùng đủ sáu `.f` trên `mgs5/mgs7`; nhóm 1 bỏ đúng `mgs4/mgs5`, không xóa nền hoặc output cũ.
+- [x] QA bộ cài local v1.4.8: NSIS x64 thành công, packaged smoke **23/23**; ASAR version/23 file src-assets/updater metadata đạt và `Input` trước smoke chỉ có README/PDF đã track.
+- [ ] CI, tag, workflow phát hành và tải lại ba artifact GitHub v1.4.8 đang chờ xác minh.
+- [ ] Chưa kiểm thử cài mới/nâng cấp tương tác v1.4.8 trên máy hoặc VM sạch.
 - [x] QA mã nguồn v1.4.7 ngày 2026-08-28: snapshot sạch sau `npm ci`, **142/142 test đạt**; nhóm không hậu tố chỉ ghép mặt trước cả hai màu và giữ canvas PNG trong vùng in.
 - [x] QA bộ cài local v1.4.7: NSIS x64 từ snapshot sạch thành công, packaged basic smoke **23/23**; 23 file src/assets trong ASAR khớp snapshot, updater metadata/size/SHA-512 đúng và Input chỉ có README/PDF đã track.
 - [x] GitHub v1.4.7 đã xác minh ngày 2026-08-28: commit `dfca525`, Windows CI `33141831962`, Release Windows `33141936831` thành công; Release `378261091` stable/public/latest có đúng ba asset đã tải lại, khớp size/SHA-256 và updater version/path/size/SHA-512.

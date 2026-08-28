@@ -4,7 +4,21 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
-Chưa có thay đổi sau v1.4.7.
+Chưa có thay đổi sau v1.4.8.
+
+## [1.4.8] - 2026-08-28
+
+### Fixed
+
+- PNG không có `.wh/.bl` dùng được trên cả áo sáng và tối theo từng file, kể cả khi nhóm có PNG khác gắn tag màu; `.f/.b` vẫn giữ đúng mặt.
+- Nhóm không có PNG mặt sau bỏ qua toàn bộ nền chứa vùng mặt sau trước khi chia trang. Bộ lọc áp dụng riêng từng nhóm, không xóa nền hoặc output cũ.
+- Nguồn màu cố định được dành đúng vùng trước nguồn wildcard; hàng đợi wildcard dùng chung hai màu, không bỏ sót hoặc lặp sớm khi tạo nhiều trang.
+
+### QA
+
+- Snapshot sạch đạt **152/152** test và audit production 0 lỗ hổng; packaged smoke **23/23**.
+- Build NSIS x64 local, ASAR/updater/Input allowlist và kiểm tra chỉ-đọc trên nhóm 1/3 của người dùng đều đạt.
+- Chưa kiểm thử cài mới/nâng cấp tương tác; bộ cài chưa ký số. Artifact GitHub được workflow build và xác minh riêng trước khi công bố.
 
 ## [1.4.7] - 2026-08-28
 

@@ -42,7 +42,7 @@
     if (profile === PROFILES.PLAIN) return 'all';
     const side = normalizeSide(source?.side);
     if (profile === PROFILES.SIDE_ONLY) return `side:${side}`;
-    const color = normalizeColor(source?.color);
+    const color = source?.explicitColor ? normalizeColor(source.color) : '*';
     if (profile === PROFILES.COLOR_ONLY) return `color:${color}`;
     return `track:${color}.${side}`;
   }
@@ -64,14 +64,25 @@
     return [...new Set(sources.map((source) => sourcePoolKey(profile, source)))];
   }
 
+  function regionSourcePoolKeys(profileValue, region) {
+    const profile = normalizeProfile(profileValue);
+    const exact = regionPoolKey(profile, region);
+    if (!exact) return [];
+    if (profile === PROFILES.COLOR_ONLY) return [exact, 'color:*'];
+    if (profile === PROFILES.COLOR_SIDE) return [exact, `track:*.${normalizeSide(region?.side)}`];
+    return [exact];
+  }
+
   function poolLabel(key) {
     if (key === 'all') return 'mặt trước của áo sáng hoặc tối';
     if (key === 'side:front') return 'mặt trước';
     if (key === 'side:back') return 'mặt sau';
     if (key === 'color:wh') return 'áo sáng mặt trước';
     if (key === 'color:bl') return 'áo tối mặt trước';
-    const match = String(key).match(/^track:(wh|bl)\.(front|back)$/u);
+    if (key === 'color:*') return 'mặt trước của áo sáng hoặc tối';
+    const match = String(key).match(/^track:(wh|bl|\*)\.(front|back)$/u);
     if (!match) return String(key);
+    if (match[1] === '*') return `${match[2] === 'back' ? 'mặt sau' : 'mặt trước'} của áo sáng hoặc tối`;
     return `${match[1] === 'bl' ? 'áo tối' : 'áo sáng'} ${match[2] === 'back' ? 'mặt sau' : 'mặt trước'}`;
   }
 
@@ -98,9 +109,10 @@
     if (regions.length === 0) return incompatible('không có vùng in', sourceKeys);
 
     const hasBackRegion = regions.some((region) => normalizeSide(region?.side) === 'back');
-    if (profile === PROFILES.COLOR_ONLY && hasBackRegion) {
+    const hasBackSource = sources.some((source) => normalizeSide(source?.side) === 'back');
+    if (hasBackRegion && !hasBackSource) {
       return incompatible(
-        'nhóm chỉ tag màu chỉ dùng nền có vùng mặt trước',
+        'nhóm không có PNG mặt sau nên bỏ qua nền có vùng mặt sau',
         sourceKeys,
         { regionCount: regions.length },
       );
@@ -109,10 +121,10 @@
     const matchedRegions = [];
     const covered = new Set();
     for (const region of regions) {
-      const key = regionPoolKey(profile, region);
-      if (!key || !sourceKeySet.has(key)) continue;
+      const keys = regionSourcePoolKeys(profile, region).filter((key) => sourceKeySet.has(key));
+      if (keys.length === 0) continue;
       matchedRegions.push(region);
-      covered.add(key);
+      for (const key of keys) covered.add(key);
     }
 
     if (profile === PROFILES.SIDE_ONLY) {
@@ -164,6 +176,7 @@
     sourcePoolKey,
     regionPoolKey,
     sourcePoolKeys,
+    regionSourcePoolKeys,
     poolLabel,
     matchGroupShirtTemplate,
     missingSourcePoolKeys,

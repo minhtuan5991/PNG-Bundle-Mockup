@@ -227,10 +227,10 @@ test('chỉ vùng in quyết định template phù hợp và template dùng bở
     random: () => 0,
   });
 
-  assert.equal(plan.outputs.length, 3);
+  assert.equal(plan.outputs.length, 2);
   assert.equal(plan.unusedTemplates.length, 0);
   assert.deepEqual(plan.outputs.filter((output) => output.groupKey === '1')
-    .map((output) => output.template.name), ['.mgs1.png', '.mgs3.png']);
+    .map((output) => output.template.name), ['.mgs1.png']);
   assert.equal(plan.outputs.find((output) => output.groupKey === '2').template.name, '.mgs3.png');
   assert.ok(plan.outputs.every((output) =>
     output.assignments.every((item) => item.source.groupKey === output.groupKey)));

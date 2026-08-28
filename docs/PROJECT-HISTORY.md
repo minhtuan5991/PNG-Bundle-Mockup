@@ -1,10 +1,10 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
 > Cập nhật: 2026-08-28
-> Phiên bản mã nguồn hiện tại: `1.4.7`
+> Phiên bản mã nguồn hiện tại: `1.4.8` (đang chuẩn bị phát hành GitHub)
 > Kênh stable: GitHub Releases `/releases/latest`
 > Bản stable đã xác minh: `v1.4.7`, phát hành ngày 2026-08-28; CI và workflow phát hành thành công.
-> Thay đổi mới nhất: v1.4.7 giữ toàn bộ canvas PNG trong vùng in 42×48 và nhóm không hậu tố chỉ ghép mặt trước trên cả áo sáng/tối.
+> Thay đổi mới nhất: v1.4.8 xét màu theo từng PNG trong nhóm trộn tag và lọc nền có mặt sau khi nhóm không có PNG mặt sau.
 
 ## 1. Mục đích tài liệu
 
@@ -22,7 +22,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.4.7` |
+| Phiên bản mã nguồn | `1.4.8` |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
@@ -700,3 +700,13 @@ Checksum SHA-256 dưới đây thuộc asset public do GitHub Actions build, kh�
 | `PNG-Bundle-Mockup-Setup-1.4.7.exe` | 104371148 | `4188da16e3ed4845876ec367921920e9f28ee0db645d45b821b8c5a4805ed4d3` |
 | `PNG-Bundle-Mockup-Setup-1.4.7.exe.blockmap` | 109430 | `dad98bd0c1049c39b221646031f1799dc8ce961afef1bb1ede94d063be45e742` |
 | `latest.yml` | 363 | `bee29e0af23f07d17deaa2ff2208c91f6218be00394a8c9f1209e4701c8ec898` |
+
+## 29. Bản vá local v1.4.8 — wildcard màu theo từng PNG và lọc nền mặt sau
+
+- PNG thiếu `.wh/.bl` là wildcard màu theo từng file, kể cả khi cùng nhóm có nguồn `.wh/.bl`; `.f/.b` và mặt trước mặc định vẫn được giữ. Nguồn màu cố định được dành đúng vùng trước khi hàng đợi wildcard chung cho hai màu được dùng.
+- Planner dùng một cursor wildcard chung qua cả màu sáng/tối, tính capacity từng pool cùng tổng số nguồn theo mặt, nên không nhân đôi hoặc bỏ sót PNG và chỉ lặp sau khi hết nguồn chưa dùng trên từng nền.
+- Nếu nhóm không có nguồn mặt sau, toàn bộ nền có bất kỳ vùng mặt sau nào bị loại trước khi chia trang. Lọc theo từng nhóm, không xóa file nền/output; nhóm chỉ `.b` vẫn dùng nền trộn và chỉ ghép vùng back.
+- Automated tests trên snapshot sạch đạt **152/152**; audit production 0 lỗ hổng. Kiểm tra đúng dữ liệu đã lưu cho thấy nhóm 3 dùng sáu `.f` trên `mgs5` (2 trang) và `mgs7` (1 trang), còn nhóm 1 bỏ `mgs4/mgs5` và dùng sáu nền chỉ có mặt trước.
+- NSIS local trong `release/v1.4.8` build từ tree `984aa134f8f7657df4b1bf2e9e4cda63b9054521`; packaged smoke **23/23**, ASAR version `1.4.8`, 23 file `src/assets` khớp snapshot, updater metadata đạt và `Input` trước smoke chỉ có README/PDF mẫu.
+- Installer local 104371611 byte, SHA-256 `599853ea49c55a55336c022831348945bd4f1b3e8898d0c2a3c0818725ba1e0f`. Bộ cài chưa ký số; chưa cài/nâng cấp tương tác.
+- Chủ dự án đã yêu cầu phát hành GitHub v1.4.8 sau khi QA local hoàn tất; chờ CI/workflow và xác minh tải lại artifact trước khi ghi nhận stable mới.

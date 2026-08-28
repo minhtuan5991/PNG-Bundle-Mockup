@@ -10,7 +10,7 @@
 - Có thể tiếp tục chọn/bỏ từng PNG trong danh sách chính.
 - Nút **Loại bỏ PNG** dọn toàn bộ danh sách để bắt đầu bộ mới mà không xóa file PNG gốc.
 - Hai chế độ loại trừ nhau: **Mockup Bundle PNG** giữ nguyên luồng dàn lưới hiện có; **Mockup Group Shirt** ghép PNG theo nhóm, màu áo và mặt trước/sau.
-- Group Shirt nhận tên `1 (1).wh.f.png`, `1 (2).bl.b.png`; nhóm không tag chỉ ghép mặt trước trên cả áo sáng/tối, nhóm chỉ `.f/.b` dùng cả hai màu áo và giữ đúng mặt.
+- Group Shirt nhận tên `1 (1).wh.f.png`, `1 (2).bl.b.png`; mỗi PNG không có tag màu dùng cả áo sáng/tối và giữ đúng mặt, kể cả trong nhóm trộn tag. Nhóm không có PNG mặt sau tự bỏ qua toàn bộ nền có vùng mặt sau.
 - Chọn nhiều nền Group Shirt có marker `mgs`, ví dụ `mgs.jpg`, `.mgs1.jpg` hoặc `shirt mgs lifestyle.png`. Mọi nền là template dùng chung; số/chữ cạnh marker chỉ là tên file, còn vùng in quyết định nhóm PNG nào tương thích. Mỗi nền lưu được nhiều vùng in áo sáng/tối, mặt trước/sau theo tỷ lệ cố định `42×48`, có thể di chuyển, scale đúng tỷ lệ và xoay.
 - Công cụ **Đổi tên PNG** gắn `.wh/.bl` và `.f/.b` bằng thao tác đổi tên file thật, kiểm tra trùng tên và rollback toàn bộ nếu lỗi. Popup mở với `0/N`; chỉ thumbnail được chọn mới đổi tên, và thumbnail `80×76 px` giúp nhìn thiết kế rõ hơn.
 - Chọn ảnh nền PNG/JPG/WEBP/TIFF.
@@ -49,18 +49,19 @@
 
 ## Mockup Group Shirt
 
-- PNG nguồn dùng dạng `<nhóm> (<số nguyên dương>)[.<tag>...].png`, ví dụ `1 (3).wh.f.png`. Tag màu `.wh/.bl` và tag mặt `.f/.b` có thể ở bất kỳ thứ tự nào. Thông tin tên file vẫn mặc định `.wh`/`.f` khi thiếu tag; quy tắc dùng chung theo nhóm dưới đây quyết định vùng in thực tế.
+- PNG nguồn dùng dạng `<nhóm> (<số nguyên dương>)[.<tag>...].png`, ví dụ `1 (3).wh.f.png`. Tag màu `.wh/.bl` và tag mặt `.f/.b` có thể ở bất kỳ thứ tự nào. Thiếu tag mặt thì dùng mặt trước; thiếu tag màu thì dùng được trên cả áo sáng và tối, không bị PNG khác trong nhóm giới hạn màu.
 - Tất cả PNG có cùng phần tên trước `(số)` thuộc một nhóm. Số thứ tự quyết định thứ tự ghép trong từng loại màu/mặt; `1 (01)` và `1 (1)` là cùng ordinal nên không thể cùng tồn tại trong một track.
 - Ảnh nền phải có đuôi thật PNG/JPG/WEBP/TIFF và tên chứa marker `mgs`, ví dụ `mgs.jpg`, `1 mgs lifestyle.png` hoặc `.mgs3.jpg`. Tất cả nền `mgs` là pool dùng chung: nhóm `1` có thể dùng `.mgs2`/`.mgs3` nếu các vùng in đã lưu phù hợp với tag màu/mặt của nhóm.
 - Mỗi vùng in lưu cả mặt (`front/back`) và màu áo (`wh/bl`). Hai checkbox **Áo sáng màu**/**Áo tối màu** loại trừ nhau; không chọn ô nào thì vùng mới mặc định là áo sáng. Bốn tổ hợp màu/mặt có màu, nhãn và kiểu viền riêng để phân biệt.
 - Vùng in luôn giữ tỷ lệ pixel `42×48` khi tạo, kéo scale, nhập rộng/cao hoặc xoay. Vùng sau xoay phải nằm trọn trong ảnh nền.
 - Toàn bộ PNG `4200×4800` được co theo đúng tỷ lệ vào vùng in `42×48`, giữ nguyên lề trong suốt và vị trí thiết kế trong canvas; không crop theo vùng có pixel. Preview và ảnh xuất dùng cùng cách đặt. Nếu PNG có tỷ lệ khác, app dùng `contain` để giữ tỷ lệ và không cắt ảnh; vùng có xoay được xoay sau khi co toàn bộ canvas.
-- App xét tag của cả nhóm để chọn PNG phù hợp cho từng vùng in:
-  - Không tag `.f`, `.b`, `.wh`, `.bl`: chỉ ghép vào vùng mặt trước trên cả áo sáng và áo tối. Nếu nền có cả trước/sau, vùng sau được giữ nguyên; nền chỉ có vùng sau được bỏ qua.
+- App xét tag của từng PNG và điều kiện của nhóm để chọn vùng in:
+  - Không tag `.f`, `.b`, `.wh`, `.bl`: chỉ ghép vào vùng mặt trước trên cả áo sáng và áo tối.
   - Chỉ `.f/.b`: `.f` vào mặt trước, `.b` vào mặt sau, trên cả áo sáng và áo tối. Mỗi template vẫn phải có các mặt tương ứng với PNG trong nhóm; không lấy PNG mặt trước để lấp mặt sau hoặc ngược lại.
   - Chỉ `.wh/.bl`: ghép vào mặt trước đúng màu; template không được có vùng mặt sau.
-  - Có cả tag màu và mặt: ghép vào các vùng đúng màu và mặt. Template có ít nhất một vùng tương ứng được dùng; tổng các template đã chọn phải bao phủ đủ các loại PNG của nhóm.
-- Ảnh được ghép lần lượt theo thứ tự vùng đã lưu. Nếu một track thiếu PNG, app chọn ngẫu nhiên PNG trong đúng track của cùng nhóm để lấp đủ vùng. Nếu PNG thừa, app tạo trang mới, ghép phần còn lại rồi tiếp tục lấp các vùng thiếu bằng nguồn ngẫu nhiên đúng track.
+  - Có cả tag màu và mặt: PNG có `.wh/.bl` chỉ dùng đúng màu; PNG không có tag màu vẫn dùng cả hai màu. Mỗi PNG giữ đúng mặt. Template có ít nhất một vùng tương ứng được dùng; tổng các template đã chọn phải bao phủ đủ các loại PNG của nhóm.
+  - Với mọi kiểu nhóm: nếu không có PNG mặt sau, app bỏ qua toàn bộ nền chứa vùng mặt sau, kể cả nền có cả trước/sau. Bộ lọc áp dụng riêng từng nhóm trước khi chia trang; không xóa file nền hoặc ảnh cũ trong `Done`.
+- Trong từng loại nguồn, PNG được dùng theo số thứ tự trên các vùng đã lưu. Khi nguồn không tag màu và nguồn có tag màu cùng phù hợp, app dành chỗ cho nguồn có tag màu trước, sau đó dùng một lượt nguồn không tag màu chung cho cả hai màu áo. Chỉ lặp ngẫu nhiên nguồn phù hợp sau khi hết nguồn chưa dùng; PNG thừa tạo trang mới, không bị bỏ sót hay nhân đôi do dùng chung màu.
 - Có thể chọn nhiều nền `mgs`; mỗi nền tương thích tạo chuỗi trang riêng cho từng nhóm PNG. Nền không tương thích với bất kỳ nhóm nào được bỏ qua có cảnh báo; nếu một nhóm không có nền nào có vùng phù hợp, app dừng trước khi ghi output.
 - Tên output có dạng `[<tên nhóm PNG>]_<tên mockup>_<số thứ tự 3 chữ số>.png`, ví dụ `[Family]_chambray.mgs_001.png`. Tên mockup giữ nguyên tên ảnh nền, bỏ đuôi định dạng ảnh. Số thứ tự tính riêng cho mỗi cặp nhóm PNG và tên mockup; khi tên đã tồn tại trong `Done`, app tăng số để không ghi đè ảnh cũ. Dấu ngoặc quanh tên nhóm tránh nhầm với tiền tố `single_` của mockup đơn.
 - Khi bật **Tạo mockup đơn** trong Group Shirt, app chỉ dùng template `bundle` trong `Input` và chọn ngẫu nhiên PNG áo sáng (`.wh` hoặc không có tag màu) trong các nhóm. Quy tắc một lần cho mỗi `Done` vẫn được giữ.
@@ -129,7 +130,7 @@ Khi bỏ chọn, app giữ metadata của ảnh nền trong khả năng định 
 2. Chạy bộ cài. Khi cài mới, bạn có thể chọn thư mục đích; nên chọn thư mục mà tài khoản hiện tại có quyền ghi để có thể thêm PDF/ảnh mẫu vào `Input`. Nếu chỉ chọn thư mục cha, bộ cài tự thêm thư mục con `PNG Bundle Mockup`. Khi nâng cấp, installer giữ nguyên chế độ/vị trí của bản hiện có, kể cả All Users/custom path, thay vì tạo app thứ hai. Với bản All Users cũ, installer chỉ cấp quyền Modify cho thư mục `Input` và dừng trước khi thay đổi bản cũ nếu bước kiểm tra quyền thất bại.
 3. Mở app bằng icon **PNG Bundle Mockup** trên Desktop hoặc Start Menu.
 
-Sau khi cài, dùng nút **Mở Input** để xác nhận thư mục `Input` nằm cạnh EXE và thêm PDF/ảnh mẫu của bạn. Mã nguồn và bản stable đã phát hành hiện tại là [`v1.4.7`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.4.7); xem [ghi chú v1.4.7](docs/RELEASE-NOTES-1.4.7.md) và tải bản stable từ [GitHub Releases](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/latest).
+Sau khi cài, dùng nút **Mở Input** để xác nhận thư mục `Input` nằm cạnh EXE và thêm PDF/ảnh mẫu của bạn. Mã nguồn đang ở bản vá `1.4.8`, xem [ghi chú v1.4.8](docs/RELEASE-NOTES-1.4.8.md). Bản vá đang được chuẩn bị phát hành GitHub; bản stable đã xác minh trước đó là [`v1.4.7`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.4.7).
 
 Bộ cài v1.2.3 thay thế giữ các file runtime Electron bắt buộc nhưng gắn thuộc tính **Hidden** để thư mục cài đặt gọn hơn. Mặc định File Explorer chỉ hiện `Input`, **PNG Bundle Mockup.exe** và **Uninstall PNG Bundle Mockup.exe**. Việc bật **Show hidden files** sẽ làm các file kỹ thuật xuất hiện lại; không xóa hoặc đổi tên chúng vì app cần chúng để chạy.
 

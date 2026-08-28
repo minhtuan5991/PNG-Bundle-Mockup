@@ -262,9 +262,10 @@ test('preview và ảnh xuất giữ toàn bộ PNG 4200×4800 trong vùng in 42
   assert.deepEqual(await fs.readFile(sourcePath), originalSource);
 });
 
-test('preview và ảnh xuất: không tag chỉ ghép mặt trước, .f/.b giữ đúng mặt trên cả hai màu', async (t) => {
+test('preview và ảnh xuất: không tag lọc nền mặt sau, .f/.b giữ đúng mặt trên cả hai màu', async (t) => {
   const directory = await createTempDirectory(t);
   const templatePath = path.join(directory, 'all sides mgs.png');
+  const frontTemplatePath = path.join(directory, 'fronts mgs.png');
   const plainPath = path.join(directory, 'Plain (1).png');
   const frontPath = path.join(directory, 'Sides (1).f.png');
   const backPath = path.join(directory, 'Sides (1).b.png');
@@ -277,6 +278,7 @@ test('preview và ảnh xuất: không tag chỉ ghép mặt trước, .f/.b gi�
   };
   await Promise.all([
     createTemplate(templatePath),
+    createTemplate(frontTemplatePath),
     createPaddedDesign(plainPath, { ...design, color: red }),
     createPaddedDesign(frontPath, { ...design, color: green }),
     createPaddedDesign(backPath, { ...design, color: blue }),
@@ -289,11 +291,16 @@ test('preview và ảnh xuất: không tag chỉ ghép mặt trước, .f/.b gi�
   ].map((region) => assignment(plainPath, region).region);
   const plan = await createGroupShirtPlan({
     sources: [plainPath, frontPath, backPath],
-    templates: [{ path: templatePath, width: 200, height: 200, regions }],
+    templates: [
+      { path: templatePath, width: 200, height: 200, regions },
+      { path: frontTemplatePath, width: 200, height: 200, regions: regions.slice(0, 2) },
+    ],
     random: () => 0,
   });
   assert.equal(plan.outputCount, 2);
-  assert.deepEqual(plan.warnings, []);
+  assert.equal(plan.warnings.length, 2);
+  assert.equal(plan.outputs.find((output) => output.profile === 'plain').template.path, frontTemplatePath);
+  assert.equal(plan.outputs.find((output) => output.profile === 'side-only').template.path, templatePath);
   const result = await generateGroupShirtMockups({ plan, sourceDirectory: directory });
 
   for (const [pageIndex, output] of plan.outputs.entries()) {

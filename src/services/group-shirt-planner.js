@@ -13,6 +13,7 @@ const {
   groupShirtProfile,
   sourcePoolKey,
   regionPoolKey,
+  regionSourcePoolKeys,
   poolLabel,
   matchGroupShirtTemplate,
   missingSourcePoolKeys,
@@ -273,9 +274,9 @@ function buildSourceGroup(groupSources) {
 function countRegionsByPool(profile, regions) {
   const counts = new Map();
   for (const region of regions) {
-    const key = regionPoolKey(profile, region);
-    if (!key) continue;
-    counts.set(key, (counts.get(key) || 0) + 1);
+    for (const key of regionSourcePoolKeys(profile, region)) {
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
   }
   return counts;
 }
@@ -295,24 +296,41 @@ function randomIndex(maxExclusive, random) {
   return Math.floor(value * maxExclusive);
 }
 
-function makeAssignments(regions, group, batchIndex, random) {
-  const capacities = countRegionsByPool(group.profile, regions);
+function makeAssignments(regions, group, poolIndexes, random) {
+  const keysByRegion = regions.map((region) => regionSourcePoolKeys(group.profile, region));
+  const selectedSources = new Map();
+  // Reserve color-specific sources first, then consume one shared wildcard queue
+  // across both colors. Cursors persist across pages, but reset for each template.
+  for (const priority of [0, 1]) {
+    for (let index = 0; index < regions.length; index += 1) {
+      if (selectedSources.has(index)) continue;
+      const key = keysByRegion[index][priority];
+      const sources = group.pools.get(key);
+      const sourceIndex = poolIndexes.get(key) || 0;
+      if (!sources || sourceIndex >= sources.length) continue;
+      selectedSources.set(index, sources[sourceIndex]);
+      poolIndexes.set(key, sourceIndex + 1);
+    }
+  }
+
   const slotIndexes = new Map();
   return regions.map((region, regionIndex) => {
     const key = regionPoolKey(group.profile, region);
-    const sources = key ? group.pools.get(key) : null;
-    if (!sources?.length) {
-      throw new GroupShirtPlanError(
-        'Không tìm thấy PNG phù hợp với vùng in Group Shirt.',
-        'MISSING_GROUP_SHIRT_ASSIGNMENT_POOL',
-        { group, region },
-      );
+    const repeated = !selectedSources.has(regionIndex);
+    let source = selectedSources.get(regionIndex);
+    if (repeated) {
+      const sources = keysByRegion[regionIndex].flatMap((pool) => group.pools.get(pool) || []);
+      if (sources.length === 0) {
+        throw new GroupShirtPlanError(
+          'Không tìm thấy PNG phù hợp với vùng in Group Shirt.',
+          'MISSING_GROUP_SHIRT_ASSIGNMENT_POOL',
+          { group, region },
+        );
+      }
+      source = sources[randomIndex(sources.length, random)];
     }
     const slotIndex = slotIndexes.get(key) || 0;
     slotIndexes.set(key, slotIndex + 1);
-    const sourceIndex = batchIndex * capacities.get(key) + slotIndex;
-    const repeated = sourceIndex >= sources.length;
-    const source = repeated ? sources[randomIndex(sources.length, random)] : sources[sourceIndex];
     return {
       region,
       regionIndex,
@@ -327,11 +345,23 @@ function makeAssignments(regions, group, batchIndex, random) {
 
 function batchCountFor(group, regions) {
   const capacities = countRegionsByPool(group.profile, regions);
+  const sourceCountsBySide = new Map();
+  const regionCountsBySide = new Map();
+  for (const region of regions) {
+    regionCountsBySide.set(region.side, (regionCountsBySide.get(region.side) || 0) + 1);
+  }
   let count = 1;
   for (const [key, capacity] of capacities) {
     const sources = group.pools.get(key);
     if (!sources?.length) continue;
     count = Math.max(count, Math.ceil(sources.length / capacity));
+    const side = sources[0].side === 'b' ? 'back' : 'front';
+    sourceCountsBySide.set(side, (sourceCountsBySide.get(side) || 0) + sources.length);
+  }
+  // Exact and wildcard pools compete for the same slots. Count each source once
+  // per side, excluding pools that this template cannot display.
+  for (const [side, sourceCount] of sourceCountsBySide) {
+    count = Math.max(count, Math.ceil(sourceCount / regionCountsBySide.get(side)));
   }
   return count;
 }
@@ -416,8 +446,9 @@ async function createGroupShirtPlan(options = {}) {
       const { template, regions } = eligible[variantIndex];
       usedTemplateIds.add(templateIdentity(template));
       const batchCount = batchCountFor(group, regions);
+      const poolIndexes = new Map();
       for (let batchIndex = 0; batchIndex < batchCount; batchIndex += 1) {
-        const assignments = makeAssignments(regions, group, batchIndex, random);
+        const assignments = makeAssignments(regions, group, poolIndexes, random);
         outputs.push({
           outputIndex: outputs.length,
           group: group.group,
