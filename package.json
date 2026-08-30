@@ -1,6 +1,6 @@
 {
   "name": "png-bundle-mockup",
-  "version": "1.4.8",
+  "version": "1.4.9",
   "description": "Ứng dụng desktop tự động sắp xếp PNG lên ảnh nền mockup.",
   "main": "src/main.js",
   "author": "PNG Bundle Mockup",
@@ -64,6 +64,13 @@
         "filter": [
           "README.txt",
           "Toystory HLW1.pdf"
+        ]
+      },
+      {
+        "from": "Print Area",
+        "to": "Print Area",
+        "filter": [
+          "README.txt"
         ]
       }
     ],

@@ -373,20 +373,22 @@ function getGroupShirtRegionsFromDocument(document, template, options = {}) {
 
 function createGroupShirtRegionStore(options = {}) {
   const {
+    storageDirectory,
     userDataPath,
     fileName = DEFAULT_GROUP_SHIRT_REGION_FILE_NAME,
     fsImpl = fs,
     onWarning = () => {},
   } = options;
-  if (typeof userDataPath !== 'string' || userDataPath.trim().length === 0) {
-    throw new TypeError('createGroupShirtRegionStore cần userDataPath hợp lệ.');
+  const directoryOption = storageDirectory ?? userDataPath;
+  if (typeof directoryOption !== 'string' || directoryOption.trim().length === 0) {
+    throw new TypeError('createGroupShirtRegionStore cần storageDirectory hợp lệ.');
   }
   if (typeof fileName !== 'string' || !fileName || path.basename(fileName) !== fileName) {
     throw new TypeError('fileName phải là tên file, không được chứa đường dẫn.');
   }
   if (typeof onWarning !== 'function') throw new TypeError('onWarning phải là một hàm.');
 
-  const directoryPath = path.resolve(userDataPath);
+  const directoryPath = path.resolve(directoryOption);
   const filePath = path.join(directoryPath, fileName);
   let cachedDocument = null;
   let loadPromise = null;

@@ -226,20 +226,22 @@ function getRegionFromDocument(document, template, options = {}) {
 
 function createSingleMockupRegionStore(options = {}) {
   const {
+    storageDirectory,
     userDataPath,
     fileName = DEFAULT_REGION_FILE_NAME,
     fsImpl = fs,
     onWarning = () => {},
   } = options;
-  if (typeof userDataPath !== 'string' || userDataPath.trim().length === 0) {
-    throw new TypeError('createSingleMockupRegionStore cần userDataPath hợp lệ.');
+  const directoryOption = storageDirectory ?? userDataPath;
+  if (typeof directoryOption !== 'string' || directoryOption.trim().length === 0) {
+    throw new TypeError('createSingleMockupRegionStore cần storageDirectory hợp lệ.');
   }
   if (typeof fileName !== 'string' || fileName.length === 0 || path.basename(fileName) !== fileName) {
     throw new TypeError('fileName phải là tên file, không được chứa đường dẫn.');
   }
   if (typeof onWarning !== 'function') throw new TypeError('onWarning phải là một hàm.');
 
-  const directoryPath = path.resolve(userDataPath);
+  const directoryPath = path.resolve(directoryOption);
   const filePath = path.join(directoryPath, fileName);
   let cachedDocument = null;
   let loadPromise = null;

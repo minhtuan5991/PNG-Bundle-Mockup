@@ -21,13 +21,13 @@
     Abort "Ambiguous existing install mode."
   ${EndIf}
 
-  ; A fresh /allusers install would put mutable Input under Program Files.
+  ; A fresh /allusers install would put mutable Input and Print Area under Program Files.
   ${GetParameters} $R0
   ${GetOptions} $R0 "/allusers" $R1
   ${IfNot} ${Errors}
   ${AndIf} $perMachineInstallationFolder == ""
     ${IfNot} ${Silent}
-      MessageBox MB_ICONSTOP|MB_OK "Fresh All Users installation is not supported because the Input folder must remain writable. Install for the current user instead."
+      MessageBox MB_ICONSTOP|MB_OK "Fresh All Users installation is not supported because the Input and Print Area folders must remain writable. Install for the current user instead."
     ${EndIf}
     Abort "Fresh All Users install is not supported."
   ${EndIf}
@@ -74,7 +74,7 @@
     ${ElseIf} $perMachineInstallationFolder != ""
       StrCpy $isForceMachineInstall "1"
     ${Else}
-      ; Fresh installs are per-user so the mutable Input directory stays writable.
+      ; Fresh installs are per-user so the mutable Input and Print Area directories stay writable.
       StrCpy $isForceCurrentInstall "1"
     ${EndIf}
   !endif
@@ -160,24 +160,27 @@
 !macroend
 
 !macro customUnInstall
-  IfFileExists "$INSTDIR\Input" 0 inputSyncDone
+  IfFileExists "$INSTDIR\Input" inputSyncStart 0
+  IfFileExists "$INSTDIR\Print Area" inputSyncStart inputSyncDone
+
+  inputSyncStart:
   IfFileExists "$INSTDIR\${APP_EXECUTABLE_FILENAME}" 0 inputSyncMissingExecutable
 
-  DetailPrint "Synchronizing PNG Bundle Mockup Input assets before uninstall/update..."
+  DetailPrint "Synchronizing PNG Bundle Mockup Input and Print Area before uninstall/update..."
   ExecWait '"$INSTDIR\${APP_EXECUTABLE_FILENAME}" --sync-input-backup' $R9
   IntCmp $R9 0 inputSyncDone inputSyncFailed inputSyncFailed
 
   inputSyncMissingExecutable:
-    DetailPrint "Cannot preserve Input assets because the application executable is missing."
+    DetailPrint "Cannot preserve Input/Print Area because the application executable is missing."
     ${IfNot} ${Silent}
-      MessageBox MB_ICONSTOP|MB_OK "Cannot safely preserve the Input folder because PNG Bundle Mockup.exe is missing. Reinstall or back up Input manually before uninstalling."
+      MessageBox MB_ICONSTOP|MB_OK "Cannot safely preserve Input/Print Area because PNG Bundle Mockup.exe is missing. Reinstall or back up these folders manually before uninstalling."
     ${EndIf}
     Abort "Input backup executable is missing."
 
   inputSyncFailed:
-    DetailPrint "Input asset synchronization failed with exit code $R9."
+    DetailPrint "Input/Print Area synchronization failed with exit code $R9."
     ${IfNot} ${Silent}
-      MessageBox MB_ICONSTOP|MB_OK "PNG Bundle Mockup could not back up the Input folder. The uninstall/update was stopped to protect your files."
+      MessageBox MB_ICONSTOP|MB_OK "PNG Bundle Mockup could not back up Input/Print Area. The uninstall/update was stopped to protect your files."
     ${EndIf}
     Abort "Input backup failed with exit code $R9."
 
@@ -202,8 +205,8 @@
 
 !macro customRemoveFiles
   ${If} ${isUpdated}
-    ; Preserve electron-builder's atomic update behaviour. Input was already
-    ; mirrored to userData above and will be restored into the new installation.
+    ; Preserve electron-builder's atomic update behaviour. Input and Print Area
+    ; were mirrored to userData above and will be restored into the new installation.
     CreateDirectory "$PLUGINSDIR\old-install"
 
     Push ""
@@ -241,8 +244,8 @@
     !insertmacro removeInstalledFile "${APP_EXECUTABLE_FILENAME}"
     !insertmacro removeInstalledFile "${UNINSTALL_FILENAME}"
 
-    ; This only succeeds when no unrelated entry exists. Normally Input is the
-    ; sole remaining child, so the installation root intentionally remains.
+    ; This only succeeds when no unrelated entry exists. Normally Input and
+    ; Print Area remain, so the installation root intentionally remains.
     RMDir "$INSTDIR"
   ${EndIf}
 !macroend

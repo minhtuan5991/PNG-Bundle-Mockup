@@ -8,7 +8,7 @@ const path = require('node:path');
 const packageJson = require('../package.json');
 const electronPackageJson = require('electron/package.json');
 
-test('installer chọn thư mục, ẩn runtime và uninstall sạch nhưng giữ Input', () => {
+test('installer chọn thư mục, ẩn runtime và uninstall sạch nhưng giữ Input/Print Area', () => {
   assert.match(packageJson.version, /^\d+\.\d+\.\d+$/);
   assert.equal(packageJson.build.nsis.oneClick, false);
   assert.equal(packageJson.build.nsis.perMachine, false);
@@ -51,6 +51,7 @@ test('installer chọn thư mục, ẩn runtime và uninstall sạch nhưng gi�
   assert.match(installerInclude, /Fresh All Users install is not supported/);
   assert.match(installerInclude, /icacls\.exe/);
   assert.match(installerInclude, /S-1-5-32-545/);
+  assert.match(installerInclude, /IfFileExists "\$INSTDIR\\Print Area" inputSyncStart inputSyncDone/);
   assert.match(installerInclude, /!macro hideTechnicalInstallFile FILE_NAME/);
   assert.match(installerInclude, /!macro hideTechnicalInstallDirectory DIRECTORY_NAME/);
   assert.match(installerInclude, /SetFileAttributes "\$INSTDIR\\\$\{FILE_NAME\}" HIDDEN\|ARCHIVE/);
@@ -85,6 +86,7 @@ test('installer chọn thư mục, ẩn runtime và uninstall sạch nhưng gi�
   )].map((match) => match[1]);
   assert.deepEqual(hiddenDirectories, ['locales', 'resources']);
   assert.ok(!hiddenFiles.includes('Input'));
+  assert.ok(!hiddenFiles.includes('Print Area'));
   assert.ok(!hiddenFiles.includes('${APP_EXECUTABLE_FILENAME}'));
   assert.ok(!hiddenFiles.includes('${UNINSTALL_FILENAME}'));
   assert.doesNotMatch(installerInclude, /hideTechnicalInstallFile "[^"*?]*[*?]/);
@@ -98,6 +100,7 @@ test('installer chọn thư mục, ẩn runtime và uninstall sạch nhưng gi�
   );
   assert.match(installerInclude, /Delete "\$INSTDIR\\Input\\\.png-bundle-input-marker"/);
   assert.doesNotMatch(installerInclude, /RMDir \/r "\$INSTDIR\\Input(?:\\|\")/);
+  assert.doesNotMatch(installerInclude, /RMDir \/r "\$INSTDIR\\Print Area(?:\\|\")/);
   assert.doesNotMatch(installerInclude, /RMDir \/r \$INSTDIR(?:\s|$)/m);
 
   const removedFiles = [...installerInclude.matchAll(
@@ -122,4 +125,11 @@ test('installer chọn thư mục, ẩn runtime và uninstall sạch nhưng gi�
   assert.ok(inputPayload);
   assert.deepEqual(inputPayload.filter, ['README.txt', 'Toystory HLW1.pdf']);
   assert.ok(inputPayload.filter.every((item) => !item.includes('*')));
+
+  const printAreaPayload = packageJson.build.extraFiles.find((entry) =>
+    path.normalize(entry.to) === path.normalize('Print Area'),
+  );
+  assert.ok(printAreaPayload);
+  assert.deepEqual(printAreaPayload.filter, ['README.txt']);
+  assert.ok(printAreaPayload.filter.every((item) => !item.includes('*')));
 });

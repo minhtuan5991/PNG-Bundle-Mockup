@@ -26,6 +26,11 @@ const {
 } = require('./services/input-directory');
 const { createInputBackupService } = require('./services/input-backup-service');
 const {
+  resolvePrintAreaDirectory,
+  ensurePrintAreaDirectory,
+  createPrintAreaStorageService,
+} = require('./services/print-area-storage');
+const {
   findPdfTemplates,
   createDownloadPdf,
 } = require('./services/pdf-download-service');
@@ -66,6 +71,8 @@ let updateInstallPending = false;
 let pathPreferences = null;
 let inputDirectory = null;
 let inputBackupService = null;
+let printAreaDirectory = null;
+let printAreaStorageService = null;
 let singleMockupRegionStore = null;
 let groupShirtRegionStore = null;
 let updateService = null;
@@ -806,6 +813,7 @@ function registerIpc() {
       try {
         mutation = beginMutation(event, { allowDuringUpdateInstall: true });
         if (inputBackupService) await inputBackupService.synchronize();
+        if (printAreaStorageService) await printAreaStorageService.synchronize();
       } catch (error) {
         updateInstallPending = false;
         throw error;
@@ -953,6 +961,7 @@ function registerIpc() {
           return { template, region: entry.region };
         });
         await singleMockupRegionStore.replaceAll(safeEntries);
+        if (printAreaStorageService) await printAreaStorageService.synchronize();
         const editorState = editorWindowStates.get(event.sender.id);
         if (editorState) {
           editorWindowStates.set(event.sender.id, { ...editorState, dirty: false });
@@ -984,6 +993,7 @@ function registerIpc() {
           safeEntries.push({ template, regions: entry?.regions });
         }
         await groupShirtRegionStore.replaceAll(safeEntries);
+        if (printAreaStorageService) await printAreaStorageService.synchronize();
         const templates = await Promise.all(safeEntries.map(async (entry) => ({
           ...entry.template,
           regions: (await groupShirtRegionStore.get(entry.template)) || [],
@@ -1466,8 +1476,18 @@ async function initializeApplication() {
     });
     await ensureInputDirectory(inputDirectory);
     userDataPath = app.getPath('userData');
+    printAreaDirectory = resolvePrintAreaDirectory({
+      isPackaged: app.isPackaged,
+      appPath: app.getAppPath(),
+      executablePath: app.getPath('exe'),
+    });
+    await ensurePrintAreaDirectory(printAreaDirectory);
     inputBackupService = createInputBackupService({
       inputDirectory,
+      userDataPath,
+    });
+    printAreaStorageService = createPrintAreaStorageService({
+      printAreaDirectory,
       userDataPath,
     });
     allowShellPath(inputDirectory);
@@ -1475,8 +1495,12 @@ async function initializeApplication() {
     if (inputSync.action === 'restored') {
       console.info('INPUT_BACKUP_RESTORED', inputSync.backupDirectory);
     }
+    const printAreaSync = await printAreaStorageService.synchronize();
+    if (printAreaSync.action === 'restored' || printAreaSync.action === 'migrated') {
+      console.info('PRINT_AREA_STORAGE_SYNCED', printAreaSync.action, printAreaSync.printAreaDirectory);
+    }
   } catch (error) {
-    console.error('INPUT_DIRECTORY_STARTUP_FAILED', error);
+    console.error('MUTABLE_STORAGE_STARTUP_FAILED', error);
     if (syncInputBackupOnly) {
       app.exit(2);
       return;
@@ -1485,14 +1509,14 @@ async function initializeApplication() {
       await dialog.showMessageBox({
         type: 'error',
         title: 'Không thể khởi động PNG Bundle Mockup',
-        message: 'Ứng dụng không thể ghi hoặc bảo vệ thư mục Input.',
+        message: 'Ứng dụng không thể ghi hoặc bảo vệ thư mục Input/Print Area.',
         detail: `${error?.message || error}\n\nHãy cài ứng dụng cho tài khoản hiện tại vào thư mục có quyền ghi rồi mở lại.`,
         buttons: ['Đóng ứng dụng'],
         defaultId: 0,
         noLink: true,
       });
     } catch (dialogError) {
-      console.error('INPUT_DIRECTORY_STARTUP_DIALOG_FAILED', dialogError);
+      console.error('MUTABLE_STORAGE_STARTUP_DIALOG_FAILED', dialogError);
     }
     app.quit();
     return;
@@ -1502,11 +1526,11 @@ async function initializeApplication() {
     return;
   }
   singleMockupRegionStore = createSingleMockupRegionStore({
-    userDataPath,
+    storageDirectory: printAreaDirectory,
     onWarning: (error) => console.warn('SINGLE_MOCKUP_REGIONS_LOAD', error),
   });
   groupShirtRegionStore = createGroupShirtRegionStore({
-    userDataPath,
+    storageDirectory: printAreaDirectory,
     onWarning: (error) => console.warn('GROUP_SHIRT_REGIONS_LOAD', error),
   });
   pathPreferences = createPathPreferencesStore({
@@ -1532,8 +1556,8 @@ const hasSingleInstanceLock = app.requestSingleInstanceLock();
 
 if (!hasSingleInstanceLock) {
   // The uninstall/update hook must fail closed while the interactive app is
-  // still using Input. A regular second launch can exit quietly because the
-  // primary instance receives the second-instance event below.
+  // still using mutable Input/Print Area data. A regular second launch can
+  // exit quietly because the primary instance receives the event below.
   app.exit(syncInputBackupOnly ? 3 : 0);
 } else {
   app.on('second-instance', (_event, commandLine) => {

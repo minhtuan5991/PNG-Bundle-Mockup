@@ -1,10 +1,10 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
 > Cập nhật: 2026-08-28
-> Phiên bản mã nguồn hiện tại: `1.4.8`
+> Phiên bản mã nguồn hiện tại: `1.4.9`
 > Kênh stable: GitHub Releases `/releases/latest`
 > Bản stable đã xác minh: `v1.4.8`, phát hành ngày 2026-08-28; CI và workflow phát hành thành công.
-> Thay đổi mới nhất: v1.4.8 xét màu theo từng PNG trong nhóm trộn tag và lọc nền có mặt sau khi nhóm không có PNG mặt sau.
+> Thay đổi mới nhất: v1.4.9 chuyển hai JSON vùng in sang `Print Area` cạnh EXE, tự di trú dữ liệu cũ và bảo vệ qua update.
 
 ## 1. Mục đích tài liệu
 
@@ -22,7 +22,7 @@ Các tài liệu liên quan:
 | Mục | Giá trị |
 | --- | --- |
 | Tên sản phẩm | PNG Bundle Mockup |
-| Phiên bản mã nguồn | `1.4.8` |
+| Phiên bản mã nguồn | `1.4.9` |
 | Nền tảng phát hành | Windows x64 |
 | Framework | Electron |
 | Xử lý ảnh | Sharp |
@@ -34,7 +34,7 @@ Các tài liệu liên quan:
 | Thư mục đầu ra | `<thư mục PNG>/Done` |
 | Thư mục tài sản bổ sung | `Input` cạnh EXE; khi phát triển là `<project>/Input` |
 | File lưu đường dẫn | `<app.getPath('userData')>/path-preferences.json` |
-| File lưu vùng in | `single-mockup-regions.json` và `group-shirt-regions.json` trong `<app.getPath('userData')>` |
+| File lưu vùng in | `single-mockup-regions.json` và `group-shirt-regions.json` trong `Print Area` cạnh EXE |
 
 Không đổi `appId`, `productName` hoặc tên shortcut theo từng phiên bản. Các giá trị này phải ổn định để NSIS nhận diện đúng bản nâng cấp và để dữ liệu trong `userData` tiếp tục được sử dụng.
 
@@ -179,6 +179,7 @@ Nếu một bước bổ sung thất bại hoặc người dùng huỷ, main ph�
 | `src/services/update-service.js` | Bao bọc `electron-updater` thành state machine độc lập với renderer. |
 | `src/services/input-directory.js` | Xác định/tạo `Input` tại project root hoặc cạnh EXE đóng gói. |
 | `src/services/input-backup-service.js` | Snapshot, mirror và khôi phục tài sản `Input` qua update/cài lại bằng marker và staging trong `userData`. |
+| `src/services/print-area-storage.js` | Tạo `Print Area`, di trú JSON vùng in cũ và snapshot/khôi phục hai JSON qua update. |
 | `src/services/dropped-png-files.js` | Chuẩn hoá, khử trùng và kiểm tra PNG kéo-thả từ File Explorer. |
 | `src/services/pdf-download-service.js` | Tìm PDF mẫu, cập nhật link/annotation, vẽ URL mới và ghi PDF không đè file cũ. |
 | `src/services/single-mockup-regions.js` | Kiểm tra vùng `7:8` và lưu cấu hình theo template trong `userData`. |
@@ -245,12 +246,19 @@ Các giá trị `gap`, `topMargin`, `bottomMargin`, `sideMargin` và `alphaThres
 Vùng in được lưu tại:
 
 ```text
-path.join(app.getPath('userData'), 'single-mockup-regions.json')
+path.join(resolvePrintAreaDirectory(...), 'single-mockup-regions.json')
 ```
 
-Schema version 1 lưu `templateName`, `templateWidth`, `templateHeight` và vùng normalized `{ x, y, width, height }` cho từng template. File được ghi qua file tạm rồi rename. Record JSON hỏng bị bỏ qua an toàn; record không khớp kích thước ảnh hiện tại không được dùng. Cấu hình nằm trong `userData`, không nằm trong `Input` hoặc thư mục cài.
+Schema version 1 lưu `templateName`, `templateWidth`, `templateHeight` và vùng normalized `{ x, y, width, height }` cho từng template. File được ghi qua file tạm rồi rename. Record JSON hỏng bị bỏ qua an toàn; record không khớp kích thước ảnh hiện tại không được dùng. Từ v1.4.9, cấu hình nằm trong `Print Area`; app tự copy dữ liệu cũ từ `userData` ở lần chạy đầu.
 
-### 6.4 Snapshot tài sản Input
+### 6.4 Print Area và chuyển máy
+
+- `Print Area` nằm cạnh EXE khi đóng gói và ở project root khi phát triển. Installer chỉ seed `README.txt`; JSON riêng không nằm trong artifact.
+- `single-mockup-regions.json` và `group-shirt-regions.json` là hai file có thể copy sang máy khác khi app đã đóng. Máy đích tự nạp chúng ở lần mở kế tiếp.
+- Mockup đơn khớp theo tên+kích thước; Group Shirt còn khớp fingerprint SHA-256 nên phải chuyển đúng ảnh nền gốc.
+- Marker `.png-bundle-print-area-marker` phân biệt dữ liệu sống qua lần chạy trước. Snapshot `print-area-backup` trong `userData` bảo vệ hai JSON khi NSIS thay thế nguyên thư mục cài đặt.
+
+### 6.5 Snapshot tài sản Input
 
 - `Input` vẫn nằm cạnh EXE theo yêu cầu giao diện, còn snapshot bền vững nằm tại `path.join(app.getPath('userData'), 'input-backup')`.
 - Marker `.png-bundle-input-marker` cho biết thư mục hiện tại đã sống qua lần chạy trước. Marker còn thì app mirror cả sửa/xóa có chủ ý sang snapshot; marker mất sau update/cài lại thì snapshot được khôi phục đè lên bundled defaults.
@@ -719,3 +727,13 @@ Checksum bên dưới thuộc artifact public do GitHub Actions build lại, kh�
 | `PNG-Bundle-Mockup-Setup-1.4.8.exe` | 104371538 | `53cfee983bbead3b4fc1b675aaa70a73ebce31cae62248502a6a34d2d865bbc1` |
 | `PNG-Bundle-Mockup-Setup-1.4.8.exe.blockmap` | 109303 | `0e025d7a2d3e7ad975d031367372e2eba6e010b36c0350041903d0b41f2f7532` |
 | `latest.yml` | 363 | `4f0ecf7cb2244abf1107d0d88c9533fddb4dcdb480d9390617429a8578c07218` |
+
+## 30. Bản local v1.4.9 — chuyển vùng in sang Print Area
+
+- Thêm `Print Area` cạnh EXE và ở project root khi phát triển. Hai store đọc/ghi `single-mockup-regions.json` và `group-shirt-regions.json` tại đây; schema và matching template không đổi.
+- Lần mở đầu tiên tự di trú JSON cũ từ `userData`. Nếu người dùng copy JSON từ máy khác vào `Print Area`, file tại thư mục này là nguồn chính và được nạp ở lần mở kế tiếp.
+- Marker cùng snapshot `print-area-backup` bảo vệ hai JSON khi NSIS thay thế nguyên thư mục cài đặt. Hook `--sync-input-backup` nay đồng bộ cả Input và Print Area; lưu vùng in và thao tác cài update cũng snapshot ngay.
+- Installer seed đúng `Print Area/README.txt`, không kèm JSON. Cài mới vẫn theo current-user; không tự mở rộng ACL cho bản All Users cũ.
+- Automated tests **159/159** và packaged smoke **23/23** đạt. Headless migration payload exit `0`, byte JSON khớp ở nguồn/Print Area/backup; ASAR version/source đạt và payload sau QA sạch marker/JSON thử nghiệm.
+- Ba artifact local nằm trong `release/v1.4.9`; Setup 104373458 byte, SHA-256 `b7392927510671219a9d4e76586493998fd7317e7f16c5b541bdec6dbce2a979`. `latest.yml` khớp SHA-512; Authenticode `NotSigned`.
+- Chưa cài/nâng cấp tương tác trên máy/VM sạch. Kết quả CI/Release và checksum asset public v1.4.9 được bổ sung sau khi workflow GitHub hoàn tất.

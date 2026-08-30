@@ -1,4 +1,4 @@
-THU MUC INPUT - PNG BUNDLE MOCKUP v1.4.2
+THU MUC INPUT - PNG BUNDLE MOCKUP v1.4.9
 
 PDF DOWNLOAD
 - Chi dat dung 1 file PDF mau truc tiep vao day.
@@ -21,6 +21,7 @@ MOCKUP GROUP SHIRT
 BAO VE DU LIEU
 - App tu dong sao luu PDF/anh trong Input vao ho so nguoi dung va khoi phuc sau update/cai lai.
 - Neu thay file .png-bundle-input-marker, khong xoa vi app dung no de bao ve tai san khi update.
+- Vung in duoc luu trong folder Print Area canh Input. Copy cac file JSON trong do de chuyen vung in sang may khac.
 
 File PDF mau mac dinh: Toystory HLW1.pdf
 - Link mac dinh trong PDF la link placeholder an toan; app se thay bang link ban nhap.

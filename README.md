@@ -81,6 +81,15 @@ App chỉ nhớ vị trí để mở đúng thư mục/file ở lần chọn sau
 - Payload installer chỉ cho phép đúng `Input/README.txt` và PDF mẫu `Input/Toystory HLW1.pdf`. Ảnh/PDF riêng khác đang nằm trong `Input` trên máy build không được tự động đóng gói hoặc tải lên GitHub; release phải được dựng từ checkout sạch để hai file allowlist cũng đúng bản đã track.
 - Chức năng **Tạo mockup đơn** chỉ đọc các ảnh `.png`, `.jpg`, `.jpeg`, `.webp`, `.tif`, `.tiff` có chữ `bundle` trong stem tên file; các ảnh khác và PDF không bị xem là template mockup đơn.
 - App tự tạo snapshot bền vững của tài sản `Input` trong hồ sơ người dùng. Nếu NSIS xóa rồi tạo lại thư mục cài đặt khi cập nhật/cài lại, app khôi phục snapshot trước khi quét tài sản; các sửa đổi và xóa có chủ ý cũng được đồng bộ.
+
+## Thư mục Print Area
+
+- Từ v1.4.9, bản đã cài lưu vùng in trong thư mục `Print Area` nằm cạnh `PNG Bundle Mockup.exe`; bản chạy mã nguồn dùng `<thư mục dự án>\Print Area`.
+- `single-mockup-regions.json` chứa vùng in mockup đơn; `group-shirt-regions.json` chứa vùng in Mockup Group Shirt.
+- App tự chuyển hai JSON cũ từ `%APPDATA%\png-bundle-mockup` vào `Print Area` ở lần mở đầu tiên và giữ snapshot trong hồ sơ người dùng để khôi phục qua update.
+- Để chuyển máy, đóng app trên cả hai máy rồi copy một hoặc cả hai JSON từ `Print Area` của máy cũ sang `Print Area` của máy mới. Mở app ở máy mới để tự nạp; không cần copy file marker ẩn.
+- Mockup đơn cần giữ nguyên tên và kích thước ảnh mẫu. Mockup Group Shirt cần đúng ảnh mockup gốc vì app kiểm tra cả SHA-256 fingerprint.
+- Payload installer chỉ kèm `Print Area/README.txt`; không đóng gói JSON hoặc vùng in riêng của máy build.
 - Bản sao tự động này bảo vệ luồng cập nhật của app nhưng không thay thế chiến lược backup cá nhân; với tài sản quan trọng, vẫn nên giữ thêm một bản sao ngoài thư mục cài đặt.
 
 ## PDF Download
@@ -132,11 +141,11 @@ Khi bỏ chọn, app giữ metadata của ảnh nền trong khả năng định 
 
 Sau khi cài, dùng nút **Mở Input** để xác nhận thư mục `Input` nằm cạnh EXE và thêm PDF/ảnh mẫu của bạn. Mã nguồn và bản stable đã xác minh là [`v1.4.8`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.4.8); xem [ghi chú v1.4.8](docs/RELEASE-NOTES-1.4.8.md) và tải bộ cài từ [GitHub Releases](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/latest).
 
-Bộ cài v1.2.3 thay thế giữ các file runtime Electron bắt buộc nhưng gắn thuộc tính **Hidden** để thư mục cài đặt gọn hơn. Mặc định File Explorer chỉ hiện `Input`, **PNG Bundle Mockup.exe** và **Uninstall PNG Bundle Mockup.exe**. Việc bật **Show hidden files** sẽ làm các file kỹ thuật xuất hiện lại; không xóa hoặc đổi tên chúng vì app cần chúng để chạy.
+Bộ cài giữ các file runtime Electron bắt buộc nhưng gắn thuộc tính **Hidden** để thư mục cài đặt gọn hơn. Từ v1.4.9, mặc định File Explorer hiện `Input`, `Print Area`, **PNG Bundle Mockup.exe** và **Uninstall PNG Bundle Mockup.exe**. Việc bật **Show hidden files** sẽ làm các file kỹ thuật xuất hiện lại; không xóa hoặc đổi tên chúng vì app cần chúng để chạy.
 
 Quy trình phát hành được ghi trong [hướng dẫn cập nhật thủ công](docs/MANUAL-GITHUB-UPDATE.md). Sau `v1.4.8`, dùng patch version mới; không di chuyển tag hoặc ghi đè asset đã public.
 
-Từ v1.2.4, uninstall thật giữ nguyên `Input` tại vị trí cài đặt nhưng xóa EXE/runtime, shortcut, registry, `%APPDATA%\png-bundle-mockup` và `%LOCALAPPDATA%\png-bundle-mockup-updater`. Các thư mục `Done`, PNG nguồn, mockup và PDF nằm ngoài thư mục cài đặt luôn được giữ nguyên. Luồng update không xóa dữ liệu người dùng và tiếp tục dùng backup/restore `Input`.
+Uninstall thật giữ nguyên `Input` và `Print Area` tại vị trí cài đặt nhưng xóa EXE/runtime, shortcut, registry, `%APPDATA%\png-bundle-mockup` và `%LOCALAPPDATA%\png-bundle-mockup-updater`. Các thư mục `Done`, PNG nguồn, mockup và PDF nằm ngoài thư mục cài đặt luôn được giữ nguyên. Luồng update dùng snapshot để khôi phục `Input` và hai JSON vùng in vào `Print Area`.
 
 Bản v1.2.4 thay thế chỉ tạo mockup đơn một lần trong mỗi `Done`: nếu đã có kết quả `single_*.png`, app bỏ qua bước mockup đơn mà không yêu cầu lại ảnh mẫu, PNG nguồn hoặc thiết lập vùng in. Người đã cài v1.2.4 trước lần thay thế này cần chạy installer mới thủ công vì updater không tự tải lại cùng version.
 
@@ -184,9 +193,10 @@ Bản build local chưa có chứng thư code-signing thương mại, vì vậy 
 - `src/services/update-service.js`: trạng thái và thao tác cập nhật GitHub.
 - `src/services/input-directory.js`: xác định và tạo thư mục `Input` cạnh EXE khi đóng gói.
 - `src/services/input-backup-service.js`: snapshot/khôi phục tài sản `Input` qua cập nhật hoặc cài lại.
+- `src/services/print-area-storage.js`: phân giải `Print Area`, di chuyển JSON vùng in cũ và snapshot/khôi phục qua cập nhật.
 - `src/services/dropped-png-files.js`: kiểm tra các PNG được kéo-thả từ File Explorer.
 - `src/services/pdf-download-service.js`: thay URL, annotation và dòng link hiển thị trong PDF mẫu bằng `pdf-lib`.
-- `src/services/single-mockup-regions.js`: lưu vùng in `42:48` theo tên/kích thước ảnh mẫu trong `userData`.
+- `src/services/single-mockup-regions.js`: lưu vùng in `42:48` theo tên/kích thước ảnh mẫu trong `Print Area`.
 - `src/services/single-mockup-service.js`: chọn PNG ngẫu nhiên và tạo mockup đơn vào `Done`.
 - `src/services/group-shirt-filenames.js`: parser tên và transaction đổi tên PNG Group Shirt.
 - `src/services/group-shirt-regions.js`: lưu nhiều vùng in trước/sau có xoay theo từng ảnh nền.
