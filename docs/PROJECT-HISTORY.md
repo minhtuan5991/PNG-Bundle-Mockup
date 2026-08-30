@@ -3,7 +3,7 @@
 > Cập nhật: 2026-08-28
 > Phiên bản mã nguồn hiện tại: `1.4.9`
 > Kênh stable: GitHub Releases `/releases/latest`
-> Bản stable đã xác minh: `v1.4.8`, phát hành ngày 2026-08-28; CI và workflow phát hành thành công.
+> Bản stable đã xác minh: `v1.4.9`, phát hành ngày 2026-08-30; CI và workflow phát hành thành công.
 > Thay đổi mới nhất: v1.4.9 chuyển hai JSON vùng in sang `Print Area` cạnh EXE, tự di trú dữ liệu cũ và bảo vệ qua update.
 
 ## 1. Mục đích tài liệu
@@ -736,4 +736,6 @@ Checksum bên dưới thuộc artifact public do GitHub Actions build lại, kh�
 - Installer seed đúng `Print Area/README.txt`, không kèm JSON. Cài mới vẫn theo current-user; không tự mở rộng ACL cho bản All Users cũ.
 - Automated tests **159/159** và packaged smoke **23/23** đạt. Headless migration payload exit `0`, byte JSON khớp ở nguồn/Print Area/backup; ASAR version/source đạt và payload sau QA sạch marker/JSON thử nghiệm.
 - Ba artifact local nằm trong `release/v1.4.9`; Setup 104373458 byte, SHA-256 `b7392927510671219a9d4e76586493998fd7317e7f16c5b541bdec6dbce2a979`. `latest.yml` khớp SHA-512; Authenticode `NotSigned`.
-- Chưa cài/nâng cấp tương tác trên máy/VM sạch. Kết quả CI/Release và checksum asset public v1.4.9 được bổ sung sau khi workflow GitHub hoàn tất.
+- Commit `d3318449e5e2f8770723c7c9888b0019fe22522e`, annotated tag `v1.4.9`; Windows CI `33296756640` và Release Windows `33296756940` đều thành công.
+- Release ID `379199422` public/stable/latest, có đúng ba asset đã tải lại và xác minh. Setup public 104373104 byte, SHA-256 `7ea2f924b9acc63045874def1cf5ef1d44c3a0bdf82fa3f4bf86f0f5403c645f`; updater metadata khớp installer.
+- Chưa cài/nâng cấp tương tác trên máy/VM sạch; bộ cài chưa ký số.

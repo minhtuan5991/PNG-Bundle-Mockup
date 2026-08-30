@@ -34,5 +34,16 @@ Ngày: 2026-08-30
 
 ## Trạng thái
 
-- Phát hành bằng tag mới `v1.4.9`; workflow Windows sẽ build lại từ tag, xác minh đúng ba artifact rồi công bố stable/latest. Không ghi đè tag hoặc asset của phiên bản cũ.
+- Commit phát hành `d3318449e5e2f8770723c7c9888b0019fe22522e` và annotated tag `v1.4.9` đã được push atomically.
+- Windows CI [33296756640](https://github.com/minhtuan5991/PNG-Bundle-Mockup/actions/runs/33296756640) và Release Windows [33296756940](https://github.com/minhtuan5991/PNG-Bundle-Mockup/actions/runs/33296756940) đều thành công.
+- [Release v1.4.9](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.4.9), ID `379199422`, public/stable/latest lúc `2026-08-30T06:24:55Z`, không phải draft hoặc prerelease.
+- Đã tải lại đúng ba asset public; kích thước/SHA-256 khớp metadata GitHub và `latest.yml` khớp version/path/size/SHA-512 của installer tải xuống.
 - Bộ cài chưa ký số; Windows có thể hiển thị SmartScreen/Unknown Publisher.
+
+## Artifact public do GitHub Actions build
+
+| File | Kích thước (byte) | SHA-256 |
+| --- | ---: | --- |
+| `PNG-Bundle-Mockup-Setup-1.4.9.exe` | 104373104 | `7ea2f924b9acc63045874def1cf5ef1d44c3a0bdf82fa3f4bf86f0f5403c645f` |
+| `PNG-Bundle-Mockup-Setup-1.4.9.exe.blockmap` | 109419 | `3fef4e6799fb9468d051ee89bcb68be73efa7a1a30d96cb0aa5b918e9ac86213` |
+| `latest.yml` | 363 | `dca3ccfe16675577f02283bcee01ba40855743b8d0f4e4922f6c271201ccd400` |

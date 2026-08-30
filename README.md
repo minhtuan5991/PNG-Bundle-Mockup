@@ -139,11 +139,11 @@ Khi bỏ chọn, app giữ metadata của ảnh nền trong khả năng định 
 2. Chạy bộ cài. Khi cài mới, bạn có thể chọn thư mục đích; nên chọn thư mục mà tài khoản hiện tại có quyền ghi để có thể thêm PDF/ảnh mẫu vào `Input`. Nếu chỉ chọn thư mục cha, bộ cài tự thêm thư mục con `PNG Bundle Mockup`. Khi nâng cấp, installer giữ nguyên chế độ/vị trí của bản hiện có, kể cả All Users/custom path, thay vì tạo app thứ hai. Với bản All Users cũ, installer chỉ cấp quyền Modify cho thư mục `Input` và dừng trước khi thay đổi bản cũ nếu bước kiểm tra quyền thất bại.
 3. Mở app bằng icon **PNG Bundle Mockup** trên Desktop hoặc Start Menu.
 
-Sau khi cài, dùng nút **Mở Input** để xác nhận thư mục `Input` nằm cạnh EXE và thêm PDF/ảnh mẫu của bạn. Mã nguồn và bản stable đã xác minh là [`v1.4.8`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.4.8); xem [ghi chú v1.4.8](docs/RELEASE-NOTES-1.4.8.md) và tải bộ cài từ [GitHub Releases](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/latest).
+Sau khi cài, dùng nút **Mở Input** để xác nhận thư mục `Input` nằm cạnh EXE và thêm PDF/ảnh mẫu của bạn. Mã nguồn và bản stable đã xác minh là [`v1.4.9`](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/tag/v1.4.9); xem [ghi chú v1.4.9](docs/RELEASE-NOTES-1.4.9.md) và tải bộ cài từ [GitHub Releases](https://github.com/minhtuan5991/PNG-Bundle-Mockup/releases/latest).
 
 Bộ cài giữ các file runtime Electron bắt buộc nhưng gắn thuộc tính **Hidden** để thư mục cài đặt gọn hơn. Từ v1.4.9, mặc định File Explorer hiện `Input`, `Print Area`, **PNG Bundle Mockup.exe** và **Uninstall PNG Bundle Mockup.exe**. Việc bật **Show hidden files** sẽ làm các file kỹ thuật xuất hiện lại; không xóa hoặc đổi tên chúng vì app cần chúng để chạy.
 
-Quy trình phát hành được ghi trong [hướng dẫn cập nhật thủ công](docs/MANUAL-GITHUB-UPDATE.md). Sau `v1.4.8`, dùng patch version mới; không di chuyển tag hoặc ghi đè asset đã public.
+Quy trình phát hành được ghi trong [hướng dẫn cập nhật thủ công](docs/MANUAL-GITHUB-UPDATE.md). Sau `v1.4.9`, dùng patch version mới; không di chuyển tag hoặc ghi đè asset đã public.
 
 Uninstall thật giữ nguyên `Input` và `Print Area` tại vị trí cài đặt nhưng xóa EXE/runtime, shortcut, registry, `%APPDATA%\png-bundle-mockup` và `%LOCALAPPDATA%\png-bundle-mockup-updater`. Các thư mục `Done`, PNG nguồn, mockup và PDF nằm ngoài thư mục cài đặt luôn được giữ nguyên. Luồng update dùng snapshot để khôi phục `Input` và hai JSON vùng in vào `Print Area`.
 
