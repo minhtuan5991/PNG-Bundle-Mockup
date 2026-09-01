@@ -39,3 +39,10 @@ Ngày: 2026-09-01
 | `latest.yml` | 366 | `c2e83cf1f772559a9ac3cebc0591856edd231ca3ed3ad2e5991b51cb9cce2cbe` |
 
 Checksum trên là của build local. GitHub Actions sẽ tự build lại, tải ngược và xác minh ba artifact công khai trước khi publish stable.
+
+## Trạng thái phát hành
+
+- Commit phát hành `2d5cbb4e4999bd18c265d8610756d2c5ced56f46` và annotated tag `v1.4.12` đã được đẩy lên GitHub.
+- Windows CI `33532442802` và Release Windows `33532699965` đều thành công.
+- Release `380666786` đang public, stable, không phải prerelease và là bản `/releases/latest`.
+- Release có đúng ba asset updater. Installer công khai có kích thước 104377879 byte và SHA-256 `6cf214cdeea4e01dbdaf64c7ca5903184b200e078dac67d3af8370de136eb5b6`.

@@ -771,4 +771,6 @@ Checksum bên dưới thuộc artifact public do GitHub Actions build lại, kh�
 - Vùng Nam hiển thị xanh lá, vùng Nữ hồng nhạt kèm nhãn chữ. Tên mockup đơn đổi thành `[Nhóm]_single_<tên nền>.png`.
 - Automated tests **169/169**; source và packaged smoke **25/25**. ASAR version `1.4.12`, không chứa test; Input/Print Area payload đúng allowlist.
 - NSIS local: Setup 104378390 byte, SHA-256 `3a757994e14b6ed678f0f7b7548e5cd95b802e6240d7ae47975b5e84bdcd1dd3`; Authenticode `NotSigned`.
+- Commit `2d5cbb4e4999bd18c265d8610756d2c5ced56f46`, annotated tag `v1.4.12`; Windows CI `33532442802` và Release Windows `33532699965` đều thành công.
+- Release `380666786` public/stable/latest có đúng ba asset. Setup công khai 104377879 byte, SHA-256 `6cf214cdeea4e01dbdaf64c7ca5903184b200e078dac67d3af8370de136eb5b6`.
 - Chưa chạy cài mới/nâng cấp tương tác trên máy hoặc VM sạch.
