@@ -357,15 +357,15 @@ test('Group Shirt tạo mọi tổ hợp nhóm PNG và ảnh nền mockup đơn 
     '1', '1', '1', '2', '2', '2', '3', '3', '3',
   ]);
   assert.deepEqual(result.outputPaths.map((filePath) => path.basename(filePath)), [
-    'single_[1]_shirt-a.png',
-    'single_[1]_shirt-b.png',
-    'single_[1]_shirt-c.png',
-    'single_[2]_shirt-a.png',
-    'single_[2]_shirt-b.png',
-    'single_[2]_shirt-c.png',
-    'single_[3]_shirt-a.png',
-    'single_[3]_shirt-b.png',
-    'single_[3]_shirt-c.png',
+    '[1]_single_shirt-a.png',
+    '[1]_single_shirt-b.png',
+    '[1]_single_shirt-c.png',
+    '[2]_single_shirt-a.png',
+    '[2]_single_shirt-b.png',
+    '[2]_single_shirt-c.png',
+    '[3]_single_shirt-a.png',
+    '[3]_single_shirt-b.png',
+    '[3]_single_shirt-c.png',
   ]);
   for (let groupIndex = 0; groupIndex < sourceGroups.length; groupIndex += 1) {
     const assignments = result.assignments.slice(groupIndex * 3, groupIndex * 3 + 3);

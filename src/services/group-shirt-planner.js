@@ -11,6 +11,7 @@ const {
 } = require('./group-shirt-regions');
 const {
   groupShirtProfile,
+  normalizeGender,
   sourcePoolKey,
   regionPoolKey,
   regionSourcePoolKeys,
@@ -91,6 +92,8 @@ function normalizeSourceDescriptor(source) {
     side: normalizedSourceSide(candidate.side ?? parsed?.side),
     explicitColor: candidate.explicitColor ?? parsed?.explicitColor ?? candidate.color !== undefined,
     explicitSide: candidate.explicitSide ?? parsed?.explicitSide ?? candidate.side !== undefined,
+    gender: normalizeGender(candidate.gender ?? parsed?.gender),
+    explicitGender: candidate.explicitGender ?? parsed?.explicitGender ?? candidate.gender !== undefined,
   };
 }
 
@@ -133,7 +136,7 @@ function normalizeTemplateDescriptor(template) {
 function sourceIdentity(source) {
   return source.path
     ? source.path.toLocaleLowerCase('en-US')
-    : `${source.name}\0${source.groupKey}\0${source.color}\0${source.side}\0${source.ordinal}`;
+    : `${source.name}\0${source.groupKey}\0${source.gender || ''}\0${source.color}\0${source.side}\0${source.ordinal}`;
 }
 
 function templateIdentity(template) {
@@ -142,9 +145,9 @@ function templateIdentity(template) {
     : template.name.toLocaleLowerCase('en-US');
 }
 
-function trackKey(color, side) {
+function trackKey(gender, color, side) {
   const normalizedSide = side === 'b' || side === 'back' ? 'back' : 'front';
-  return `${normalizedColor(color)}\0${normalizedSide}`;
+  return `${normalizeGender(gender) || 'unisex'}\0${normalizedColor(color)}\0${normalizedSide}`;
 }
 
 function localeCompare(left, right) {
@@ -214,10 +217,10 @@ function validateNoDuplicateSources(sources) {
       );
     }
     identities.add(identity);
-    const slot = `${source.groupKey}\0${source.color}\0${source.side}\0${source.ordinal}`;
+    const slot = `${source.groupKey}\0${source.gender || ''}\0${source.color}\0${source.side}\0${source.ordinal}`;
     if (logicalSlots.has(slot)) {
       throw new GroupShirtPlanError(
-        `Nhóm “${source.group}” có nhiều PNG trùng màu, mặt và số thứ tự ${source.ordinal}.`,
+        `Nhóm “${source.group}” có nhiều PNG trùng giới tính, màu, mặt và số thứ tự ${source.ordinal}.`,
         'DUPLICATE_GROUP_SHIRT_ORDINAL',
         { source },
       );
@@ -251,7 +254,7 @@ function buildSourceGroup(groupSources) {
   const tracks = new Map();
   const pools = new Map();
   for (const source of groupSources) {
-    const track = trackKey(source.color, source.side);
+    const track = trackKey(source.gender, source.color, source.side);
     if (!tracks.has(track)) tracks.set(track, []);
     tracks.get(track).push(source);
 
@@ -300,11 +303,13 @@ function orderedRegionIndexes(regions) {
   return regions
     .map((region, index) => ({ region, index }))
     .sort((left, right) => {
+      const leftGender = left.region.gender === 'm' ? 0 : (left.region.gender === 'w' ? 1 : 2);
+      const rightGender = right.region.gender === 'm' ? 0 : (right.region.gender === 'w' ? 1 : 2);
       const leftColor = left.region.color === 'bl' ? 1 : 0;
       const rightColor = right.region.color === 'bl' ? 1 : 0;
       const leftSide = left.region.side === 'back' ? 1 : 0;
       const rightSide = right.region.side === 'back' ? 1 : 0;
-      return leftColor - rightColor || leftSide - rightSide || left.index - right.index;
+      return leftGender - rightGender || leftColor - rightColor || leftSide - rightSide || left.index - right.index;
     })
     .map((item) => item.index);
 }

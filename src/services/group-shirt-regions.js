@@ -3,7 +3,7 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
 
-const GROUP_SHIRT_REGION_SCHEMA_VERSION = 2;
+const GROUP_SHIRT_REGION_SCHEMA_VERSION = 3;
 const GROUP_SHIRT_PRINT_ASPECT_WIDTH = 42;
 const GROUP_SHIRT_PRINT_ASPECT_HEIGHT = 48;
 const GROUP_SHIRT_PRINT_ASPECT_RATIO =
@@ -63,6 +63,18 @@ function normalizeGroupShirtColor(value) {
     'Vùng in phải thuộc áo sáng màu hoặc áo tối màu.',
     'INVALID_GROUP_SHIRT_REGION_COLOR',
     { color: value },
+  );
+}
+
+function normalizeGroupShirtGender(value) {
+  const normalized = String(value ?? '').trim().toLocaleLowerCase('en-US');
+  if (!normalized || normalized === 'unisex') return null;
+  if (normalized === 'm' || normalized === 'male') return 'm';
+  if (normalized === 'w' || normalized === 'female') return 'w';
+  throw new GroupShirtRegionError(
+    'Vùng in giới tính phải là áo nam hoặc áo nữ.',
+    'INVALID_GROUP_SHIRT_REGION_GENDER',
+    { gender: value },
   );
 }
 
@@ -163,6 +175,7 @@ function validateGroupShirtRegion(region, templateSize = null) {
     id: normalizeRegionId(region.id),
     side: normalizeGroupShirtSide(region.side ?? region.type),
     color: normalizeGroupShirtColor(region.color ?? region.shirtColor),
+    gender: normalizeGroupShirtGender(region.gender ?? region.shirtGender),
     ...coordinates,
     rotation: normalizeRotation(region.rotation ?? region.angle),
   };
@@ -282,6 +295,7 @@ function cloneRegion(region) {
     id: region.id,
     side: region.side,
     color: region.color,
+    gender: region.gender,
     centerX: region.centerX,
     centerY: region.centerY,
     width: region.width,
@@ -316,7 +330,7 @@ function sanitizeGroupShirtRegionDocument(rawDocument) {
   const output = defaultGroupShirtRegionDocument();
   if (
     !rawDocument || typeof rawDocument !== 'object' || Array.isArray(rawDocument) ||
-    (rawDocument.schemaVersion !== 1 &&
+    (rawDocument.schemaVersion !== 1 && rawDocument.schemaVersion !== 2 &&
       rawDocument.schemaVersion !== GROUP_SHIRT_REGION_SCHEMA_VERSION) ||
     !rawDocument.templates || typeof rawDocument.templates !== 'object' ||
     Array.isArray(rawDocument.templates)
@@ -515,6 +529,7 @@ module.exports = {
   defaultGroupShirtRegionDocument,
   normalizeGroupShirtColor,
   normalizeGroupShirtSide,
+  normalizeGroupShirtGender,
   validateGroupShirtRegion,
   validateGroupShirtRegions,
   groupShirtTemplateDescriptor,

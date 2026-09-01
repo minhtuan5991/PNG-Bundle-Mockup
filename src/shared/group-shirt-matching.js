@@ -21,6 +21,17 @@
     return side === 'b' || side === 'back' ? 'back' : 'front';
   }
 
+  function normalizeGender(value) {
+    const gender = String(value ?? '').trim().toLocaleLowerCase('en-US');
+    if (gender === 'm' || gender === 'male') return 'm';
+    if (gender === 'w' || gender === 'female') return 'w';
+    return null;
+  }
+
+  function genderPoolKey(gender, key) {
+    return gender ? `gender:${gender}|${key}` : key;
+  }
+
   function normalizeProfile(value) {
     const profile = String(value ?? '').trim();
     if (Object.values(PROFILES).includes(profile)) return profile;
@@ -39,25 +50,27 @@
 
   function sourcePoolKey(profileValue, source) {
     const profile = normalizeProfile(profileValue);
-    if (profile === PROFILES.PLAIN) return 'all';
+    const gender = source?.explicitGender ? normalizeGender(source.gender) : null;
+    if (profile === PROFILES.PLAIN) return genderPoolKey(gender, 'all');
     const side = normalizeSide(source?.side);
-    if (profile === PROFILES.SIDE_ONLY) return `side:${side}`;
+    if (profile === PROFILES.SIDE_ONLY) return genderPoolKey(gender, `side:${side}`);
     const color = source?.explicitColor ? normalizeColor(source.color) : '*';
-    if (profile === PROFILES.COLOR_ONLY) return `color:${color}`;
-    return `track:${color}.${side}`;
+    if (profile === PROFILES.COLOR_ONLY) return genderPoolKey(gender, `color:${color}`);
+    return genderPoolKey(gender, `track:${color}.${side}`);
   }
 
   function regionPoolKey(profileValue, region) {
     const profile = normalizeProfile(profileValue);
     const side = normalizeSide(region?.side);
     const color = normalizeColor(region?.color);
+    const gender = normalizeGender(region?.gender);
     // Untagged groups share one source pool across both colors, on the front only.
-    if (profile === PROFILES.PLAIN) return side === 'front' ? 'all' : null;
-    if (profile === PROFILES.SIDE_ONLY) return `side:${side}`;
+    if (profile === PROFILES.PLAIN) return side === 'front' ? genderPoolKey(gender, 'all') : null;
+    if (profile === PROFILES.SIDE_ONLY) return genderPoolKey(gender, `side:${side}`);
     if (profile === PROFILES.COLOR_ONLY) {
-      return side === 'front' ? `color:${color}` : null;
+      return side === 'front' ? genderPoolKey(gender, `color:${color}`) : null;
     }
-    return `track:${color}.${side}`;
+    return genderPoolKey(gender, `track:${color}.${side}`);
   }
 
   function sourcePoolKeys(profile, sources) {
@@ -68,22 +81,34 @@
     const profile = normalizeProfile(profileValue);
     const exact = regionPoolKey(profile, region);
     if (!exact) return [];
-    if (profile === PROFILES.COLOR_ONLY) return [exact, 'color:*'];
-    if (profile === PROFILES.COLOR_SIDE) return [exact, `track:*.${normalizeSide(region?.side)}`];
+    const gender = normalizeGender(region?.gender);
+    if (profile === PROFILES.COLOR_ONLY) return [exact, genderPoolKey(gender, 'color:*')];
+    if (profile === PROFILES.COLOR_SIDE) {
+      return [exact, genderPoolKey(gender, `track:*.${normalizeSide(region?.side)}`)];
+    }
     return [exact];
   }
 
   function poolLabel(key) {
-    if (key === 'all') return 'mặt trước của áo sáng hoặc tối';
-    if (key === 'side:front') return 'mặt trước';
-    if (key === 'side:back') return 'mặt sau';
-    if (key === 'color:wh') return 'áo sáng mặt trước';
-    if (key === 'color:bl') return 'áo tối mặt trước';
-    if (key === 'color:*') return 'mặt trước của áo sáng hoặc tối';
-    const match = String(key).match(/^track:(wh|bl|\*)\.(front|back)$/u);
-    if (!match) return String(key);
-    if (match[1] === '*') return `${match[2] === 'back' ? 'mặt sau' : 'mặt trước'} của áo sáng hoặc tối`;
-    return `${match[1] === 'bl' ? 'áo tối' : 'áo sáng'} ${match[2] === 'back' ? 'mặt sau' : 'mặt trước'}`;
+    const genderMatch = String(key).match(/^gender:(m|w)\|(.*)$/u);
+    const genderLabel = genderMatch ? (genderMatch[1] === 'm' ? 'áo nam' : 'áo nữ') : null;
+    const baseKey = genderMatch ? genderMatch[2] : String(key);
+    let label;
+    if (baseKey === 'all') label = 'mặt trước của áo sáng hoặc tối';
+    else if (baseKey === 'side:front') label = 'mặt trước';
+    else if (baseKey === 'side:back') label = 'mặt sau';
+    else if (baseKey === 'color:wh') label = 'áo sáng mặt trước';
+    else if (baseKey === 'color:bl') label = 'áo tối mặt trước';
+    else if (baseKey === 'color:*') label = 'mặt trước của áo sáng hoặc tối';
+    const match = baseKey.match(/^track:(wh|bl|\*)\.(front|back)$/u);
+    if (!label && !match) label = baseKey;
+    if (!label && match[1] === '*') {
+      label = `${match[2] === 'back' ? 'mặt sau' : 'mặt trước'} của áo sáng hoặc tối`;
+    }
+    if (!label) {
+      label = `${match[1] === 'bl' ? 'áo tối' : 'áo sáng'} ${match[2] === 'back' ? 'mặt sau' : 'mặt trước'}`;
+    }
+    return genderLabel ? `${genderLabel}, ${label}` : label;
   }
 
   function incompatible(reason, sourceKeys, details = {}) {
@@ -108,19 +133,29 @@
     const sourceKeySet = new Set(sourceKeys);
     if (regions.length === 0) return incompatible('không có vùng in', sourceKeys);
 
-    const hasBackRegion = regions.some((region) => normalizeSide(region?.side) === 'back');
+    const requiredGenders = new Set(sources.map((source) => (
+      source?.explicitGender ? normalizeGender(source.gender) : null
+    )));
+    const genderRegions = regions.filter((region) => requiredGenders.has(normalizeGender(region?.gender)));
+    if (genderRegions.length === 0) {
+      return incompatible('không có vùng đúng giới tính PNG', sourceKeys, {
+        regionCount: regions.length,
+      });
+    }
+
+    const hasBackRegion = genderRegions.some((region) => normalizeSide(region?.side) === 'back');
     const hasBackSource = sources.some((source) => normalizeSide(source?.side) === 'back');
     if (hasBackRegion && !hasBackSource) {
       return incompatible(
         'nhóm không có PNG mặt sau nên bỏ qua nền có vùng mặt sau',
         sourceKeys,
-        { regionCount: regions.length },
+        { regionCount: genderRegions.length },
       );
     }
 
     const matchedRegions = [];
     const covered = new Set();
-    for (const region of regions) {
+    for (const region of genderRegions) {
       const keys = regionSourcePoolKeys(profile, region).filter((key) => sourceKeySet.has(key));
       if (keys.length === 0) continue;
       matchedRegions.push(region);
@@ -172,6 +207,7 @@
     PROFILES,
     normalizeColor,
     normalizeSide,
+    normalizeGender,
     groupShirtProfile,
     sourcePoolKey,
     regionPoolKey,

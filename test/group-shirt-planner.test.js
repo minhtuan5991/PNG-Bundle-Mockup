@@ -10,8 +10,8 @@ const {
   selectLightGroupShirtSourceGroups,
 } = require('../src/services/group-shirt-planner');
 
-function source(group, ordinal, color, side) {
-  const tags = `${color ? `.${color}` : ''}${side ? `.${side}` : ''}`;
+function source(group, ordinal, color, side, gender) {
+  const tags = `${color ? `.${color}` : ''}${side ? `.${side}` : ''}${gender ? `.${gender}` : ''}`;
   return path.resolve('D:\\Source', `${group} (${ordinal})${tags}.png`);
 }
 
@@ -290,9 +290,12 @@ test('lọc mockup đơn Group Shirt lấy .wh hoặc mặc định và loại .
     source('7', 1),
     source('7', 2, 'wh', 'b'),
     source('7', 3, 'bl', 'f'),
+    source('7', 4, 'wh', 'f', 'm'),
+    source('7', 5, null, 'f', 'w'),
   ]);
-  assert.deepEqual(selected.map((item) => item.ordinal), [1, 2]);
+  assert.deepEqual(selected.map((item) => item.ordinal), [1, 2, 4, 5]);
   assert.ok(selected.every((item) => item.color === 'wh'));
+  assert.deepEqual(selected.map((item) => item.gender), [null, null, 'm', 'w']);
 });
 
 test('mockup đơn Group Shirt chia PNG áo sáng theo từng nhóm và thứ tự ổn định', () => {

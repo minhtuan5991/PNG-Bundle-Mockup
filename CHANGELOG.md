@@ -4,7 +4,15 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
-Chưa có thay đổi sau v1.4.11.
+### Added
+
+- Group Shirt hỗ trợ tag giới tính `.m` (áo nam) và `.w` (áo nữ) trong công cụ đổi tên PNG và vùng in Mockup Cặp đôi.
+- Trình chỉnh vùng in có lựa chọn Áo nam/Áo nữ, hiển thị lần lượt bằng xanh lá/hồng nhạt kèm nhãn chữ.
+
+### Changed
+
+- Khi PNG có tag giới tính, app lọc đúng vùng Nam/Nữ trước rồi áp dụng các quy tắc màu áo và mặt áo hiện có. Mockup đơn tiếp tục bỏ qua tag giới tính.
+- Tên mockup đơn Group Shirt chuyển sang `[Nhóm]_single_<tên nền>.png` để luôn đặt tên nhóm ở đầu.
 
 ## [1.4.11] - 2026-09-01
 

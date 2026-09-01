@@ -21,8 +21,8 @@ async function tempDirectory(t) {
   return directory;
 }
 
-test('phân tích tên PNG theo nhóm, số thứ tự, màu và mặt không phụ thuộc khoảng trắng', () => {
-  const first = parseGroupShirtSourceName('1 (1).wh.f.png');
+test('phân tích tên PNG theo nhóm, số thứ tự, màu, mặt và giới tính không phụ thuộc khoảng trắng', () => {
+  const first = parseGroupShirtSourceName('1 (1).wh.f.m.png');
   assert.deepEqual(
     {
       group: first.group,
@@ -33,6 +33,8 @@ test('phân tích tên PNG theo nhóm, số thứ tự, màu và mặt không ph
       side: first.side,
       explicitColor: first.explicitColor,
       explicitSide: first.explicitSide,
+      gender: first.gender,
+      explicitGender: first.explicitGender,
     },
     {
       group: '1',
@@ -43,6 +45,8 @@ test('phân tích tên PNG theo nhóm, số thứ tự, màu và mặt không ph
       side: 'f',
       explicitColor: true,
       explicitSide: true,
+      gender: 'm',
+      explicitGender: true,
     },
   );
   const third = parseGroupShirtSourceName('Nhóm Áo(003).b.BL.PNG');
@@ -59,6 +63,8 @@ test('PNG thiếu tag mặc định áo sáng và mặt trước', () => {
   assert.equal(parsed.side, 'f');
   assert.equal(parsed.explicitColor, false);
   assert.equal(parsed.explicitSide, false);
+  assert.equal(parsed.gender, null);
+  assert.equal(parsed.explicitGender, false);
 });
 
 test('từ chối tên PNG sai mẫu, ordinal 0, tag lặp hoặc tag mâu thuẫn', () => {
@@ -81,6 +87,10 @@ test('từ chối tên PNG sai mẫu, ordinal 0, tag lặp hoặc tag mâu thu�
   );
   assert.throws(
     () => parseGroupShirtSourceName('1 (1).f.b.png'),
+    (error) => error.code === 'CONFLICTING_NAME_MARKERS',
+  );
+  assert.throws(
+    () => parseGroupShirtSourceName('1 (1).m.w.png'),
     (error) => error.code === 'CONFLICTING_NAME_MARKERS',
   );
 });
@@ -117,7 +127,7 @@ test('ảnh nền cần marker mgs; phần tên quanh marker chỉ là nhãn tem
   assert.equal(markerOnly.groupKey, 'mgs');
   assert.equal(markerOnly.marker, 'mgs');
 });
-test('lập tên mới theo thứ tự chuẩn color rồi side và thay tag cùng loại', () => {
+test('lập tên mới theo thứ tự chuẩn color, side, gender và thay tag cùng loại', () => {
   const root = path.resolve('D:\\Mockups');
   assert.equal(
     buildGroupShirtRenamedPath(path.join(root, '1 (1).b.bl.png'), { color: 'wh', side: 'f' }),
@@ -126,6 +136,10 @@ test('lập tên mới theo thứ tự chuẩn color rồi side và thay tag cù
   assert.equal(
     buildGroupShirtRenamedPath(path.join(root, '1 (2).png'), { side: 'b' }),
     path.join(root, '1 (2).b.png'),
+  );
+  assert.equal(
+    buildGroupShirtRenamedPath(path.join(root, '1 (3).w.bl.b.png'), { color: 'wh', side: 'f', gender: 'm' }),
+    path.join(root, '1 (3).wh.f.m.png'),
   );
 });
 

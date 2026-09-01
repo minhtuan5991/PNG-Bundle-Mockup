@@ -68,6 +68,8 @@ const elements = {
   addBackRegionButton: document.querySelector('#addBackRegionButton'),
   groupRegionColorLight: document.querySelector('#groupRegionColorLight'),
   groupRegionColorDark: document.querySelector('#groupRegionColorDark'),
+  groupRegionGenderMale: document.querySelector('#groupRegionGenderMale'),
+  groupRegionGenderFemale: document.querySelector('#groupRegionGenderFemale'),
   deleteGroupRegionButton: document.querySelector('#deleteGroupRegionButton'),
   groupRegionStatus: document.querySelector('#groupRegionStatus'),
   groupRegionInspector: document.querySelector('#groupRegionInspector'),
@@ -136,6 +138,9 @@ const elements = {
   renameSideNone: document.querySelector('#renameSideNone'),
   renameSideFront: document.querySelector('#renameSideFront'),
   renameSideBack: document.querySelector('#renameSideBack'),
+  renameGenderNone: document.querySelector('#renameGenderNone'),
+  renameGenderMale: document.querySelector('#renameGenderMale'),
+  renameGenderFemale: document.querySelector('#renameGenderFemale'),
   renamePngPreview: document.querySelector('#renamePngPreview'),
   renamePngError: document.querySelector('#renamePngError'),
   renamePngCancel: document.querySelector('#renamePngCancel'),
@@ -245,7 +250,7 @@ function parseGroupSourceName(fileName) {
   const tags = [];
   while (true) {
     const markerMatch = baseStem.match(/\.([a-z]{1,3})\s*$/iu);
-    if (!markerMatch || !/^(wh|bl|f|b)$/i.test(markerMatch[1])) break;
+    if (!markerMatch || !/^(wh|bl|f|b|m|w)$/i.test(markerMatch[1])) break;
     const marker = markerMatch[1].toLocaleLowerCase('en-US');
     if (tags.includes(marker)) {
       return { valid: false, error: `Tên đang lặp tag .${marker}.` };
@@ -255,8 +260,9 @@ function parseGroupSourceName(fileName) {
   }
   const colors = tags.filter((tag) => tag === 'wh' || tag === 'bl');
   const sides = tags.filter((tag) => tag === 'f' || tag === 'b');
-  if (colors.length > 1 || sides.length > 1) {
-    return { valid: false, error: 'Tên có tag màu hoặc mặt áo xung đột.' };
+  const genders = tags.filter((tag) => tag === 'm' || tag === 'w');
+  if (colors.length > 1 || sides.length > 1 || genders.length > 1) {
+    return { valid: false, error: 'Tên có tag màu, mặt áo hoặc giới tính xung đột.' };
   }
   const match = baseStem.match(/^(.+?)\s*\(\s*([1-9]\d*)\s*\)\s*$/u);
   if (!match || !Number.isSafeInteger(Number(match[2]))) {
@@ -272,13 +278,16 @@ function parseGroupSourceName(fileName) {
     ordinal: Number(match[2]),
     explicitColor: colors[0] || null,
     explicitSide: sides[0] || null,
+    explicitGender: genders[0] || null,
     color: colors[0] || 'wh',
     side: sides[0] || 'f',
+    gender: genders[0] || null,
   };
 }
 
-function groupRegionTrackKey(color, side) {
-  return `${color === 'bl' ? 'bl' : 'wh'}\u0000${side === 'b' || side === 'back' ? 'back' : 'front'}`;
+function groupRegionTrackKey(gender, color, side) {
+  const normalizedGender = gender === 'm' || gender === 'w' ? gender : 'unisex';
+  return `${normalizedGender}\u0000${color === 'bl' ? 'bl' : 'wh'}\u0000${side === 'b' || side === 'back' ? 'back' : 'front'}`;
 }
 
 function groupSourceDirectory(file) {
@@ -319,7 +328,7 @@ function analyzeGroupShirtSetup() {
       });
     }
     sourceGroups.get(parsed.groupKey).descriptors.push(descriptor);
-    const slot = `${parsed.groupKey}\u0000${parsed.color}\u0000${parsed.side}\u0000${parsed.ordinal}`;
+    const slot = `${parsed.groupKey}\u0000${parsed.gender || ''}\u0000${parsed.color}\u0000${parsed.side}\u0000${parsed.ordinal}`;
     if (logicalSlots.has(slot)) {
       logicalDuplicates.push({ first: logicalSlots.get(slot), duplicate: descriptor });
     } else {
@@ -991,24 +1000,29 @@ function selectedRenameCategory() {
   const side = elements.renameSideFront.checked
     ? 'f'
     : elements.renameSideBack.checked ? 'b' : null;
-  return { color, side };
+  const gender = elements.renameGenderMale.checked
+    ? 'm'
+    : elements.renameGenderFemale.checked ? 'w' : null;
+  return { color, side, gender };
 }
 
-function rewriteGroupPngName(fileName, color, side) {
+function rewriteGroupPngName(fileName, color, side, gender) {
   const parsed = parseGroupSourceName(fileName);
   if (!parsed.valid) return fileName;
   const currentColor = parsed.explicitColor;
   const currentSide = parsed.explicitSide;
+  const currentGender = parsed.explicitGender;
   const nextColor = color || currentColor;
   const nextSide = side || currentSide;
-  return `${parsed.baseStem}${nextColor ? `.${nextColor}` : ''}${nextSide ? `.${nextSide}` : ''}.png`;
+  const nextGender = gender || currentGender;
+  return `${parsed.baseStem}${nextColor ? `.${nextColor}` : ''}${nextSide ? `.${nextSide}` : ''}${nextGender ? `.${nextGender}` : ''}.png`;
 }
 
 function renderRenamePngDialog() {
   if (!state.renamePicker) return;
   const saving = Boolean(state.renamePicker.saving);
   const visible = renameSelectionFiles();
-  const { color, side } = selectedRenameCategory();
+  const { color, side, gender } = selectedRenameCategory();
   elements.renamePngGrid.textContent = '';
   for (const file of visible) {
     const checked = state.renamePicker.selected.has(file.path);
@@ -1028,7 +1042,7 @@ function renderRenamePngDialog() {
     next.textContent = !checked
       ? 'Không đổi tên'
       : parsed.valid
-        ? rewriteGroupPngName(file.name, color, side)
+        ? rewriteGroupPngName(file.name, color, side, gender)
         : `Không thể đổi: ${parsed.error}`;
     copy.append(name, next);
     tile.append(image, copy);
@@ -1045,16 +1059,16 @@ function renderRenamePngDialog() {
   elements.renamePngCount.textContent = `Đã chọn ${selectedFilesForRename.length}/${selectedFiles().length} PNG để đổi tên`;
   elements.renamePngPreview.textContent = selectedFilesForRename.length === 0
     ? 'Chọn ít nhất một PNG.'
-    : `Sẽ ${color ? `gắn .${color}` : 'giữ nguyên tag màu'} và ${side ? `gắn .${side}` : 'giữ nguyên tag mặt áo'} cho ${selectedFilesForRename.length} file.`;
+    : `Sẽ ${color ? `gắn .${color}` : 'giữ nguyên tag màu'}, ${side ? `gắn .${side}` : 'giữ nguyên tag mặt áo'} và ${gender ? `gắn .${gender}` : 'giữ nguyên tag giới tính'} cho ${selectedFilesForRename.length} file.`;
   const invalid = selectedFilesForRename.find((file) => !parseGroupSourceName(file.name).valid);
-  const targetNames = selectedFilesForRename.map((file) => rewriteGroupPngName(file.name, color, side).toLocaleLowerCase());
+  const targetNames = selectedFilesForRename.map((file) => rewriteGroupPngName(file.name, color, side, gender).toLocaleLowerCase());
   const duplicate = targetNames.find((name, index) => targetNames.indexOf(name) !== index);
   const validationError = invalid
     ? `${invalid.name}: ${parseGroupSourceName(invalid.name).error}`
     : duplicate ? `Tên đích bị trùng: ${duplicate}` : '';
   elements.renamePngError.textContent = state.renamePicker.error || validationError;
   const submitDisabled =
-    saving || selectedFilesForRename.length === 0 || Boolean(validationError) || (!color && !side);
+    saving || selectedFilesForRename.length === 0 || Boolean(validationError) || (!color && !side && !gender);
   elements.renamePngApply.textContent = saving && !state.renamePicker.closeAfterSave
     ? 'Đang đổi tên…'
     : 'Đổi Tên';
@@ -1075,6 +1089,9 @@ function renderRenamePngDialog() {
     elements.renameSideNone,
     elements.renameSideFront,
     elements.renameSideBack,
+    elements.renameGenderNone,
+    elements.renameGenderMale,
+    elements.renameGenderFemale,
   ]) input.disabled = saving;
 }
 
@@ -1093,6 +1110,7 @@ function openRenamePngDialog() {
   elements.renamePngSearch.value = '';
   elements.renameColorNone.checked = true;
   elements.renameSideNone.checked = true;
+  elements.renameGenderNone.checked = true;
   renderRenamePngDialog();
   elements.renamePngDialog.showModal();
 }
@@ -1106,10 +1124,10 @@ async function applyRenamePngFiles(closeAfterSave = false) {
   if (!state.renamePicker || state.renamePicker.saving) return;
   const picker = state.renamePicker;
   const filePaths = selectedRenameFiles().map((file) => file.path);
-  const { color, side } = selectedRenameCategory();
+  const { color, side, gender } = selectedRenameCategory();
   if (filePaths.length === 0) return;
-  if (!color && !side) {
-    showError(new Error('Hãy chọn ít nhất một tag màu áo hoặc mặt áo cần gắn.'));
+  if (!color && !side && !gender) {
+    showError(new Error('Hãy chọn ít nhất một tag màu áo, mặt áo hoặc giới tính cần gắn.'));
     return;
   }
   if (!window.confirm(`Đổi tên thật ${filePaths.length} file PNG trên máy? App sẽ kiểm tra trùng tên trước khi thay đổi.`)) return;
@@ -1118,7 +1136,7 @@ async function applyRenamePngFiles(closeAfterSave = false) {
   picker.error = '';
   renderRenamePngDialog();
   try {
-    const result = unwrap(await api.renameGroupShirtPngFiles({ filePaths, color, side }));
+    const result = unwrap(await api.renameGroupShirtPngFiles({ filePaths, color, side, gender }));
     const mappings = new Map((result.mappings || []).map((item) => [normalizePath(item.oldPath), item.file]));
     picker.selected = new Set([...picker.selected].map((filePath) => {
       const renamed = mappings.get(normalizePath(filePath));
@@ -1434,7 +1452,7 @@ function validateGroupReady({ includeAdditionalOutputs = false } = {}) {
   if (analysis.logicalDuplicates.length > 0) {
     const duplicate = analysis.logicalDuplicates[0].duplicate;
     throw new Error(
-      `Nhóm “${duplicate.parsed.displayGroup}” có nhiều PNG trùng màu, mặt và số thứ tự ${duplicate.parsed.ordinal}.`,
+      `Nhóm “${duplicate.parsed.displayGroup}” có nhiều PNG trùng giới tính, màu, mặt và số thứ tự ${duplicate.parsed.ordinal}.`,
     );
   }
   if (state.groupTemplates.length === 0) {
@@ -1569,6 +1587,10 @@ function updateControls() {
     state.regionEditor?.kind !== 'group' || editorSaving;
   elements.groupRegionColorDark.disabled =
     state.regionEditor?.kind !== 'group' || editorSaving;
+  elements.groupRegionGenderMale.disabled =
+    state.regionEditor?.kind !== 'group' || editorSaving;
+  elements.groupRegionGenderFemale.disabled =
+    state.regionEditor?.kind !== 'group' || editorSaving;
   for (const row of elements.groupTemplateList.querySelectorAll('.group-template-row')) {
     row.disabled = state.busy || editorSaving;
   }
@@ -1668,11 +1690,11 @@ function renderGroupReadiness() {
     elements.groupReadinessSummary.textContent = 'Chọn PNG để kiểm tra nhóm áo.';
   } else if (analysis.invalid.length > 0) {
     elements.groupReadinessSummary.textContent =
-      `${analysis.invalid.length} PNG sai tên hoặc tag. Hãy sửa phần tên gốc về “Nhóm (số)” trong File Explorer; Đổi tên PNG chỉ gắn hoặc thay tag màu/mặt.`;
+      `${analysis.invalid.length} PNG sai tên hoặc tag. Hãy sửa phần tên gốc về “Nhóm (số)” trong File Explorer; Đổi tên PNG chỉ gắn hoặc thay tag màu/mặt/giới tính.`;
   } else if (analysis.logicalDuplicates.length > 0) {
     const item = analysis.logicalDuplicates[0].duplicate.parsed;
     elements.groupReadinessSummary.textContent =
-      `Trùng PNG logic: ${item.displayGroup}.${item.color}.${item.side}, số thứ tự ${item.ordinal}.`;
+      `Trùng PNG logic: ${item.displayGroup}.${item.gender || 'không giới tính'}.${item.color}.${item.side}, số thứ tự ${item.ordinal}.`;
   } else if (state.groupTemplates.length === 0) {
     elements.groupReadinessSummary.textContent =
       `${analysis.sourceGroups.size} nhóm PNG · chưa chọn ảnh nền mgs.`;
@@ -2166,6 +2188,7 @@ function cloneGroupRegion(region) {
     id: String(region.id),
     side: region.side === 'back' ? 'back' : 'front',
     color: region.color === 'bl' ? 'bl' : 'wh',
+    gender: region.gender === 'm' ? 'm' : (region.gender === 'w' ? 'w' : null),
     centerX: Number(region.centerX),
     centerY: Number(region.centerY),
     width: Number(region.width),
@@ -2174,7 +2197,7 @@ function cloneGroupRegion(region) {
   };
 }
 
-function defaultGroupRegion(template, side, color, index = 0) {
+function defaultGroupRegion(template, side, color, gender, index = 0) {
   const pixelHeight = Math.max(24, Math.min(template.height * 0.42, template.width * 0.42 * 8 / 7));
   const pixelWidth = pixelHeight * 7 / 8;
   const offset = ((index % 5) - 2) * Math.min(0.06, pixelWidth / template.width / 3);
@@ -2182,6 +2205,7 @@ function defaultGroupRegion(template, side, color, index = 0) {
     id: `region-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     side,
     color: color === 'bl' ? 'bl' : 'wh',
+    gender: gender === 'm' ? 'm' : (gender === 'w' ? 'w' : null),
     centerX: Math.max(pixelWidth / template.width / 2, Math.min(1 - pixelWidth / template.width / 2, 0.5 + offset)),
     centerY: 0.5,
     width: pixelWidth / template.width,
@@ -2250,7 +2274,9 @@ function setGroupRegionStatus(message = null) {
   elements.groupRegionStatus.textContent = message ||
     `Ảnh ${state.pageIndex + 1}/${state.regionEditor.entries.length}: ${entry.template.name} · ` +
     `sáng ${count('wh', 'front')} trước/${count('wh', 'back')} sau · ` +
-    `tối ${count('bl', 'front')} trước/${count('bl', 'back')} sau.`;
+    `tối ${count('bl', 'front')} trước/${count('bl', 'back')} sau · ` +
+    `nam ${entry.regions.filter((region) => region.gender === 'm').length} · ` +
+    `nữ ${entry.regions.filter((region) => region.gender === 'w').length}.`;
 }
 function syncGroupRegionInspector() {
   const entry = currentGroupRegionEntry();
@@ -2277,8 +2303,9 @@ function syncGroupRegionInspector() {
     ]) input.value = '';
     return;
   }
+  const genderLabel = region.gender === 'm' ? 'áo nam · ' : (region.gender === 'w' ? 'áo nữ · ' : '');
   elements.groupRegionSelectionStatus.textContent =
-    `Đang chọn vùng ${region.color === 'bl' ? 'áo tối' : 'áo sáng'} · mặt ${region.side === 'front' ? 'trước' : 'sau'}`;
+    `Đang chọn vùng ${genderLabel}${region.color === 'bl' ? 'áo tối' : 'áo sáng'} · mặt ${region.side === 'front' ? 'trước' : 'sau'}`;
   elements.groupRegionX.value = (region.centerX * 100).toFixed(2);
   elements.groupRegionY.value = (region.centerY * 100).toFixed(2);
   elements.groupRegionWidth.value = (region.width * 100).toFixed(2);
@@ -2298,19 +2325,21 @@ function renderGroupRegions() {
   }
   const trackIndexes = new Map();
   for (const region of entry.regions) {
-    const track = groupRegionTrackKey(region.color, region.side);
+    const track = groupRegionTrackKey(region.gender, region.color, region.side);
     const trackIndex = (trackIndexes.get(track) || 0) + 1;
     trackIndexes.set(track, trackIndex);
     const colorLabel = region.color === 'bl' ? 'Tối' : 'Sáng';
     const sideLabel = region.side === 'front' ? 'Trước' : 'Sau';
+    const genderLabel = region.gender === 'm' ? 'Nam · ' : (region.gender === 'w' ? 'Nữ · ' : '');
     const node = document.createElement('div');
     node.className = `group-print-region${region.id === state.regionEditor.activeRegionId ? ' is-active' : ''}`;
     node.dataset.regionId = region.id;
     node.dataset.side = region.side;
     node.dataset.color = region.color;
+    node.dataset.gender = region.gender || '';
     node.tabIndex = 0;
     node.setAttribute('role', 'button');
-    node.setAttribute('aria-label', `Vùng in áo ${colorLabel.toLocaleLowerCase('vi')} mặt ${sideLabel.toLocaleLowerCase('vi')} ${trackIndex}`);
+    node.setAttribute('aria-label', `Vùng in ${genderLabel.toLocaleLowerCase('vi')}áo ${colorLabel.toLocaleLowerCase('vi')} mặt ${sideLabel.toLocaleLowerCase('vi')} ${trackIndex}`);
     node.style.left = `${(region.centerX - region.width / 2) * 100}%`;
     node.style.top = `${(region.centerY - region.height / 2) * 100}%`;
     node.style.width = `${region.width * 100}%`;
@@ -2318,7 +2347,7 @@ function renderGroupRegions() {
     node.style.transform = `rotate(${region.rotation}deg)`;
     const label = document.createElement('span');
     label.className = 'group-region-label';
-    label.textContent = `${colorLabel} · ${sideLabel} ${trackIndex}`;
+    label.textContent = `${genderLabel}${colorLabel} · ${sideLabel} ${trackIndex}`;
     node.append(label);
     for (const handle of ['nw', 'ne', 'sw', 'se']) {
       const resize = document.createElement('i');
@@ -2429,6 +2458,12 @@ function selectedGroupRegionColor() {
   return elements.groupRegionColorDark.checked ? 'bl' : 'wh';
 }
 
+function selectedGroupRegionGender() {
+  if (elements.groupRegionGenderMale.checked) return 'm';
+  if (elements.groupRegionGenderFemale.checked) return 'w';
+  return null;
+}
+
 function addGroupRegion(side) {
   if (state.inputAssetsSaving) return;
   const entry = currentGroupRegionEntry();
@@ -2437,6 +2472,7 @@ function addGroupRegion(side) {
     entry.template,
     side,
     selectedGroupRegionColor(),
+    selectedGroupRegionGender(),
     entry.regions.length,
   );
   entry.regions.push(region);
@@ -3301,6 +3337,12 @@ elements.groupRegionColorLight.addEventListener('change', () => {
 elements.groupRegionColorDark.addEventListener('change', () => {
   if (elements.groupRegionColorDark.checked) elements.groupRegionColorLight.checked = false;
 });
+elements.groupRegionGenderMale.addEventListener('change', () => {
+  if (elements.groupRegionGenderMale.checked) elements.groupRegionGenderFemale.checked = false;
+});
+elements.groupRegionGenderFemale.addEventListener('change', () => {
+  if (elements.groupRegionGenderFemale.checked) elements.groupRegionGenderMale.checked = false;
+});
 elements.deleteGroupRegionButton.addEventListener('click', deleteActiveGroupRegion);
 elements.rotateGroupRegionLeft.addEventListener('click', () => nudgeGroupRegion(0, 0, -15));
 elements.rotateGroupRegionRight.addEventListener('click', () => nudgeGroupRegion(0, 0, 15));
@@ -3379,6 +3421,9 @@ for (const input of [
   elements.renameSideNone,
   elements.renameSideFront,
   elements.renameSideBack,
+  elements.renameGenderNone,
+  elements.renameGenderMale,
+  elements.renameGenderFemale,
 ]) input.addEventListener('change', () => {
   if (state.renamePicker?.saving) return;
   if (state.renamePicker) state.renamePicker.error = '';

@@ -120,7 +120,7 @@ test('popup Group Shirt chỉ đổi tên các thumbnail được chọn rõ rà
   assert.match(script, /function selectedRenameFiles\(\)[\s\S]*?renamePicker\.selected\.has\(file\.path\)/);
   assert.match(script, /next\.textContent = !checked[\s\S]*?'Không đổi tên'/);
   assert.match(applySource, /const filePaths = selectedRenameFiles\(\)\.map\(\(file\) => file\.path\);/);
-  assert.match(applySource, /renameGroupShirtPngFiles\(\{ filePaths, color, side \}\)/);
+  assert.match(applySource, /renameGroupShirtPngFiles\(\{ filePaths, color, side, gender \}\)/);
 });
 
 test('thumbnail đổi tên Group Shirt đủ lớn để nhận diện ảnh rõ hơn', () => {

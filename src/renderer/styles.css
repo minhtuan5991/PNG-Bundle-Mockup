@@ -1319,13 +1319,15 @@ input:disabled {
 }
 
 .group-region-add-buttons,
-.group-region-color-selector {
+.group-region-color-selector,
+.group-region-gender-selector {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 7px;
 }
 
-.group-region-color-selector {
+.group-region-color-selector,
+.group-region-gender-selector {
   padding: 7px;
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 10px;
@@ -1365,6 +1367,22 @@ input:disabled {
 }
 
 .dark-color-option input { accent-color: #a78bfa; }
+
+.male-gender-option {
+  color: #a7f3d0;
+  border-color: rgba(52, 211, 153, 0.42);
+  background: rgba(6, 95, 70, 0.16);
+}
+
+.male-gender-option input { accent-color: #34d399; }
+
+.female-gender-option {
+  color: #fbcfe8;
+  border-color: rgba(249, 168, 212, 0.46);
+  background: rgba(157, 23, 77, 0.14);
+}
+
+.female-gender-option input { accent-color: #f9a8d4; }
 
 .region-color-option:has(input:focus-visible) {
   outline: 2px solid #f8fafc;
@@ -1680,6 +1698,16 @@ input:disabled {
   --region-color: #fb7185;
   --region-dark: rgba(136, 19, 55, 0.94);
   border-style: dashed;
+}
+
+.group-print-region[data-gender="m"] {
+  --region-color: #34d399;
+  --region-dark: rgba(6, 78, 59, 0.94);
+}
+
+.group-print-region[data-gender="w"] {
+  --region-color: #f9a8d4;
+  --region-dark: rgba(131, 24, 67, 0.94);
 }
 
 .group-print-region.is-active,
@@ -2051,6 +2079,12 @@ input:disabled {
   color: #cbd5e1;
   font-size: 10px;
   font-weight: 750;
+}
+
+.rename-tag-help {
+  color: var(--muted-2);
+  font-size: 9px;
+  line-height: 1.4;
 }
 
 .rename-tag-option {

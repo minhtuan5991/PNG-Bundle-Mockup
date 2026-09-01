@@ -96,7 +96,7 @@
             </span>
           </div>
           <p class="settings-note is-hidden" id="groupRenameHint">
-            Đổi tên PNG chỉ gắn hoặc thay tag màu/mặt. Nếu phần “Nhóm (số)” sai, hãy sửa tên gốc trong File Explorer rồi nạp lại.
+            Đổi tên PNG chỉ gắn hoặc thay tag màu/mặt/giới tính. Nếu phần “Nhóm (số)” sai, hãy sửa tên gốc trong File Explorer rồi nạp lại.
           </p>
         </section>
 
@@ -404,6 +404,17 @@
                 </label>
               </div>
               <small class="group-region-color-help">Không chọn màu sẽ mặc định tạo vùng áo sáng.</small>
+              <div class="group-region-gender-selector" role="group" aria-label="Giới tính áo cho vùng in mới">
+                <label class="region-color-option male-gender-option">
+                  <input id="groupRegionGenderMale" type="checkbox" data-lock />
+                  <span>Áo nam</span>
+                </label>
+                <label class="region-color-option female-gender-option">
+                  <input id="groupRegionGenderFemale" type="checkbox" data-lock />
+                  <span>Áo nữ</span>
+                </label>
+              </div>
+              <small class="group-region-color-help">Không chọn giới tính sẽ tạo vùng dùng quy tắc cũ.</small>
               <button class="mini-button delete-region-button" id="deleteGroupRegionButton" type="button" disabled data-lock>
                 Xóa vùng đang chọn
               </button>
@@ -547,7 +558,7 @@
           <div>
             <span class="eyebrow">ĐẶT TÊN GROUP SHIRT</span>
             <h2 id="renamePngTitle">Gắn ký hiệu vào tên PNG</h2>
-            <p id="renamePngDescription">Công cụ chỉ gắn hoặc thay tag màu/mặt. Phần “Nhóm (số)” phải được sửa thủ công trong File Explorer trước khi nạp lại.</p>
+            <p id="renamePngDescription">Công cụ chỉ gắn hoặc thay tag màu/mặt/giới tính. Phần “Nhóm (số)” phải được sửa thủ công trong File Explorer trước khi nạp lại.</p>
           </div>
           <button class="dialog-close" id="renamePngClose" type="button" aria-label="Đóng hộp đổi tên">×</button>
         </header>
@@ -597,6 +608,23 @@
                 <input id="renameSideBack" name="renameSide" type="radio" value="b" />
                 <span>Mặt sau <b>.b</b></span>
               </label>
+            </fieldset>
+
+            <fieldset class="rename-tag-group">
+              <legend>Giới tính</legend>
+              <label class="rename-tag-option">
+                <input id="renameGenderNone" name="renameGender" type="radio" value="" checked />
+                <span>Giữ nguyên tag giới tính</span>
+              </label>
+              <label class="rename-tag-option">
+                <input id="renameGenderMale" name="renameGender" type="radio" value="m" />
+                <span>Áo nam <b>.m</b></span>
+              </label>
+              <label class="rename-tag-option">
+                <input id="renameGenderFemale" name="renameGender" type="radio" value="w" />
+                <span>Áo nữ <b>.w</b></span>
+              </label>
+              <small class="rename-tag-help">Chỉ dùng cho Mockup Cặp đôi</small>
             </fieldset>
 
             <div class="rename-preview-card">

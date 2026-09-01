@@ -25,6 +25,7 @@ const front = Object.freeze({
   id: 'front-light-1',
   side: 'front',
   color: 'wh',
+  gender: null,
   centerX: 0.25,
   centerY: 0.5,
   width: 0.168,
@@ -35,6 +36,7 @@ const back = Object.freeze({
   id: 'back-dark-1',
   side: 'back',
   color: 'bl',
+  gender: null,
   centerX: 0.75,
   centerY: 0.5,
   width: 0.168,
@@ -62,6 +64,7 @@ test('chuẩn hóa màu/mặt, alias center và mặc định áo sáng cho reco
       id: 'alias-center',
       side: 'front',
       color: 'bl',
+      gender: null,
       centerX: 0.5,
       centerY: 0.5,
       width: 0.175,
@@ -74,6 +77,7 @@ test('chuẩn hóa màu/mặt, alias center và mặc định áo sáng cho reco
   });
   assert.equal(legacy.side, 'back');
   assert.equal(legacy.color, 'wh');
+  assert.equal(legacy.gender, null);
   assert.ok(Math.abs(legacy.centerX - 0.3) < 1e-12);
   assert.equal(legacy.centerY, 0.5);
 });
@@ -96,25 +100,27 @@ test('vùng bắt buộc tỷ lệ pixel 42×48, nằm trọn sau xoay và khôn
   );
 });
 
-test('store schema v2 giữ thứ tự, màu, dimensions và fingerprint', async (t) => {
+test('store schema v3 giữ thứ tự, màu, giới tính, dimensions và fingerprint', async (t) => {
   const userDataPath = await tempDirectory(t);
   const template = {
     name: '1 mgs.png', ...templateSize, fingerprint: 'AAA111',
   };
   const store = createGroupShirtRegionStore({ userDataPath });
-  await store.save(template, [front, back]);
-  assert.deepEqual(await store.get(template), [front, back]);
+  const maleFront = { ...front, gender: 'm' };
+  const femaleBack = { ...back, gender: 'w' };
+  await store.save(template, [maleFront, femaleBack]);
+  assert.deepEqual(await store.get(template), [maleFront, femaleBack]);
 
   const reloaded = createGroupShirtRegionStore({ userDataPath });
-  assert.deepEqual(await reloaded.get(template), [front, back]);
+  assert.deepEqual(await reloaded.get(template), [maleFront, femaleBack]);
   assert.equal(await reloaded.get({ ...template, width: 999 }), null);
   assert.equal(await reloaded.get({ ...template, fingerprint: 'different' }), null);
-  assert.deepEqual(await reloaded.get({ name: template.name, ...templateSize }), [front, back]);
+  assert.deepEqual(await reloaded.get({ name: template.name, ...templateSize }), [maleFront, femaleBack]);
 
   const disk = JSON.parse(await fs.readFile(store.filePath, 'utf8'));
   assert.equal(disk.schemaVersion, GROUP_SHIRT_REGION_SCHEMA_VERSION);
-  assert.equal(disk.schemaVersion, 2);
-  assert.deepEqual(disk.templates['1 mgs.png'].regions, [front, back]);
+  assert.equal(disk.schemaVersion, 3);
+  assert.deepEqual(disk.templates['1 mgs.png'].regions, [maleFront, femaleBack]);
 });
 
 test('sanitize di trú schema v1 thiếu màu thành áo sáng và bỏ riêng record sai tỷ lệ', () => {
@@ -135,7 +141,7 @@ test('sanitize di trú schema v1 thiếu màu thành áo sáng và bỏ riêng r
   };
   const sanitized = sanitizeGroupShirtRegionDocument(raw);
   assert.deepEqual(Object.keys(sanitized.templates), ['good mgs.png']);
-  assert.equal(sanitized.schemaVersion, 2);
+  assert.equal(sanitized.schemaVersion, 3);
   assert.equal(sanitized.templates['good mgs.png'].regions[0].color, 'wh');
   assert.deepEqual(
     getGroupShirtRegionsFromDocument(sanitized, {
@@ -143,6 +149,21 @@ test('sanitize di trú schema v1 thiếu màu thành áo sáng và bỏ riêng r
     }),
     [{ ...front, color: 'wh' }],
   );
+});
+
+test('sanitize di trú schema v2 thiếu giới tính thành vùng dùng quy tắc cũ', () => {
+  const raw = {
+    schemaVersion: 2,
+    templates: {
+      legacy: {
+        templateName: 'legacy mgs.png', templateWidth: 1000, templateHeight: 800,
+        regions: [{ ...front, gender: undefined }],
+      },
+    },
+  };
+  const sanitized = sanitizeGroupShirtRegionDocument(raw);
+  assert.equal(sanitized.schemaVersion, 3);
+  assert.equal(sanitized.templates['legacy mgs.png'].regions[0].gender, null);
 });
 
 test('replaceAll ghi nối tiếp và không xóa template ngoài lần cập nhật', async (t) => {

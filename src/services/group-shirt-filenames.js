@@ -12,6 +12,10 @@ const GROUP_SHIRT_SIDES = Object.freeze({
   FRONT: 'f',
   BACK: 'b',
 });
+const GROUP_SHIRT_GENDERS = Object.freeze({
+  MALE: 'm',
+  FEMALE: 'w',
+});
 const GROUP_SHIRT_TEMPLATE_EXTENSIONS = Object.freeze([
   '.png',
   '.jpg',
@@ -21,7 +25,7 @@ const GROUP_SHIRT_TEMPLATE_EXTENSIONS = Object.freeze([
   '.tiff',
 ]);
 const TEMPLATE_EXTENSION_SET = new Set(GROUP_SHIRT_TEMPLATE_EXTENSIONS);
-const SOURCE_MARKERS = new Set(['wh', 'bl', 'f', 'b']);
+const SOURCE_MARKERS = new Set(['wh', 'bl', 'f', 'b', 'm', 'w']);
 
 class GroupShirtFilenameError extends Error {
   constructor(message, code, details = {}) {
@@ -109,6 +113,7 @@ function parseGroupShirtSourceName(value) {
   const { baseStem, markers } = peelTerminalMarkers(rawStem, SOURCE_MARKERS, name);
   const colorMarker = resolveExclusiveMarker(markers, 'wh', 'bl', 'màu áo', name);
   const sideMarker = resolveExclusiveMarker(markers, 'f', 'b', 'mặt áo', name);
+  const genderMarker = resolveExclusiveMarker(markers, 'm', 'w', 'giới tính', name);
   const groupMatch = baseStem.match(/^(.*?)\s*\(\s*(\d+)\s*\)\s*$/u);
   if (!groupMatch) {
     throw new GroupShirtFilenameError(
@@ -142,6 +147,8 @@ function parseGroupShirtSourceName(value) {
     side: sideMarker || GROUP_SHIRT_SIDES.FRONT,
     explicitColor: Boolean(colorMarker),
     explicitSide: Boolean(sideMarker),
+    gender: genderMarker,
+    explicitGender: Boolean(genderMarker),
     markers: Object.freeze([...markers]),
   });
 }
@@ -222,9 +229,15 @@ function buildGroupShirtRenamedPath(filePath, updates = {}) {
     new Set(['f', 'b']),
     'mặt áo',
   );
+  const requestedGender = normalizeRequestedMarker(
+    updates.gender,
+    new Set(['m', 'w']),
+    'giới tính',
+  );
   const color = requestedColor || (parsed.explicitColor ? parsed.color : null);
   const side = requestedSide || (parsed.explicitSide ? parsed.side : null);
-  const targetName = `${parsed.baseStem}${color ? `.${color}` : ''}${side ? `.${side}` : ''}.png`;
+  const gender = requestedGender || (parsed.explicitGender ? parsed.gender : null);
+  const targetName = `${parsed.baseStem}${color ? `.${color}` : ''}${side ? `.${side}` : ''}${gender ? `.${gender}` : ''}.png`;
   return path.join(path.dirname(path.resolve(filePath)), targetName);
 }
 
@@ -254,6 +267,7 @@ function buildGroupShirtRenamePlan(operations) {
     const targetPath = buildGroupShirtRenamedPath(resolvedSourcePath, {
       color: typeof operation === 'string' ? null : operation.color,
       side: typeof operation === 'string' ? null : operation.side,
+      gender: typeof operation === 'string' ? null : operation.gender,
     });
     const sourceKey = portablePathKey(resolvedSourcePath);
     const targetKey = portablePathKey(targetPath);
@@ -417,6 +431,7 @@ async function applyGroupShirtRenamePlan(operations, options = {}) {
 module.exports = {
   GROUP_SHIRT_COLORS,
   GROUP_SHIRT_SIDES,
+  GROUP_SHIRT_GENDERS,
   GROUP_SHIRT_TEMPLATE_EXTENSIONS,
   GroupShirtFilenameError,
   GroupShirtRenameError,

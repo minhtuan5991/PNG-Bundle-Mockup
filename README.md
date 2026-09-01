@@ -10,7 +10,7 @@
 - Có thể tiếp tục chọn/bỏ từng PNG trong danh sách chính.
 - Nút **Loại bỏ PNG** dọn toàn bộ danh sách để bắt đầu bộ mới mà không xóa file PNG gốc.
 - Hai chế độ loại trừ nhau: **Mockup Bundle PNG** giữ nguyên luồng dàn lưới hiện có; **Mockup Group Shirt** ghép PNG theo nhóm, màu áo và mặt trước/sau.
-- Group Shirt nhận tên `1 (1).wh.f.png`, `1 (2).bl.b.png`; mỗi PNG không có tag màu dùng cả áo sáng/tối và giữ đúng mặt, kể cả trong nhóm trộn tag. Nhóm không có PNG mặt sau tự bỏ qua toàn bộ nền có vùng mặt sau.
+- Group Shirt nhận tên `1 (1).wh.f.m.png`, `1 (2).bl.b.w.png`; tag `.m/.w` dành cho vùng Áo nam/Áo nữ của Mockup Cặp đôi. Mỗi PNG không có tag màu dùng cả áo sáng/tối và giữ đúng mặt, kể cả trong nhóm trộn tag. Nhóm không có PNG mặt sau tự bỏ qua toàn bộ nền có vùng mặt sau.
 - Trong từng màu/mặt, PNG `(1)`, `(2)`, `(3)` được ưu tiên lần lượt vào vùng 1, 2, 3. Nếu nền có cả áo sáng/tối, app dùng đúng ordinal của từng pool màu và chỉ lấp ngẫu nhiên các vùng còn thiếu sau khi hết PNG chưa dùng.
 - Chọn nhiều nền Group Shirt có marker `mgs`, ví dụ `mgs.jpg`, `.mgs1.jpg` hoặc `shirt mgs lifestyle.png`. Mọi nền là template dùng chung; số/chữ cạnh marker chỉ là tên file, còn vùng in quyết định nhóm PNG nào tương thích. Mỗi nền lưu được nhiều vùng in áo sáng/tối, mặt trước/sau theo tỷ lệ cố định `42×48`, có thể di chuyển, scale đúng tỷ lệ và xoay.
 - Công cụ **Đổi tên PNG** gắn `.wh/.bl` và `.f/.b` bằng thao tác đổi tên file thật, kiểm tra trùng tên và rollback toàn bộ nếu lỗi. Popup mở với `0/N`; chỉ thumbnail được chọn mới đổi tên, và thumbnail `80×76 px` giúp nhìn thiết kế rõ hơn.
@@ -55,10 +55,10 @@
 
 ## Mockup Group Shirt
 
-- PNG nguồn dùng dạng `<nhóm> (<số nguyên dương>)[.<tag>...].png`, ví dụ `1 (3).wh.f.png`. Tag màu `.wh/.bl` và tag mặt `.f/.b` có thể ở bất kỳ thứ tự nào. Thiếu tag mặt thì dùng mặt trước; thiếu tag màu thì dùng được trên cả áo sáng và tối, không bị PNG khác trong nhóm giới hạn màu.
+- PNG nguồn dùng dạng `<nhóm> (<số nguyên dương>)[.<tag>...].png`, ví dụ `1 (3).wh.f.m.png`. Tag màu `.wh/.bl`, tag mặt `.f/.b` và tag giới tính `.m/.w` có thể ở bất kỳ thứ tự nào; app luôn chuẩn hóa lại theo thứ tự màu, mặt, giới tính. Thiếu tag mặt thì dùng mặt trước; thiếu tag màu thì dùng được trên cả áo sáng và tối, không bị PNG khác trong nhóm giới hạn màu.
 - Tất cả PNG có cùng phần tên trước `(số)` thuộc một nhóm. Số thứ tự quyết định thứ tự ghép trong từng loại màu/mặt; `1 (01)` và `1 (1)` là cùng ordinal nên không thể cùng tồn tại trong một track.
 - Ảnh nền phải có đuôi thật PNG/JPG/WEBP/TIFF và tên chứa marker `mgs`, ví dụ `mgs.jpg`, `1 mgs lifestyle.png` hoặc `.mgs3.jpg`. Tất cả nền `mgs` là pool dùng chung: nhóm `1` có thể dùng `.mgs2`/`.mgs3` nếu các vùng in đã lưu phù hợp với tag màu/mặt của nhóm.
-- Mỗi vùng in lưu cả mặt (`front/back`) và màu áo (`wh/bl`). Hai checkbox **Áo sáng màu**/**Áo tối màu** loại trừ nhau; không chọn ô nào thì vùng mới mặc định là áo sáng. Bốn tổ hợp màu/mặt có màu, nhãn và kiểu viền riêng để phân biệt.
+- Mỗi vùng in lưu mặt (`front/back`), màu áo (`wh/bl`) và giới tính tùy chọn (`m/w`). Hai checkbox **Áo sáng màu**/**Áo tối màu** loại trừ nhau; không chọn ô nào thì vùng mới mặc định là áo sáng. **Áo nam**/**Áo nữ** cũng loại trừ nhau; vùng Nam có màu xanh lá, vùng Nữ màu hồng nhạt và đều có nhãn chữ. Không chọn giới tính thì vùng giữ quy tắc cũ.
 - Vùng in luôn giữ tỷ lệ pixel `42×48` khi tạo, kéo scale, nhập rộng/cao hoặc xoay. Vùng sau xoay phải nằm trọn trong ảnh nền.
 - Toàn bộ PNG `4200×4800` được co theo đúng tỷ lệ vào vùng in `42×48`, giữ nguyên lề trong suốt và vị trí thiết kế trong canvas; không crop theo vùng có pixel. Preview và ảnh xuất dùng cùng cách đặt. Nếu PNG có tỷ lệ khác, app dùng `contain` để giữ tỷ lệ và không cắt ảnh; vùng có xoay được xoay sau khi co toàn bộ canvas.
 - App xét tag của từng PNG và điều kiện của nhóm để chọn vùng in:
@@ -66,11 +66,12 @@
   - Chỉ `.f/.b`: `.f` vào mặt trước, `.b` vào mặt sau, trên cả áo sáng và áo tối. Mỗi template vẫn phải có các mặt tương ứng với PNG trong nhóm; không lấy PNG mặt trước để lấp mặt sau hoặc ngược lại.
   - Chỉ `.wh/.bl`: ghép vào mặt trước đúng màu; template không được có vùng mặt sau.
   - Có cả tag màu và mặt: PNG có `.wh/.bl` chỉ dùng đúng màu; PNG không có tag màu vẫn dùng cả hai màu. Mỗi PNG giữ đúng mặt. Template có ít nhất một vùng tương ứng được dùng; tổng các template đã chọn phải bao phủ đủ các loại PNG của nhóm.
+  - Có `.m/.w`: app lọc vùng giới tính trước (`.m` chỉ vào vùng Áo nam, `.w` chỉ vào vùng Áo nữ), rồi mới áp dụng nguyên các quy tắc màu và mặt ở trên. PNG không có tag giới tính không dùng vùng Nam/Nữ.
   - Với mọi kiểu nhóm: nếu không có PNG mặt sau, app bỏ qua toàn bộ nền chứa vùng mặt sau, kể cả nền có cả trước/sau. Bộ lọc áp dụng riêng từng nhóm trước khi chia trang; không xóa file nền hoặc ảnh cũ trong `Done`.
 - Trong từng loại nguồn, PNG được dùng theo số thứ tự trên các vùng đã lưu. Thứ tự ưu tiên track là áo sáng rồi áo tối; trong mỗi track, vùng 1, 2, 3 nhận PNG ordinal tăng dần. Mặt trước/sau dùng hàng đợi riêng theo tag mặt. Khi nguồn không tag màu và nguồn có tag màu cùng phù hợp, app dành chỗ cho nguồn có tag màu trước, sau đó dùng một lượt nguồn không tag màu chung cho cả hai màu áo. Chỉ lặp ngẫu nhiên nguồn phù hợp sau khi hết nguồn chưa dùng; PNG thừa tạo trang mới, không bị bỏ sót hay nhân đôi do dùng chung màu.
 - Có thể chọn nhiều nền `mgs`; mỗi nền tương thích tạo chuỗi trang riêng cho từng nhóm PNG. Nền không tương thích với bất kỳ nhóm nào được bỏ qua có cảnh báo; nếu một nhóm không có nền nào có vùng phù hợp, app dừng trước khi ghi output.
 - Tên output có dạng `[<tên nhóm PNG>]_<tên mockup>_<số thứ tự 3 chữ số>.png`, ví dụ `[Family]_chambray.mgs_001.png`. Tên mockup giữ nguyên tên ảnh nền, bỏ đuôi định dạng ảnh. Số thứ tự tính riêng cho mỗi cặp nhóm PNG và tên mockup; khi tên đã tồn tại trong `Done`, app tăng số để không ghi đè ảnh cũ. Dấu ngoặc quanh tên nhóm tránh nhầm với tiền tố `single_` của mockup đơn.
-- Khi bật **Tạo mockup đơn** trong Group Shirt, app cho chọn nhiều ảnh nền riêng, không cần đặt trong `Input` và không cần chữ `bundle`. Mỗi nhóm PNG dùng toàn bộ nền đã chọn; trên từng nền, app chọn ngẫu nhiên PNG áo sáng (`.wh` hoặc không có tag màu) thuộc chính nhóm đó. Ví dụ 3 nhóm × 3 nền tạo 9 ảnh. Tên file có dạng `single_[<tên nhóm>]_<tên nền>.png`. Quy tắc một lần cho mỗi `Done` vẫn được giữ.
+- Khi bật **Tạo mockup đơn** trong Group Shirt, app cho chọn nhiều ảnh nền riêng, không cần đặt trong `Input` và không cần chữ `bundle`. Mỗi nhóm PNG dùng toàn bộ nền đã chọn; trên từng nền, app chọn ngẫu nhiên PNG áo sáng (`.wh` hoặc không có tag màu) thuộc chính nhóm đó. Đuôi `.m/.w` không ảnh hưởng bước Mockup đơn. Ví dụ 3 nhóm × 3 nền tạo 9 ảnh. Tên file có dạng `[<tên nhóm>]_single_<tên nền>.png`, luôn đặt tên nhóm ở đầu. Quy tắc một lần cho mỗi `Done` vẫn được giữ.
 - **Tạo PDF Download** dùng được ở cả Bundle và Group Shirt, với cùng quy tắc chỉ một PDF trong mỗi `Done`.
 - Nền JPEG/TIFF có EXIF Orientation được xoay theo chiều nhìn thấy trước khi tính vùng in và xuất PNG.
 
@@ -213,7 +214,7 @@ Bản build local chưa có chứng thư code-signing thương mại, vì vậy 
 - `src/services/single-mockup-service.js`: chọn PNG ngẫu nhiên và tạo mockup đơn vào `Done`.
 - `src/services/group-shirt-filenames.js`: parser tên và transaction đổi tên PNG Group Shirt.
 - `src/services/group-shirt-regions.js`: lưu nhiều vùng in trước/sau có xoay theo từng ảnh nền.
-- `src/services/group-shirt-planner.js`: so khớp group/màu/mặt và lập các trang ghép không lặp.
+- `src/services/group-shirt-planner.js`: so khớp group/giới tính/màu/mặt và lập các trang ghép không lặp.
 - `src/services/group-shirt-service.js`: composite, preview, watermark, metadata và rollback Group Shirt.
 - `src/renderer/`: giao diện tiếng Việt.
 - `test/`: kiểm thử layout, xử lý ảnh, Input, kéo-thả, PDF Download, mockup đơn, cấu hình vùng in và updater.

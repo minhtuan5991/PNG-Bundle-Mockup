@@ -482,7 +482,11 @@ async function findExistingSingleMockupOutputs(outputDirectory, options = {}) {
     throw error;
   }
 
-  const outputPattern = new RegExp(`^${escapeRegExp(safePrefix)}_.+\\.png$`, 'i');
+  const escapedPrefix = escapeRegExp(safePrefix);
+  const outputPattern = new RegExp(
+    `^(?:${escapedPrefix}_.+|\\[.+\\]_${escapedPrefix}_.+)\\.png$`,
+    'i',
+  );
   return entries
     .filter((entry) => entry.isFile() && outputPattern.test(entry.name))
     .sort((left, right) =>
@@ -715,12 +719,12 @@ async function generateSingleMockups(options = {}) {
         `template-${index + 1}`,
       );
       const groupStem = item.group
-        ? `[${sanitizeFileStem(item.group, `group-${index + 1}`)}]_`
-        : '';
+        ? `[${sanitizeFileStem(item.group, `group-${index + 1}`)}]_${safePrefix}_`
+        : `${safePrefix}_`;
       const outputPath = await commitWithoutOverwrite(
         item.tempPath,
         resolvedOutputDirectory,
-        `${safePrefix}_${groupStem}${templateStem}`,
+        `${groupStem}${templateStem}`,
       );
       committedPaths.push(outputPath);
       progress(

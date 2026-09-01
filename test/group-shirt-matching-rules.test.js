@@ -5,16 +5,17 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { createGroupShirtPlan } = require('../src/services/group-shirt-planner');
 
-function source(group, ordinal, color, side) {
-  const tags = `${color ? `.${color}` : ''}${side ? `.${side}` : ''}`;
+function source(group, ordinal, color, side, gender) {
+  const tags = `${color ? `.${color}` : ''}${side ? `.${side}` : ''}${gender ? `.${gender}` : ''}`;
   return path.resolve('D:\\Source', `${group} (${ordinal})${tags}.png`);
 }
 
-function region(id, side = 'front', color = 'wh', centerX = 0.5, centerY = 0.5) {
+function region(id, side = 'front', color = 'wh', centerX = 0.5, centerY = 0.5, gender = null) {
   return {
     id,
     side,
     color,
+    gender,
     centerX,
     centerY,
     width: 0.084,
@@ -310,4 +311,53 @@ test('nhóm tag hỗn hợp dùng PNG .f không tag màu trên cả áo sáng/t�
     if (assignment.source.explicitColor) assert.equal(assignment.source.color, assignment.region.color);
     assert.equal(assignment.source.side === 'b' ? 'back' : 'front', assignment.region.side);
   }
+});
+
+test('đuôi giới tính lọc vùng trước rồi vẫn ghép đúng màu và mặt', async () => {
+  const plan = await createGroupShirtPlan({
+    sources: [
+      source('couple', 1, 'wh', 'f', 'm'),
+      source('couple', 1, 'bl', 'b', 'm'),
+      source('couple', 1, 'wh', 'f', 'w'),
+      source('couple', 1, 'bl', 'b', 'w'),
+    ],
+    templates: [
+      template('couple mgs.png', [
+        region('male-front', 'front', 'wh', 0.2, 0.3, 'm'),
+        region('male-back', 'back', 'bl', 0.4, 0.7, 'm'),
+        region('female-front', 'front', 'wh', 0.6, 0.3, 'w'),
+        region('female-back', 'back', 'bl', 0.8, 0.7, 'w'),
+      ]),
+      template('unisex mgs.png', [
+        region('unisex-front', 'front', 'wh'),
+        region('unisex-back', 'back', 'bl'),
+      ]),
+    ],
+    random: () => 0,
+  });
+
+  assert.deepEqual(templateNames(plan), ['couple mgs.png']);
+  assert.equal(plan.outputs[0].assignments.length, 4);
+  for (const assignment of plan.outputs[0].assignments) {
+    assert.equal(assignment.source.gender, assignment.region.gender);
+    assert.equal(assignment.source.color, assignment.region.color);
+    assert.equal(assignment.source.side === 'b' ? 'back' : 'front', assignment.region.side);
+  }
+  assert.ok(plan.warnings.some((warning) =>
+    warning.template.name === 'unisex mgs.png' && /giới tính/u.test(warning.message)));
+});
+
+test('PNG không có đuôi giới tính không dùng vùng dành riêng Nam/Nữ', async () => {
+  const plan = await createGroupShirtPlan({
+    sources: [source('regular', 1)],
+    templates: [
+      template('regular mgs.png', [region('regular-front')]),
+      template('couple-only mgs.png', [
+        region('male-front', 'front', 'wh', 0.35, 0.5, 'm'),
+        region('female-front', 'front', 'wh', 0.65, 0.5, 'w'),
+      ]),
+    ],
+    random: () => 0,
+  });
+  assert.deepEqual(templateNames(plan), ['regular mgs.png']);
 });

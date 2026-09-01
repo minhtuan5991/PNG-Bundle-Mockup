@@ -681,7 +681,7 @@ function createWindow() {
             inputApi: typeof window.bundleApi?.getInputAssets === 'function' && typeof window.bundleApi?.saveSingleMockupRegions === 'function',
             v121Controls: Boolean(document.querySelector('#createPdfDownload') && document.querySelector('#downloadUrl') && document.querySelector('#createSingleMockups') && document.querySelector('#editSingleMockupRegions')),
             v140Api: typeof window.bundleApi?.selectGroupShirtTemplates === 'function' && typeof window.bundleApi?.renameGroupShirtPngFiles === 'function' && typeof window.bundleApi?.saveGroupShirtRegions === 'function' && typeof window.bundleApi?.renderGroupShirtPreview === 'function' && typeof window.bundleApi?.generateGroupShirtMockups === 'function',
-            v140Controls: Boolean(document.querySelector('#mockupModeBundle') && document.querySelector('#mockupModeGroup') && document.querySelector('#chooseGroupTemplatesButton') && document.querySelector('#renamePngButton') && document.querySelector('#addFrontRegionButton') && document.querySelector('#addBackRegionButton') && document.querySelector('#groupRegionColorLight') && document.querySelector('#groupRegionColorDark')),
+            v140Controls: Boolean(document.querySelector('#mockupModeBundle') && document.querySelector('#mockupModeGroup') && document.querySelector('#chooseGroupTemplatesButton') && document.querySelector('#renamePngButton') && document.querySelector('#addFrontRegionButton') && document.querySelector('#addBackRegionButton') && document.querySelector('#groupRegionColorLight') && document.querySelector('#groupRegionColorDark') && document.querySelector('#groupRegionGenderMale') && document.querySelector('#groupRegionGenderFemale') && document.querySelector('#renameGenderMale') && document.querySelector('#renameGenderFemale')),
             v1410Api: typeof window.bundleApi?.selectGroupSingleMockupTemplates === 'function' && typeof window.bundleApi?.saveGroupSingleMockupRegions === 'function' && typeof window.bundleApi?.cleanupAppData === 'function',
             v1410Controls: Boolean(document.querySelector('#chooseGroupSingleTemplatesButton') && document.querySelector('#cleanupDataButton')),
             v140SourceDirectory: typeof groupSourceDirectory === 'function' && groupSourceDirectory({ directory: 'C:/Group Source' }) === 'C:/Group Source',
@@ -1047,6 +1047,7 @@ function registerIpc() {
           path: filePath,
           color: payload.color || null,
           side: payload.side || null,
+          gender: payload.gender || null,
         }));
         const renamed = await applyGroupShirtRenamePlan(operations);
         const mappings = [];

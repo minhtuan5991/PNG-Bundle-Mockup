@@ -89,6 +89,7 @@ test('allowlist và fingerprint bảo vệ source/template theo từng renderer'
   assert.match(main, /if\s*\(smokeTest\)\s*app\.disableHardwareAcceleration\(\)/);
   assert.match(main, /v140Api:\s*typeof window\.bundleApi\?\.selectGroupShirtTemplates/);
   assert.match(main, /v140Controls:\s*Boolean\(document\.querySelector\('#mockupModeBundle'\)/);
+  assert.match(main, /v140Controls:[\s\S]*?#groupRegionGenderMale[\s\S]*?#renameGenderFemale/);
   assert.match(main, /v140SourceDirectory:[\s\S]*?groupSourceDirectory/);
   assert.match(main, /v142SharedMgs:[\s\S]*?!analyzeGroupShirtSetup[\s\S]*?state\.groupTemplates/);
   assert.match(main, /renameDialogActions:[\s\S]*?#renamePngApply[\s\S]*?Đổi tên và Đóng/);
@@ -185,7 +186,7 @@ test('renderer giữ preview và thống kê đúng chế độ hiện tại', (
   assert.match(preview, /if\s*\(groupMode\)[\s\S]*?statLayout\.textContent\s*=\s*`\$\{result\.regionCount\s*\|\|\s*0\}\s*vùng in`/);
 });
 
-test('Group Shirt ẩn thiết lập Bundle, giữ alpha và có bộ chọn màu vùng in', () => {
+test('Group Shirt ẩn thiết lập Bundle, giữ alpha và có bộ chọn màu/giới tính vùng in', () => {
   const html = read('src/renderer/index.html');
   const script = read('src/renderer/app.js');
   assert.match(
@@ -201,7 +202,12 @@ test('Group Shirt ẩn thiết lập Bundle, giữ alpha và có bộ chọn mà
   assert.match(html, /id=.groupRegionColorDark.[\s\S]*?Áo tối màu/);
   assert.match(script, /groupRegionColorLight\.checked[\s\S]*?groupRegionColorDark\.checked\s*=\s*false/);
   assert.match(script, /groupRegionColorDark\.checked[\s\S]*?groupRegionColorLight\.checked\s*=\s*false/);
-  assert.match(html, /Đổi tên PNG chỉ gắn hoặc thay tag màu\/mặt/);
+  assert.match(html, /id=.groupRegionGenderMale.[\s\S]*?Áo nam/);
+  assert.match(html, /id=.groupRegionGenderFemale.[\s\S]*?Áo nữ/);
+  assert.match(html, /id=.renameGenderMale.[\s\S]*?\.m/);
+  assert.match(html, /id=.renameGenderFemale.[\s\S]*?\.w/);
+  assert.match(html, /Chỉ dùng cho Mockup Cặp đôi/);
+  assert.match(html, /Đổi tên PNG chỉ gắn hoặc thay tag màu\/mặt\/giới tính/);
   assert.match(html, /“Nhóm \(số\)”[\s\S]*?File Explorer/);
 });
 
