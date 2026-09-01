@@ -750,3 +750,13 @@ Checksum bên dưới thuộc artifact public do GitHub Actions build lại, kh�
 - Commit `6f979d3a88e4909ec62a0a648e5a05e497491bca`, annotated tag `v1.4.10`; Windows CI `33490320726` và Release Windows `33490320665` đều thành công.
 - Release `380352195` public/stable/latest có đúng ba asset. Setup công khai 104376031 byte, SHA-256 `0b7721bff52c8092dc99cf675a1c7e0aa6088fc5076d6aebd5032805ba3c18ef`.
 - Chưa chạy cài mới/nâng cấp tương tác trên máy hoặc VM sạch.
+
+## 32. Bản local v1.4.11 — mọi nhóm dùng toàn bộ nền mockup đơn
+
+- Luồng mockup đơn Group Shirt tạo tích Descartes giữa nhóm PNG và danh sách nền đã chọn: 3 nhóm × 3 nền tạo 9 ảnh.
+- Mỗi nhóm giữ pool PNG áo sáng riêng và chọn ngẫu nhiên trong pool đó cho từng nền; không trộn nguồn giữa các nhóm.
+- Output thêm nhãn nhóm theo dạng `single_[Nhóm]_<tên nền>.png`. Vùng in, watermark, metadata và skip toàn bộ khi `Done` đã có mockup đơn giữ nguyên.
+- Regression test bao phủ phân nhóm áo sáng, tổ hợp 3×3, tên output và skip lần chạy sau.
+- Automated tests **166/166**; source và packaged smoke **25/25**. ASAR version `1.4.11`, 25 file `src/assets` khớp byte, updater metadata và Input/Print Area allowlist đều đạt.
+- NSIS local: Setup 104376922 byte, SHA-256 `6a9891c882cc49fa37693246d9877b4bd237ecdbb93b71a8607c591ac47588b8`. Authenticode `NotSigned`.
+- Chưa commit/tag/push GitHub và chưa chạy cài mới/nâng cấp tương tác.

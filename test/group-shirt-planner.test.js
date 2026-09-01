@@ -7,6 +7,7 @@ const {
   GroupShirtPlanError,
   createGroupShirtPlan,
   selectLightGroupShirtSources,
+  selectLightGroupShirtSourceGroups,
 } = require('../src/services/group-shirt-planner');
 
 function source(group, ordinal, color, side) {
@@ -292,6 +293,28 @@ test('lọc mockup đơn Group Shirt lấy .wh hoặc mặc định và loại .
   ]);
   assert.deepEqual(selected.map((item) => item.ordinal), [1, 2]);
   assert.ok(selected.every((item) => item.color === 'wh'));
+});
+
+test('mockup đơn Group Shirt chia PNG áo sáng theo từng nhóm và thứ tự ổn định', () => {
+  const groups = selectLightGroupShirtSourceGroups([
+    source('3', 1, 'wh', 'f'),
+    source('1', 2, 'wh', 'b'),
+    source('2', 2, 'bl', 'f'),
+    source('2', 2, 'wh', 'f'),
+    source('1', 1),
+    source('2', 1, 'wh', 'f'),
+  ]);
+  assert.deepEqual(groups.map((group) => group.group), ['1', '2', '3']);
+  assert.deepEqual(groups.map((group) => group.sources.map((item) => item.ordinal)), [
+    [1, 2],
+    [1, 2],
+    [1],
+  ]);
+  assert.ok(groups.flatMap((group) => group.sources).every((item) => item.color === 'wh'));
+  assert.deepEqual(
+    groups[0].sourcePaths,
+    groups[0].sources.map((item) => item.path),
+  );
 });
 
 test('ưu tiên ordinal theo vùng Sáng/Tối dù các vùng được lưu xen kẽ', async () => {

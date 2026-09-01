@@ -57,7 +57,7 @@ test('preload và main expose đủ IPC Group Shirt, PDF và nền mockup đơn 
   ]) assert.match(main, new RegExp(`ipcMain\\.handle\\('${channel}'`));
   assert.match(main, /ipcMain\.handle\('group-shirt:generate'[\s\S]*?createDownloadPdf\(\{/);
   assert.match(main, /ipcMain\.handle\('group-shirt:generate'[\s\S]*?templates:\s*singleTemplates/);
-  assert.match(main, /selectLightGroupShirtSources\(sourcePaths\)/);
+  assert.match(main, /selectLightGroupShirtSourceGroups\(sourcePaths\)/);
 });
 
 test('Group Shirt đăng ký job trước mọi inspect async và xác thực capability theo sender', () => {
@@ -112,13 +112,13 @@ test('allowlist và fingerprint bảo vệ source/template theo từng renderer'
   );
 });
 
-test('mockup đơn Group Shirt preflight áo sáng, dùng nền tự chọn và vẫn cho service skip Done cũ', () => {
+test('mockup đơn Group Shirt chia theo nhóm, dùng mọi nền tự chọn và vẫn skip Done cũ', () => {
   const main = read('src/main.js');
   const helperStart = main.indexOf('async function preflightGroupSingleMockupSources');
   const helperEnd = main.indexOf('\nfunction createWindow', helperStart);
   assert.ok(helperStart >= 0 && helperEnd > helperStart);
   const helper = main.slice(helperStart, helperEnd);
-  assert.match(helper, /selectLightGroupShirtSources\(sourcePaths\)/);
+  assert.match(helper, /selectLightGroupShirtSourceGroups\(sourcePaths\)/);
   assert.match(helper, /findExistingSingleMockupOutputs\([\s\S]*?Done/);
   assert.match(helper, /existingPaths\.length\s*>\s*0[\s\S]*?return \[\]/);
   assert.match(helper, /NO_LIGHT_SINGLE_MOCKUP_SOURCES/);
@@ -131,9 +131,10 @@ test('mockup đơn Group Shirt preflight áo sáng, dùng nền tự chọn và 
       generate.indexOf('generateGroupShirtMockups('),
     'preflight áo sáng phải hoàn tất trước render Group Shirt',
   );
-  assert.match(generate, /generateSingleMockups\(\{[\s\S]*?sourcePaths:\s*lightSources/);
+  assert.match(generate, /generateSingleMockups\(\{[\s\S]*?sourceGroups:\s*lightSourceGroups/);
   assert.match(generate, /generateSingleMockups\(\{[\s\S]*?templates:\s*singleTemplates/);
   assert.match(generate, /validateAuthorizedSingleTemplatePaths\([\s\S]*?allowEmpty:\s*true/);
+  assert.match(read('src/renderer/app.js'), /outputCount\s*=\s*groupCount\s*\*\s*state\.groupSingleMockupTemplates\.length/);
 });
 
 test('renderer dispatch theo mode và payload Group Shirt nhận tùy chọn PDF dùng chung', () => {
@@ -220,10 +221,10 @@ test('vùng Group Shirt scale khóa đúng tỷ lệ pixel 42×48 và tối thi�
   assert.match(drag, /pixelWidth\s*=\s*pixelHeight\s*\*\s*aspectRatio/);
 });
 
-test('package và lockfile cùng mang version 1.4.10', () => {
+test('package và lockfile cùng mang version 1.4.11', () => {
   const manifest = JSON.parse(read('package.json'));
   const lockfile = JSON.parse(read('package-lock.json'));
-  assert.equal(manifest.version, '1.4.10');
-  assert.equal(lockfile.version, '1.4.10');
-  assert.equal(lockfile.packages[''].version, '1.4.10');
+  assert.equal(manifest.version, '1.4.11');
+  assert.equal(lockfile.version, '1.4.11');
+  assert.equal(lockfile.packages[''].version, '1.4.11');
 });

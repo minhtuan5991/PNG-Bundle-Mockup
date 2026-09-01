@@ -4,6 +4,9 @@
 
 ## Trạng thái mốc
 
+- [x] QA local v1.4.11: **166/166 test đạt**; regression 3 nhóm × 3 nền = 9 mockup đơn, tên output theo nhóm và không trộn PNG giữa nhóm.
+- [x] Source/package smoke v1.4.11 đều **25/25**; NSIS x64, ASAR version/25 file src-assets, updater metadata và Input/Print Area allowlist đạt.
+- [ ] Chưa commit/tag/push và xác minh GitHub Release v1.4.11; chưa kiểm thử cài mới/nâng cấp tương tác.
 - [x] QA local v1.4.10 ngày 2026-09-01: **164/164 test đạt**; ordinal theo track, nền mockup đơn Group Shirt tự chọn và cleanup allowlist đều có regression test.
 - [x] Source/package smoke v1.4.10 đều **25/25**; NSIS x64, ASAR version/25 file src-assets, updater metadata và Input/Print Area allowlist đạt.
 - [x] GitHub v1.4.10 đã xác minh: commit `6f979d3`, tag `v1.4.10`, Windows CI `33490320726` và Release Windows `33490320665` thành công; Release `380352195` public/stable/latest có đúng ba asset.

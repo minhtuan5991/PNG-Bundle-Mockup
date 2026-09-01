@@ -447,7 +447,7 @@ function renderInputAssets() {
   elements.inputAssetSummary.title = inputDirectory || '';
   elements.groupSingleMockupPicker.classList.toggle('is-hidden', !groupMode);
   elements.singleMockupOptionHelp.textContent = groupMode
-    ? 'Chọn nhiều ảnh nền riêng và ghép ngẫu nhiên PNG áo sáng của các nhóm.'
+    ? 'Mỗi nhóm PNG dùng tất cả ảnh nền đã chọn; PNG áo sáng trong từng nhóm được chọn ngẫu nhiên.'
     : 'Ghép PNG ngẫu nhiên lên từng ảnh áo, cốc, túi… trong Input.';
 
   if (!state.inputAssetsLoaded && state.inputAssetsLoading) {
@@ -3241,10 +3241,12 @@ elements.createSingleMockups.addEventListener('change', async () => {
         }
       }
       const missing = templatesMissingRegions();
+      const groupCount = analyzeGroupShirtSetup().sourceGroups.size;
+      const outputCount = groupCount * state.groupSingleMockupTemplates.length;
       if (missing.length > 0) elements.advancedSettings.open = true;
       elements.singleRegionStatus.textContent = missing.length > 0
         ? `Cần chỉnh và lưu vùng in cho ${missing.length} ảnh trước khi tạo.`
-        : `Sẽ tạo ${state.groupSingleMockupTemplates.length} mockup đơn.`;
+        : `Sẽ tạo ${outputCount} mockup đơn (${groupCount} nhóm × ${state.groupSingleMockupTemplates.length} nền).`;
       renderInputAssets();
       updateControls();
       return;

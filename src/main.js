@@ -52,7 +52,7 @@ const {
   createGroupShirtRegionStore,
 } = require('./services/group-shirt-regions');
 const {
-  selectLightGroupShirtSources,
+  selectLightGroupShirtSourceGroups,
 } = require('./services/group-shirt-planner');
 const {
   renderGroupShirtPreview,
@@ -520,8 +520,8 @@ async function preflightGroupSingleMockupSources(options = {}) {
   if (typeof isCancelled === 'function' && isCancelled()) {
     throw new GenerationCancelledError();
   }
-  const lightSources = selectLightGroupShirtSources(sourcePaths).map((source) => source.path);
-  if (lightSources.length > 0) return lightSources;
+  const lightSourceGroups = selectLightGroupShirtSourceGroups(sourcePaths);
+  if (lightSourceGroups.length > 0) return lightSourceGroups;
 
   const existingPaths = await findExistingSingleMockupOutputs(
     path.join(sourceDirectory, 'Done'),
@@ -1411,7 +1411,7 @@ function registerIpc() {
               { allowEmpty: true },
             )
           : [];
-        const lightSources = createSingleMockups
+        const lightSourceGroups = createSingleMockups
           ? await preflightGroupSingleMockupSources({
               sourcePaths,
               sourceDirectory,
@@ -1446,7 +1446,7 @@ function registerIpc() {
         let singleResult = null;
         if (createSingleMockups) {
           singleResult = await generateSingleMockups({
-            sourcePaths: lightSources,
+            sourceGroups: lightSourceGroups,
             templates: singleTemplates,
             outputDirectory: result.outputDir,
             regionStore: singleMockupRegionStore,

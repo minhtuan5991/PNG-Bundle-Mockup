@@ -22,7 +22,7 @@
 - Dùng thư mục `Input` cạnh file EXE để chứa một PDF mẫu và các ảnh mockup đơn PNG/JPG/WEBP/TIFF có chữ `bundle` trong tên.
 - Tạo **PDF Download** bằng cách thay URL cũ trong nút Download, dòng link hiển thị và các thông tin liên kết liên quan bằng URL mới.
 - Tạo một mockup đơn cho mỗi ảnh mockup trong `Input`; PNG nguồn được chọn ngẫu nhiên và đặt vào vùng in tỷ lệ `42:48` (`7:8`) đã lưu riêng theo từng ảnh mẫu.
-- Riêng luồng Group Shirt cho phép chọn nhiều ảnh nền mockup đơn trực tiếp từ bất kỳ thư mục nào, không cần marker `bundle`; các vùng in dùng chung file JSON với mockup đơn trong `Input`.
+- Riêng luồng Group Shirt cho phép chọn nhiều ảnh nền mockup đơn trực tiếp từ bất kỳ thư mục nào, không cần marker `bundle`; mỗi nhóm PNG dùng tất cả nền đã chọn và các vùng in dùng chung file JSON với mockup đơn trong `Input`.
 - Gắn một watermark PNG trong suốt lên lớp trên cùng của mockup Bundle, Group Shirt và mockup đơn.
 - Xóa Metadata mặc định ở bước cuối của mọi ảnh mockup: Comment, EXIF, XMP, EXIF thumbnail, IPTC và ICC profile.
 - Preview đúng bố cục và watermark trước khi xuất.
@@ -70,7 +70,7 @@
 - Trong từng loại nguồn, PNG được dùng theo số thứ tự trên các vùng đã lưu. Thứ tự ưu tiên track là áo sáng rồi áo tối; trong mỗi track, vùng 1, 2, 3 nhận PNG ordinal tăng dần. Mặt trước/sau dùng hàng đợi riêng theo tag mặt. Khi nguồn không tag màu và nguồn có tag màu cùng phù hợp, app dành chỗ cho nguồn có tag màu trước, sau đó dùng một lượt nguồn không tag màu chung cho cả hai màu áo. Chỉ lặp ngẫu nhiên nguồn phù hợp sau khi hết nguồn chưa dùng; PNG thừa tạo trang mới, không bị bỏ sót hay nhân đôi do dùng chung màu.
 - Có thể chọn nhiều nền `mgs`; mỗi nền tương thích tạo chuỗi trang riêng cho từng nhóm PNG. Nền không tương thích với bất kỳ nhóm nào được bỏ qua có cảnh báo; nếu một nhóm không có nền nào có vùng phù hợp, app dừng trước khi ghi output.
 - Tên output có dạng `[<tên nhóm PNG>]_<tên mockup>_<số thứ tự 3 chữ số>.png`, ví dụ `[Family]_chambray.mgs_001.png`. Tên mockup giữ nguyên tên ảnh nền, bỏ đuôi định dạng ảnh. Số thứ tự tính riêng cho mỗi cặp nhóm PNG và tên mockup; khi tên đã tồn tại trong `Done`, app tăng số để không ghi đè ảnh cũ. Dấu ngoặc quanh tên nhóm tránh nhầm với tiền tố `single_` của mockup đơn.
-- Khi bật **Tạo mockup đơn** trong Group Shirt, app cho chọn nhiều ảnh nền riêng, không cần đặt trong `Input` và không cần chữ `bundle`. App chọn ngẫu nhiên PNG áo sáng (`.wh` hoặc không có tag màu) trong các nhóm. Quy tắc một lần cho mỗi `Done` vẫn được giữ.
+- Khi bật **Tạo mockup đơn** trong Group Shirt, app cho chọn nhiều ảnh nền riêng, không cần đặt trong `Input` và không cần chữ `bundle`. Mỗi nhóm PNG dùng toàn bộ nền đã chọn; trên từng nền, app chọn ngẫu nhiên PNG áo sáng (`.wh` hoặc không có tag màu) thuộc chính nhóm đó. Ví dụ 3 nhóm × 3 nền tạo 9 ảnh. Tên file có dạng `single_[<tên nhóm>]_<tên nền>.png`. Quy tắc một lần cho mỗi `Done` vẫn được giữ.
 - **Tạo PDF Download** dùng được ở cả Bundle và Group Shirt, với cùng quy tắc chỉ một PDF trong mỗi `Done`.
 - Nền JPEG/TIFF có EXIF Orientation được xoay theo chiều nhìn thấy trước khi tính vùng in và xuất PNG.
 
@@ -107,7 +107,7 @@ PDF mẫu phải có ít nhất hai annotation link cùng trỏ tới URL cũ tr
 ## Mockup đơn và vùng in
 
 - App tạo một file mockup đơn cho mỗi ảnh mẫu có chữ `bundle` trong tên ở `Input`; ảnh không chứa `bundle` không được dùng.
-- Trong Group Shirt, danh sách nền mockup đơn do người dùng chọn trực tiếp thay cho danh sách `bundle` trong `Input`. Có thể chọn PNG/JPG/JPEG/WEBP/TIF/TIFF và lưu vùng in bằng cùng trình chỉnh.
+- Trong Group Shirt, danh sách nền mockup đơn do người dùng chọn trực tiếp thay cho danh sách `bundle` trong `Input`. Có thể chọn PNG/JPG/JPEG/WEBP/TIF/TIFF và lưu vùng in bằng cùng trình chỉnh. Mọi nhóm PNG đều chạy qua toàn bộ danh sách nền này.
 - Số PNG nguồn được chọn ngẫu nhiên bằng số ảnh mẫu. Trong một lượt, app xáo trộn để hạn chế lặp; nếu số ảnh mẫu lớn hơn số PNG đã chọn thì PNG có thể được dùng lại ở vòng tiếp theo.
 - Vùng in có tỷ lệ pixel cố định `42:48` (`7:8`), có thể kéo, đổi kích thước và di chuyển trong Preview.
 - Thiết lập được lưu trong `Print Area/single-mockup-regions.json` theo tên và kích thước từng ảnh mẫu. Ảnh giữ nguyên tên và kích thước sẽ dùng lại thiết lập ở các lần sau; thay đổi kích thước ảnh yêu cầu lưu lại vùng in.

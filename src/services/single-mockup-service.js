@@ -512,6 +512,7 @@ async function commitWithoutOverwrite(tempPath, outputDirectory, stem) {
 async function generateSingleMockups(options = {}) {
   const {
     sourcePaths,
+    sourceGroups = null,
     inputDirectory,
     sourceDirectory,
     outputDirectory,
@@ -584,13 +585,77 @@ async function generateSingleMockups(options = {}) {
   });
 
   throwIfCancelled(isCancelled);
-  const validSources = await validateSourcePngPaths(sourcePaths, isCancelled);
-  const selectedSources = selectRandomSourcePngs(validSources, normalizedTemplates.length, random);
   const templateRegions = await resolveTemplateRegions(normalizedTemplates, {
     regionStore,
     regions,
     isCancelled,
   });
+  let renderPlan;
+  if (sourceGroups !== null) {
+    if (!Array.isArray(sourceGroups) || sourceGroups.length === 0) {
+      throw new SingleMockupError(
+        'Cần ít nhất một nhóm PNG để tạo mockup đơn Group Shirt.',
+        'NO_SINGLE_MOCKUP_SOURCE_GROUPS',
+      );
+    }
+    const seenGroupKeys = new Set();
+    renderPlan = [];
+    for (const [groupIndex, candidate] of sourceGroups.entries()) {
+      throwIfCancelled(isCancelled);
+      if (!candidate || typeof candidate !== 'object') {
+        throw new SingleMockupError(
+          'Thông tin nhóm PNG mockup đơn không hợp lệ.',
+          'INVALID_SINGLE_MOCKUP_SOURCE_GROUP',
+        );
+      }
+      const group = String(
+        candidate.group ?? candidate.displayGroup ?? candidate.groupKey ?? '',
+      ).normalize('NFC').trim().replace(/\s+/gu, ' ');
+      const groupKey = String(candidate.groupKey ?? group)
+        .normalize('NFC').trim().toLocaleLowerCase('en-US');
+      if (!group || !groupKey) {
+        throw new SingleMockupError(
+          `Nhóm PNG thứ ${groupIndex + 1} chưa có tên.`,
+          'INVALID_SINGLE_MOCKUP_SOURCE_GROUP',
+        );
+      }
+      if (seenGroupKeys.has(groupKey)) {
+        throw new SingleMockupError(
+          `Nhóm PNG “${group}” bị lặp trong danh sách mockup đơn.`,
+          'DUPLICATE_SINGLE_MOCKUP_SOURCE_GROUP',
+          { group, groupKey },
+        );
+      }
+      seenGroupKeys.add(groupKey);
+      const groupSourcePaths = candidate.sourcePaths ||
+        candidate.sources?.map((source) => source?.path || source);
+      const validGroupSources = await validateSourcePngPaths(groupSourcePaths, isCancelled);
+      const selectedGroupSources = selectRandomSourcePngs(
+        validGroupSources,
+        normalizedTemplates.length,
+        random,
+      );
+      for (let templateIndex = 0; templateIndex < normalizedTemplates.length; templateIndex += 1) {
+        renderPlan.push({
+          group,
+          groupKey,
+          template: normalizedTemplates[templateIndex],
+          sourcePath: selectedGroupSources[templateIndex],
+          region: templateRegions[templateIndex],
+        });
+      }
+    }
+  } else {
+    const validSources = await validateSourcePngPaths(sourcePaths, isCancelled);
+    const selectedSources = selectRandomSourcePngs(validSources, normalizedTemplates.length, random);
+    renderPlan = normalizedTemplates.map((template, index) => ({
+      group: null,
+      groupKey: null,
+      template,
+      sourcePath: selectedSources[index],
+      region: templateRegions[index],
+    }));
+  }
   await fs.mkdir(resolvedOutputDirectory, { recursive: true });
 
   const tempPaths = [];
@@ -604,19 +669,17 @@ async function generateSingleMockups(options = {}) {
   };
 
   try {
-    for (let index = 0; index < normalizedTemplates.length; index += 1) {
+    for (let index = 0; index < renderPlan.length; index += 1) {
       throwIfCancelled(isCancelled);
-      const template = normalizedTemplates[index];
-      const sourcePath = selectedSources[index];
-      const region = templateRegions[index];
+      const { template, sourcePath, region, group, groupKey } = renderPlan[index];
       const tempPath = path.join(
         resolvedOutputDirectory,
         `.${safePrefix}-${jobId}-${String(index + 1).padStart(3, '0')}.tmp`,
       );
       tempPaths.push(tempPath);
       progress(
-        0.85 * (index / normalizedTemplates.length),
-        `Đang tạo mockup đơn ${index + 1}/${normalizedTemplates.length}…`,
+        0.85 * (index / renderPlan.length),
+        `Đang tạo mockup đơn ${index + 1}/${renderPlan.length}…`,
         'single-mockup-compose',
       );
       const pixelRegion = await renderSingleMockupToFile({
@@ -629,7 +692,7 @@ async function generateSingleMockups(options = {}) {
         preserveMetadata: !shouldRemoveMetadata,
         isCancelled,
       });
-      rendered.push({ template, sourcePath, region, pixelRegion, tempPath });
+      rendered.push({ template, sourcePath, region, pixelRegion, tempPath, group, groupKey });
     }
 
     if (shouldRemoveMetadata) {
@@ -651,10 +714,13 @@ async function generateSingleMockups(options = {}) {
         path.basename(item.template.name, path.extname(item.template.name)),
         `template-${index + 1}`,
       );
+      const groupStem = item.group
+        ? `[${sanitizeFileStem(item.group, `group-${index + 1}`)}]_`
+        : '';
       const outputPath = await commitWithoutOverwrite(
         item.tempPath,
         resolvedOutputDirectory,
-        `${safePrefix}_${templateStem}`,
+        `${safePrefix}_${groupStem}${templateStem}`,
       );
       committedPaths.push(outputPath);
       progress(
@@ -685,6 +751,7 @@ async function generateSingleMockups(options = {}) {
           format: item.template.format || null,
         },
         sourcePath: item.sourcePath,
+        ...(item.group ? { group: item.group, groupKey: item.groupKey } : {}),
         region: { ...item.region },
         pixelRegion: { ...item.pixelRegion },
         outputPath: committedPaths[index],

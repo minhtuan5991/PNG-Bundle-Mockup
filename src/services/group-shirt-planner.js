@@ -514,10 +514,32 @@ function selectLightGroupShirtSources(sources) {
   return sources.map(normalizeSourceDescriptor).filter((source) => source.color === 'wh');
 }
 
+function selectLightGroupShirtSourceGroups(sources) {
+  const lightSources = selectLightGroupShirtSources(sources);
+  const buckets = new Map();
+  for (const source of lightSources) {
+    if (!buckets.has(source.groupKey)) buckets.set(source.groupKey, []);
+    buckets.get(source.groupKey).push(source);
+  }
+  return [...buckets.values()]
+    .map((groupSources) => {
+      const orderedSources = sortedSources(groupSources);
+      return {
+        group: orderedSources[0].group,
+        displayGroup: orderedSources[0].group,
+        groupKey: orderedSources[0].groupKey,
+        sources: orderedSources,
+        sourcePaths: orderedSources.map((source) => source.path),
+      };
+    })
+    .sort((left, right) => localeCompare(left.group, right.group));
+}
+
 module.exports = {
   GroupShirtPlanError,
   normalizeGroupShirtSourceDescriptor: normalizeSourceDescriptor,
   normalizeGroupShirtTemplateDescriptor: normalizeTemplateDescriptor,
   selectLightGroupShirtSources,
+  selectLightGroupShirtSourceGroups,
   createGroupShirtPlan,
 };

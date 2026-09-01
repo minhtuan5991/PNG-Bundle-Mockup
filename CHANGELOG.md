@@ -4,7 +4,19 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
-Chưa có thay đổi sau v1.4.10.
+Chưa có thay đổi sau v1.4.11.
+
+## [1.4.11] - 2026-09-01
+
+### Changed
+
+- Trong luồng Group Shirt, mỗi nhóm PNG giờ dùng toàn bộ ảnh nền mockup đơn đã chọn. Ví dụ 3 nhóm và 3 nền tạo đúng 9 ảnh, chia đều 3 ảnh cho mỗi nhóm.
+- Mỗi nền tiếp tục chọn ngẫu nhiên một PNG áo sáng tương thích trong chính nhóm đó; không trộn PNG giữa các nhóm.
+- Tên mockup đơn Group Shirt có thêm tên nhóm theo dạng `single_[Nhóm]_<tên nền>.png` để phân biệt kết quả.
+
+### Unchanged
+
+- Giữ nguyên vùng in `42×48`, watermark, xóa metadata, lựa chọn nền, quy tắc PNG áo sáng và cơ chế bỏ qua toàn bộ bước mockup đơn khi `Done` đã có `single_*.png`.
 
 ## [1.4.10] - 2026-09-01
 

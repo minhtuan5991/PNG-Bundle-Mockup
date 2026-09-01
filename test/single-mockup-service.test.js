@@ -316,6 +316,68 @@ test('lưu lại các template hiện có không xóa vùng in của template t�
   assert.deepEqual(Object.keys(diskDocument.templates).sort(), ['cup.png', 'shirt.png']);
 });
 
+test('Group Shirt tạo mọi tổ hợp nhóm PNG và ảnh nền mockup đơn đã chọn', async (t) => {
+  const directory = await createTempDirectory(t, 'single-mockup-groups-');
+  const outputDirectory = path.join(directory, 'Done');
+  const templateNames = ['shirt-a.png', 'shirt-b.png', 'shirt-c.png'];
+  const sourceNames = ['1 (1).png', '2 (1).wh.png', '3 (1).png'];
+  const templatePaths = templateNames.map((name) => path.join(directory, name));
+  const sourcePaths = sourceNames.map((name) => path.join(directory, name));
+  await Promise.all([
+    ...templatePaths.map((filePath) => createSolidImage(filePath, 'png')),
+    ...sourcePaths.map((filePath) => createPaddedDesign(filePath)),
+  ]);
+  const templates = templatePaths.map((filePath) => ({
+    path: filePath,
+    name: path.basename(filePath),
+    width: 200,
+    height: 200,
+  }));
+  const regions = Object.fromEntries(templateNames.map((name) => [
+    name,
+    { x: 0.1, y: 0.1, width: 0.35, height: 0.4 },
+  ]));
+  const sourceGroups = sourcePaths.map((filePath, index) => ({
+    group: String(index + 1),
+    groupKey: String(index + 1),
+    sourcePaths: [filePath],
+  }));
+
+  const result = await generateSingleMockups({
+    sourceGroups,
+    templates,
+    regions,
+    outputDirectory,
+    random: () => 0,
+  });
+
+  assert.equal(result.created, true);
+  assert.equal(result.outputPaths.length, 9);
+  assert.deepEqual(result.assignments.map((item) => item.group), [
+    '1', '1', '1', '2', '2', '2', '3', '3', '3',
+  ]);
+  assert.deepEqual(result.outputPaths.map((filePath) => path.basename(filePath)), [
+    'single_[1]_shirt-a.png',
+    'single_[1]_shirt-b.png',
+    'single_[1]_shirt-c.png',
+    'single_[2]_shirt-a.png',
+    'single_[2]_shirt-b.png',
+    'single_[2]_shirt-c.png',
+    'single_[3]_shirt-a.png',
+    'single_[3]_shirt-b.png',
+    'single_[3]_shirt-c.png',
+  ]);
+  for (let groupIndex = 0; groupIndex < sourceGroups.length; groupIndex += 1) {
+    const assignments = result.assignments.slice(groupIndex * 3, groupIndex * 3 + 3);
+    assert.ok(assignments.every((item) => item.sourcePath === sourcePaths[groupIndex]));
+  }
+
+  const repeated = await generateSingleMockups({ outputDirectory });
+  assert.equal(repeated.skipped, true);
+  assert.equal(repeated.skipReason, 'SINGLE_MOCKUP_ALREADY_EXISTS');
+  assert.equal(repeated.existingPaths.length, 9);
+});
+
 test('mockup đơn giữ kích thước và vị trí thiết kế trên canvas PNG 4200×4800', async (t) => {
   const directory = await createTempDirectory(t, 'single-mockup-full-canvas-');
   const templatePath = path.join(directory, 'shirt bundle.png');
