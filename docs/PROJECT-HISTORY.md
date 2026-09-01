@@ -762,3 +762,13 @@ Checksum bên dưới thuộc artifact public do GitHub Actions build lại, kh�
 - Commit `f0bdcd89d64a6870e42ad00d3c6dc3d8752b6866`, annotated tag `v1.4.11`; Windows CI `33497184683` và Release Windows `33497184747` đều thành công.
 - Release `380402056` public/stable/latest có đúng ba asset. Setup công khai 104376615 byte, SHA-256 `03fd7170a4dc9939419fb77797632a3ca8a69e3d452ac54d8b04b42a344f8d4c`.
 - Chưa chạy cài mới/nâng cấp tương tác trên máy hoặc VM sạch.
+
+## 33. Bản local v1.4.12 — vùng in Nam/Nữ cho Mockup Cặp đôi
+
+- Parser và công cụ đổi tên Group Shirt hỗ trợ tag `.m/.w`, chuẩn hóa sau tag màu và mặt. Cùng ordinal được phép tồn tại riêng trong track Nam/Nữ.
+- Schema vùng in nâng lên v3 với trường giới tính tùy chọn; schema v1/v2 tự di trú thành vùng không giới tính để giữ nguyên hành vi cũ.
+- Matching lọc giới tính trước, rồi áp dụng nguyên các pool màu/mặt/ordinal. PNG không tag giới tính không dùng vùng Nam/Nữ; Mockup đơn bỏ qua `.m/.w`.
+- Vùng Nam hiển thị xanh lá, vùng Nữ hồng nhạt kèm nhãn chữ. Tên mockup đơn đổi thành `[Nhóm]_single_<tên nền>.png`.
+- Automated tests **169/169**; source và packaged smoke **25/25**. ASAR version `1.4.12`, không chứa test; Input/Print Area payload đúng allowlist.
+- NSIS local: Setup 104378390 byte, SHA-256 `3a757994e14b6ed678f0f7b7548e5cd95b802e6240d7ae47975b5e84bdcd1dd3`; Authenticode `NotSigned`.
+- Chưa chạy cài mới/nâng cấp tương tác trên máy hoặc VM sạch.

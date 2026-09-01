@@ -4,6 +4,10 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
+Chưa có thay đổi sau v1.4.12.
+
+## [1.4.12] - 2026-09-01
+
 ### Added
 
 - Group Shirt hỗ trợ tag giới tính `.m` (áo nam) và `.w` (áo nữ) trong công cụ đổi tên PNG và vùng in Mockup Cặp đôi.
