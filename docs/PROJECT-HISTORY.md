@@ -759,4 +759,6 @@ Checksum bên dưới thuộc artifact public do GitHub Actions build lại, kh�
 - Regression test bao phủ phân nhóm áo sáng, tổ hợp 3×3, tên output và skip lần chạy sau.
 - Automated tests **166/166**; source và packaged smoke **25/25**. ASAR version `1.4.11`, 25 file `src/assets` khớp byte, updater metadata và Input/Print Area allowlist đều đạt.
 - NSIS local: Setup 104376922 byte, SHA-256 `6a9891c882cc49fa37693246d9877b4bd237ecdbb93b71a8607c591ac47588b8`. Authenticode `NotSigned`.
-- Chưa commit/tag/push GitHub và chưa chạy cài mới/nâng cấp tương tác.
+- Commit `f0bdcd89d64a6870e42ad00d3c6dc3d8752b6866`, annotated tag `v1.4.11`; Windows CI `33497184683` và Release Windows `33497184747` đều thành công.
+- Release `380402056` public/stable/latest có đúng ba asset. Setup công khai 104376615 byte, SHA-256 `03fd7170a4dc9939419fb77797632a3ca8a69e3d452ac54d8b04b42a344f8d4c`.
+- Chưa chạy cài mới/nâng cấp tương tác trên máy hoặc VM sạch.
