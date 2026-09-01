@@ -11,6 +11,7 @@
 - Nút **Loại bỏ PNG** dọn toàn bộ danh sách để bắt đầu bộ mới mà không xóa file PNG gốc.
 - Hai chế độ loại trừ nhau: **Mockup Bundle PNG** giữ nguyên luồng dàn lưới hiện có; **Mockup Group Shirt** ghép PNG theo nhóm, màu áo và mặt trước/sau.
 - Group Shirt nhận tên `1 (1).wh.f.png`, `1 (2).bl.b.png`; mỗi PNG không có tag màu dùng cả áo sáng/tối và giữ đúng mặt, kể cả trong nhóm trộn tag. Nhóm không có PNG mặt sau tự bỏ qua toàn bộ nền có vùng mặt sau.
+- Trong từng màu/mặt, PNG `(1)`, `(2)`, `(3)` được ưu tiên lần lượt vào vùng 1, 2, 3. Nếu nền có cả áo sáng/tối, app dùng đúng ordinal của từng pool màu và chỉ lấp ngẫu nhiên các vùng còn thiếu sau khi hết PNG chưa dùng.
 - Chọn nhiều nền Group Shirt có marker `mgs`, ví dụ `mgs.jpg`, `.mgs1.jpg` hoặc `shirt mgs lifestyle.png`. Mọi nền là template dùng chung; số/chữ cạnh marker chỉ là tên file, còn vùng in quyết định nhóm PNG nào tương thích. Mỗi nền lưu được nhiều vùng in áo sáng/tối, mặt trước/sau theo tỷ lệ cố định `42×48`, có thể di chuyển, scale đúng tỷ lệ và xoay.
 - Công cụ **Đổi tên PNG** gắn `.wh/.bl` và `.f/.b` bằng thao tác đổi tên file thật, kiểm tra trùng tên và rollback toàn bộ nếu lỗi. Popup mở với `0/N`; chỉ thumbnail được chọn mới đổi tên, và thumbnail `80×76 px` giúp nhìn thiết kế rõ hơn.
 - Chọn ảnh nền PNG/JPG/WEBP/TIFF.
@@ -21,11 +22,13 @@
 - Dùng thư mục `Input` cạnh file EXE để chứa một PDF mẫu và các ảnh mockup đơn PNG/JPG/WEBP/TIFF có chữ `bundle` trong tên.
 - Tạo **PDF Download** bằng cách thay URL cũ trong nút Download, dòng link hiển thị và các thông tin liên kết liên quan bằng URL mới.
 - Tạo một mockup đơn cho mỗi ảnh mockup trong `Input`; PNG nguồn được chọn ngẫu nhiên và đặt vào vùng in tỷ lệ `42:48` (`7:8`) đã lưu riêng theo từng ảnh mẫu.
+- Riêng luồng Group Shirt cho phép chọn nhiều ảnh nền mockup đơn trực tiếp từ bất kỳ thư mục nào, không cần marker `bundle`; các vùng in dùng chung file JSON với mockup đơn trong `Input`.
 - Gắn một watermark PNG trong suốt lên lớp trên cùng của mockup Bundle, Group Shirt và mockup đơn.
 - Xóa Metadata mặc định ở bước cuối của mọi ảnh mockup: Comment, EXIF, XMP, EXIF thumbnail, IPTC và ICC profile.
 - Preview đúng bố cục và watermark trước khi xuất.
 - Lưu mockup Bundle, Group Shirt, mockup đơn và PDF Download vào cùng thư mục `Done`, không ghi đè kết quả cũ.
 - Xử lý nền, hiển thị tiến trình và có thể huỷ an toàn.
+- Nút **Xóa dữ liệu** dọn cache/file tạm theo allowlist có xác nhận; khi thoát app cũng tự dọn trước rồi mới đóng. Ảnh Input, JSON Print Area và kết quả Done không bị xóa.
 - Hiển thị phiên bản ngay trên tên app và kiểm tra cập nhật từ GitHub Releases.
 - Bộ cài Windows tạo icon ngoài Desktop và Start Menu; máy người dùng không cần Node.js hay `start-app.bat`.
 
@@ -41,7 +44,10 @@
 5. Giữ **Xóa Metadata** được bật nếu muốn làm sạch sáu nhóm metadata ở các file ảnh Bundle, Group Shirt và mockup đơn cuối.
 6. Nếu cần watermark, bật **Gắn Watermark** và chọn một PNG có pixel nền trong suốt. Watermark được áp dụng cho Bundle, Group Shirt và mockup đơn khi chức năng này được bật.
 7. Muốn tạo PDF trong chế độ Bundle hoặc Group Shirt, bật **Tạo PDF Download** rồi nhập URL tải dạng `http://` hoặc `https://`.
-8. Muốn tạo mockup đơn, đặt các ảnh mẫu có chữ `bundle` trong tên vào `Input` rồi bật **Tạo mockup đơn**. Lần đầu, mở **Thiết lập nâng cao**, bật **Chỉnh vùng in mockup đơn**, chỉnh vùng `42×48` trên từng ảnh rồi bấm **Lưu vùng in**.
+8. Muốn tạo mockup đơn:
+   - Trong Bundle, đặt các ảnh mẫu có chữ `bundle` trong tên vào `Input` rồi bật **Tạo mockup đơn**.
+   - Trong Group Shirt, bật **Tạo mockup đơn** và chọn trực tiếp nhiều ảnh nền cần dùng.
+   Lần đầu, mở **Thiết lập nâng cao**, bật **Chỉnh vùng in mockup đơn**, chỉnh vùng `42×48` trên từng ảnh rồi bấm **Lưu vùng in**.
 9. Trong chế độ Bundle, nhập số mockup; dòng “Chia file” cho biết số PNG trên từng ảnh. Group Shirt tự tính số trang theo số vùng trước/sau đã lưu.
 10. Trong chế độ Bundle, giữ lề trên/dưới ở `195 px` hoặc mở **Thiết lập nâng cao** để điều chỉnh; các thiết lập lề này được ẩn trong Group Shirt.
 11. Bấm **Xem trước**, sau đó bấm **Tạo mockup**.
@@ -61,10 +67,10 @@
   - Chỉ `.wh/.bl`: ghép vào mặt trước đúng màu; template không được có vùng mặt sau.
   - Có cả tag màu và mặt: PNG có `.wh/.bl` chỉ dùng đúng màu; PNG không có tag màu vẫn dùng cả hai màu. Mỗi PNG giữ đúng mặt. Template có ít nhất một vùng tương ứng được dùng; tổng các template đã chọn phải bao phủ đủ các loại PNG của nhóm.
   - Với mọi kiểu nhóm: nếu không có PNG mặt sau, app bỏ qua toàn bộ nền chứa vùng mặt sau, kể cả nền có cả trước/sau. Bộ lọc áp dụng riêng từng nhóm trước khi chia trang; không xóa file nền hoặc ảnh cũ trong `Done`.
-- Trong từng loại nguồn, PNG được dùng theo số thứ tự trên các vùng đã lưu. Khi nguồn không tag màu và nguồn có tag màu cùng phù hợp, app dành chỗ cho nguồn có tag màu trước, sau đó dùng một lượt nguồn không tag màu chung cho cả hai màu áo. Chỉ lặp ngẫu nhiên nguồn phù hợp sau khi hết nguồn chưa dùng; PNG thừa tạo trang mới, không bị bỏ sót hay nhân đôi do dùng chung màu.
+- Trong từng loại nguồn, PNG được dùng theo số thứ tự trên các vùng đã lưu. Thứ tự ưu tiên track là áo sáng rồi áo tối; trong mỗi track, vùng 1, 2, 3 nhận PNG ordinal tăng dần. Mặt trước/sau dùng hàng đợi riêng theo tag mặt. Khi nguồn không tag màu và nguồn có tag màu cùng phù hợp, app dành chỗ cho nguồn có tag màu trước, sau đó dùng một lượt nguồn không tag màu chung cho cả hai màu áo. Chỉ lặp ngẫu nhiên nguồn phù hợp sau khi hết nguồn chưa dùng; PNG thừa tạo trang mới, không bị bỏ sót hay nhân đôi do dùng chung màu.
 - Có thể chọn nhiều nền `mgs`; mỗi nền tương thích tạo chuỗi trang riêng cho từng nhóm PNG. Nền không tương thích với bất kỳ nhóm nào được bỏ qua có cảnh báo; nếu một nhóm không có nền nào có vùng phù hợp, app dừng trước khi ghi output.
 - Tên output có dạng `[<tên nhóm PNG>]_<tên mockup>_<số thứ tự 3 chữ số>.png`, ví dụ `[Family]_chambray.mgs_001.png`. Tên mockup giữ nguyên tên ảnh nền, bỏ đuôi định dạng ảnh. Số thứ tự tính riêng cho mỗi cặp nhóm PNG và tên mockup; khi tên đã tồn tại trong `Done`, app tăng số để không ghi đè ảnh cũ. Dấu ngoặc quanh tên nhóm tránh nhầm với tiền tố `single_` của mockup đơn.
-- Khi bật **Tạo mockup đơn** trong Group Shirt, app chỉ dùng template `bundle` trong `Input` và chọn ngẫu nhiên PNG áo sáng (`.wh` hoặc không có tag màu) trong các nhóm. Quy tắc một lần cho mỗi `Done` vẫn được giữ.
+- Khi bật **Tạo mockup đơn** trong Group Shirt, app cho chọn nhiều ảnh nền riêng, không cần đặt trong `Input` và không cần chữ `bundle`. App chọn ngẫu nhiên PNG áo sáng (`.wh` hoặc không có tag màu) trong các nhóm. Quy tắc một lần cho mỗi `Done` vẫn được giữ.
 - **Tạo PDF Download** dùng được ở cả Bundle và Group Shirt, với cùng quy tắc chỉ một PDF trong mỗi `Done`.
 - Nền JPEG/TIFF có EXIF Orientation được xoay theo chiều nhìn thấy trước khi tính vùng in và xuất PNG.
 
@@ -101,12 +107,19 @@ PDF mẫu phải có ít nhất hai annotation link cùng trỏ tới URL cũ tr
 ## Mockup đơn và vùng in
 
 - App tạo một file mockup đơn cho mỗi ảnh mẫu có chữ `bundle` trong tên ở `Input`; ảnh không chứa `bundle` không được dùng.
+- Trong Group Shirt, danh sách nền mockup đơn do người dùng chọn trực tiếp thay cho danh sách `bundle` trong `Input`. Có thể chọn PNG/JPG/JPEG/WEBP/TIF/TIFF và lưu vùng in bằng cùng trình chỉnh.
 - Số PNG nguồn được chọn ngẫu nhiên bằng số ảnh mẫu. Trong một lượt, app xáo trộn để hạn chế lặp; nếu số ảnh mẫu lớn hơn số PNG đã chọn thì PNG có thể được dùng lại ở vòng tiếp theo.
 - Vùng in có tỷ lệ pixel cố định `42:48` (`7:8`), có thể kéo, đổi kích thước và di chuyển trong Preview.
-- Thiết lập được lưu trong hồ sơ người dùng theo tên và kích thước từng ảnh mẫu. Ảnh giữ nguyên tên và kích thước sẽ dùng lại thiết lập ở các lần sau; thay đổi kích thước ảnh yêu cầu lưu lại vùng in.
+- Thiết lập được lưu trong `Print Area/single-mockup-regions.json` theo tên và kích thước từng ảnh mẫu. Ảnh giữ nguyên tên và kích thước sẽ dùng lại thiết lập ở các lần sau; thay đổi kích thước ảnh yêu cầu lưu lại vùng in.
 - Toàn bộ canvas PNG, gồm phần trong suốt, được resize theo kiểu `contain` và đặt vào vùng in; PNG `4200×4800` khớp đúng vùng `42×48`, không phóng riêng phần thiết kế. Watermark, nếu bật, luôn được composite sau cùng trên lớp trên cùng.
 - Ảnh mẫu JPEG/TIFF có EXIF Orientation được xoay theo chiều nhìn thấy trước khi tính và áp dụng vùng in.
 - Tên file bắt đầu bằng `single_<tên ảnh mẫu>` và được thêm hậu tố khi trùng.
+
+## Xóa dữ liệu rác
+
+- Bấm **Xóa dữ liệu** trên thanh đầu ứng dụng, đọc hộp xác nhận rồi chọn **Xóa dữ liệu rác**.
+- App chỉ dọn cache Electron, thư mục staging/previous còn sót sau thao tác nguyên tử và file tạm có đúng mẫu tên nội bộ trong các thư mục nguồn/Done đã được người dùng cấp quyền ở phiên hiện tại.
+- App không xóa PNG, ảnh nền, PDF mẫu, `path-preferences.json`, hai JSON vùng in hoặc output hoàn chỉnh. Khi đóng cửa sổ, app tự chạy cùng cơ chế an toàn rồi mới thoát.
 
 ## Kéo-thả PNG
 

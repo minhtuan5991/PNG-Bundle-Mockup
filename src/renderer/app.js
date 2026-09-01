@@ -10,6 +10,7 @@ if (!groupShirtMatching) {
 const elements = {
   appTitle: document.querySelector('#appTitle'),
   appStatus: document.querySelector('#appStatus'),
+  cleanupDataButton: document.querySelector('#cleanupDataButton'),
   checkUpdateButton: document.querySelector('#checkUpdateButton'),
   controlsPanel: document.querySelector('#controlsPanel'),
   chooseFolderButton: document.querySelector('#chooseFolderButton'),
@@ -48,6 +49,10 @@ const elements = {
   downloadUrl: document.querySelector('#downloadUrl'),
   pdfTemplateSummary: document.querySelector('#pdfTemplateSummary'),
   createSingleMockups: document.querySelector('#createSingleMockups'),
+  singleMockupOptionHelp: document.querySelector('#singleMockupOptionHelp'),
+  groupSingleMockupPicker: document.querySelector('#groupSingleMockupPicker'),
+  groupSingleMockupTemplateSummary: document.querySelector('#groupSingleMockupTemplateSummary'),
+  chooseGroupSingleTemplatesButton: document.querySelector('#chooseGroupSingleTemplatesButton'),
   singleMockupSummary: document.querySelector('#singleMockupSummary'),
   editSingleMockupRegions: document.querySelector('#editSingleMockupRegions'),
   saveSingleMockupRegions: document.querySelector('#saveSingleMockupRegions'),
@@ -172,6 +177,7 @@ const state = {
   mockupMode: 'bundle',
   template: null,
   groupTemplates: [],
+  groupSingleMockupTemplates: [],
   watermark: null,
   sourcePicker: null,
   renamePicker: null,
@@ -221,7 +227,8 @@ function isTemplateFile(file) {
   const fileKey = normalizePath(file.path);
   return Boolean(
     (state.template && fileKey === normalizePath(state.template.path)) ||
-    state.groupTemplates.some((template) => fileKey === normalizePath(template.path))
+    state.groupTemplates.some((template) => fileKey === normalizePath(template.path)) ||
+    state.groupSingleMockupTemplates.some((template) => fileKey === normalizePath(template.path))
   );
 }
 
@@ -415,8 +422,14 @@ function readDownloadUrl(markInvalid = true) {
   return normalized;
 }
 
+function activeSingleMockupTemplates() {
+  return state.mockupMode === 'group-shirt'
+    ? state.groupSingleMockupTemplates
+    : state.inputAssets.singleMockupTemplates;
+}
+
 function templatesMissingRegions() {
-  return state.inputAssets.singleMockupTemplates.filter((template) => !template.region);
+  return activeSingleMockupTemplates().filter((template) => !template.region);
 }
 
 function renderInputAssets() {
@@ -427,9 +440,15 @@ function renderInputAssets() {
     warnings = [],
   } = state.inputAssets;
   const pdfCount = pdfTemplates.length;
-  const singleCount = singleMockupTemplates.length;
-  const configuredCount = singleMockupTemplates.filter((template) => template.region).length;
+  const activeSingleTemplates = activeSingleMockupTemplates();
+  const singleCount = activeSingleTemplates.length;
+  const configuredCount = activeSingleTemplates.filter((template) => template.region).length;
+  const groupMode = state.mockupMode === 'group-shirt';
   elements.inputAssetSummary.title = inputDirectory || '';
+  elements.groupSingleMockupPicker.classList.toggle('is-hidden', !groupMode);
+  elements.singleMockupOptionHelp.textContent = groupMode
+    ? 'Chọn nhiều ảnh nền riêng và ghép ngẫu nhiên PNG áo sáng của các nhóm.'
+    : 'Ghép PNG ngẫu nhiên lên từng ảnh áo, cốc, túi… trong Input.';
 
   if (!state.inputAssetsLoaded && state.inputAssetsLoading) {
     elements.inputAssetSummary.textContent = 'Đang kiểm tra PDF và ảnh mockup đơn…';
@@ -438,7 +457,7 @@ function renderInputAssets() {
   } else {
     const warningSuffix = warnings.length > 0 ? ` · ${warnings.length} ảnh lỗi` : '';
     elements.inputAssetSummary.textContent =
-      `${pdfCount} PDF · ${singleCount} ảnh mockup đơn${warningSuffix}`;
+      `${pdfCount} PDF · ${singleMockupTemplates.length} ảnh mockup đơn${warningSuffix}`;
   }
 
   if (pdfCount === 0) {
@@ -450,16 +469,24 @@ function renderInputAssets() {
     elements.pdfTemplateSummary.textContent = `Có ${pdfCount} PDF. Hãy chỉ giữ lại 1 file PDF mẫu trong Input.`;
   }
 
+  if (groupMode) {
+    elements.groupSingleMockupTemplateSummary.textContent = singleCount === 0
+      ? 'Chưa chọn ảnh nền mockup đơn.'
+      : `${singleCount} ảnh · đã có vùng in ${configuredCount}/${singleCount}.`;
+  }
+
   if (singleCount === 0) {
-    elements.singleMockupSummary.textContent = warnings.length > 0
+    elements.singleMockupSummary.textContent = groupMode
+      ? 'Bật Tạo mockup đơn rồi chọn các ảnh nền cần dùng.'
+      : warnings.length > 0
       ? `Không có ảnh mockup hợp lệ. Ảnh lỗi: ${warnings.map((item) => item.name).join(', ')}.`
       : 'Chưa có ảnh mockup đơn trong Input.';
   } else {
-    const names = singleMockupTemplates.slice(0, 3).map((template) => template.name).join(', ');
+    const names = activeSingleTemplates.slice(0, 3).map((template) => template.name).join(', ');
     const remainder = singleCount > 3 ? ` và ${singleCount - 3} ảnh khác` : '';
     elements.singleMockupSummary.textContent =
       `${singleCount} ảnh · đã thiết lập ${configuredCount}/${singleCount}: ${names}${remainder}.`;
-    if (warnings.length > 0) {
+    if (!groupMode && warnings.length > 0) {
       elements.singleMockupSummary.textContent +=
         ` Đã bỏ qua ${warnings.length} ảnh lỗi: ${warnings.map((item) => item.name).join(', ')}.`;
     }
@@ -467,7 +494,9 @@ function renderInputAssets() {
 
   if (!state.regionEditor) {
     elements.singleRegionStatus.textContent = singleCount === 0
-      ? 'Thêm ảnh mockup đơn vào Input để thiết lập vùng in.'
+      ? groupMode
+        ? 'Chọn ảnh nền mockup đơn cho Group Shirt để thiết lập vùng in.'
+        : 'Thêm ảnh mockup đơn vào Input để thiết lập vùng in.'
       : configuredCount === singleCount
         ? `Đã lưu vùng in cho ${singleCount}/${singleCount} ảnh mockup.`
         : `Còn ${singleCount - configuredCount} ảnh chưa có vùng in.`;
@@ -516,6 +545,9 @@ function readAdditionalGenerationOptions() {
     downloadUrl: null,
     createSingleMockups: elements.createSingleMockups.checked,
   };
+  if (options.createSingleMockups && state.mockupMode === 'group-shirt') {
+    options.singleTemplatePaths = state.groupSingleMockupTemplates.map((template) => template.path);
+  }
   if (options.createPdfDownload) {
     // Main checks Done first. If a PDF already exists, it can skip without
     // requiring a template or URL; otherwise the PDF service validates both.
@@ -1501,6 +1533,10 @@ function updateControls() {
   elements.mockupModeGroup.disabled = editorSaving;
   elements.chooseTemplateButton.disabled = editorActive;
   elements.chooseGroupTemplatesButton.disabled = editorActive || scanning;
+  elements.chooseGroupSingleTemplatesButton.disabled =
+    editorActive || scanning || state.inputAssetsSaving;
+  elements.cleanupDataButton.disabled =
+    scanning || state.inputAssetsLoading || state.inputAssetsSaving || editorActive;
   elements.renamePngButton.disabled = scanning || !hasFiles || editorActive;
   elements.watermarkFile.disabled = editorActive;
   elements.useWatermark.disabled = editorActive;
@@ -1694,6 +1730,7 @@ function setMockupMode(mode, { initial = false } = {}) {
     'is-hidden',
     !elements.createPdfDownload.checked,
   );
+  renderInputAssets();
   state.output = null;
   elements.openOutputButton.classList.add('is-hidden');
   renderFileList();
@@ -1729,6 +1766,40 @@ async function selectGroupTemplates() {
     showGroupTemplatePreview(0);
   } catch (error) {
     showError(error);
+  }
+}
+
+async function selectGroupSingleMockupTemplates() {
+  if (state.regionEditor || state.busy || state.inputAssetsSaving) return false;
+  try {
+    const result = unwrap(await api.selectGroupSingleMockupTemplates());
+    if (result.cancelled) return false;
+    state.groupSingleMockupTemplates = result.templates;
+    if (state.watermark && state.groupSingleMockupTemplates.some(
+      (template) => normalizePath(template.path) === normalizePath(state.watermark.path),
+    )) {
+      state.watermark = null;
+      elements.useWatermark.checked = false;
+      renderWatermarkSummary();
+    }
+    for (const template of state.groupSingleMockupTemplates) {
+      for (const selectedPath of [...state.selected]) {
+        if (normalizePath(selectedPath) === normalizePath(template.path)) state.selected.delete(selectedPath);
+      }
+    }
+    renderInputAssets();
+    renderFileList();
+    updateSelectionState();
+    const missing = templatesMissingRegions();
+    if (missing.length > 0) elements.advancedSettings.open = true;
+    showToast(
+      `Đã chọn ${state.groupSingleMockupTemplates.length} ảnh nền mockup đơn.`,
+      'success',
+    );
+    return true;
+  } catch (error) {
+    showError(error);
+    return false;
   }
 }
 
@@ -1904,15 +1975,21 @@ function exitRegionEditor({ notifyUnsaved = false } = {}) {
 
 async function enterRegionEditor() {
   if (state.busy || state.inputAssetsSaving) return;
-  const refreshed = await refreshInputAssets();
-  if (!refreshed) {
-    elements.editSingleMockupRegions.checked = false;
-    return;
+  if (state.mockupMode !== 'group-shirt') {
+    const refreshed = await refreshInputAssets();
+    if (!refreshed) {
+      elements.editSingleMockupRegions.checked = false;
+      return;
+    }
   }
-  const templates = state.inputAssets.singleMockupTemplates;
+  const templates = activeSingleMockupTemplates();
   if (templates.length === 0) {
     elements.editSingleMockupRegions.checked = false;
-    showError(new Error('Hãy thêm ảnh mockup đơn vào thư mục Input.'));
+    showError(new Error(
+      state.mockupMode === 'group-shirt'
+        ? 'Hãy chọn ít nhất một ảnh nền mockup đơn cho Group Shirt.'
+        : 'Hãy thêm ảnh mockup đơn vào thư mục Input.',
+    ));
     return;
   }
   const tooSmall = templates.find((template) => template.width < 7 || template.height < 8);
@@ -1923,6 +2000,7 @@ async function enterRegionEditor() {
   }
   state.regionEditor = {
     kind: 'single',
+    source: state.mockupMode === 'group-shirt' ? 'group-shirt' : 'input',
     entries: templates.map((template) => ({
       template,
       region: validPrintRegion(template.region, template)
@@ -1957,12 +2035,18 @@ async function saveRegionEditor() {
   setRegionEditorStatus('Đang lưu thiết lập vùng in…');
   const entries = editor.entries.map((entry) => ({
     templateName: entry.template.name,
+    templatePath: entry.template.path,
     region: clonePrintRegion(entry.region),
   }));
   try {
-    const assets = unwrap(await api.saveSingleMockupRegions(entries));
-    state.inputAssets = assets;
-    state.inputAssetsLoaded = true;
+    if (editor.source === 'group-shirt') {
+      const result = unwrap(await api.saveGroupSingleMockupRegions(entries));
+      state.groupSingleMockupTemplates = result.templates;
+    } else {
+      const assets = unwrap(await api.saveSingleMockupRegions(entries));
+      state.inputAssets = assets;
+      state.inputAssetsLoaded = true;
+    }
     if (state.regionEditor === editor) state.regionEditor = null;
     syncEditorWindowState();
     elements.editSingleMockupRegions.checked = false;
@@ -1973,7 +2057,11 @@ async function saveRegionEditor() {
     showToast(`Đã lưu vùng in cho ${entries.length} ảnh mockup đơn.`, 'success');
   } catch (error) {
     showError(error);
-    setRegionEditorStatus('Chưa lưu được. Hãy kiểm tra lại các ảnh trong Input.');
+    setRegionEditorStatus(
+      editor.source === 'group-shirt'
+        ? 'Chưa lưu được. Hãy chọn lại các ảnh nền mockup đơn.'
+        : 'Chưa lưu được. Hãy kiểm tra lại các ảnh trong Input.',
+    );
   } finally {
     state.inputAssetsSaving = false;
     updateControls();
@@ -2637,7 +2725,8 @@ function setBusy(type, busy) {
     row.disabled = busy || state.inputAssetsSaving;
   }
   elements.openInputFolderButton.disabled = busy || state.inputAssetsLoading || state.inputAssetsSaving;
-  elements.cancelButton.classList.toggle('is-hidden', !busy);
+  const cancellable = busy && type !== 'cleanup';
+  elements.cancelButton.classList.toggle('is-hidden', !cancellable);
   elements.cancelButton.disabled = false;
   elements.previewButton.classList.toggle('is-hidden', busy);
   elements.generateButton.classList.toggle('is-hidden', busy);
@@ -2648,7 +2737,11 @@ function setBusy(type, busy) {
   } else if (state.update) {
     renderUpdateStatus(state.update);
   }
-  elements.workingTitle.textContent = type === 'preview' ? 'Đang tạo preview…' : 'Đang tạo mockup…';
+  elements.workingTitle.textContent = type === 'preview'
+    ? 'Đang tạo preview…'
+    : type === 'cleanup'
+      ? 'Đang dọn dữ liệu…'
+      : 'Đang tạo mockup…';
   if (busy) {
     renderFileList();
     elements.progressFill.style.width = '1%';
@@ -2863,7 +2956,10 @@ function showOutputPage(pageIndex) {
 async function generate() {
   let payload;
   try {
-    if (elements.createPdfDownload.checked || elements.createSingleMockups.checked) {
+    if (
+      elements.createPdfDownload.checked ||
+      (elements.createSingleMockups.checked && state.mockupMode !== 'group-shirt')
+    ) {
       const refreshed = await refreshInputAssets();
       if (!refreshed) return;
     }
@@ -2952,6 +3048,40 @@ async function generate() {
   }
 }
 
+async function cleanupAppData() {
+  if (state.busy || state.regionEditor || state.inputAssetsSaving) return;
+  setBusy('cleanup', true);
+  elements.workingMessage.textContent = 'Đang xác nhận và kiểm tra dữ liệu có thể dọn…';
+  elements.progressMessage.textContent = 'Chỉ xóa cache và file tạm do ứng dụng tạo';
+  try {
+    const result = unwrap(await api.cleanupAppData());
+    if (result.cancelled) {
+      showToast('Đã hủy Xóa dữ liệu. Không có file nào bị xóa.', 'info');
+      setAppStatus('Sẵn sàng', 'ready');
+      return;
+    }
+    const reclaimed = formatBytes(Number(result.reclaimedBytes) || 0);
+    const count = Number(result.removedEntries) || 0;
+    const warningCount = Array.isArray(result.warnings) ? result.warnings.length : 0;
+    elements.progressFill.style.width = '100%';
+    elements.progressMessage.textContent =
+      `Đã xóa ${count} mục rác, giải phóng khoảng ${reclaimed}.`;
+    setAppStatus('Đã dọn dữ liệu', 'ready');
+    showToast(
+      count > 0
+        ? `Đã xóa ${count} mục rác · ${reclaimed}${warningCount ? `; ${warningCount} mục đang được hệ thống sử dụng nên được giữ lại` : ''}.`
+        : warningCount > 0
+          ? `Có ${warningCount} mục đang được hệ thống sử dụng nên chưa thể xóa.`
+          : 'Không có dữ liệu rác cần xóa.',
+      warningCount > 0 ? 'info' : 'success',
+    );
+  } catch (error) {
+    showError(error);
+  } finally {
+    setBusy(null, false);
+  }
+}
+
 async function cancelCurrentJob() {
   if (!state.busy) return;
   elements.cancelButton.disabled = true;
@@ -2996,6 +3126,7 @@ api.onUpdateStatus((update) => {
 });
 
 elements.checkUpdateButton.addEventListener('click', checkForUpdatesManually);
+elements.cleanupDataButton.addEventListener('click', cleanupAppData);
 elements.updateCloseButton.addEventListener('click', () => elements.updateDialog.close());
 elements.updatePrimaryButton.addEventListener('click', async () => {
   try {
@@ -3060,6 +3191,7 @@ window.addEventListener('drop', (event) => {
 });
 elements.chooseTemplateButton.addEventListener('click', selectTemplate);
 elements.chooseGroupTemplatesButton.addEventListener('click', selectGroupTemplates);
+elements.chooseGroupSingleTemplatesButton.addEventListener('click', selectGroupSingleMockupTemplates);
 elements.renamePngButton.addEventListener('click', openRenamePngDialog);
 elements.watermarkFile.addEventListener('click', () => selectWatermark());
 elements.removeMetadata.addEventListener('change', () => {
@@ -3098,6 +3230,25 @@ elements.downloadUrl.addEventListener('blur', () => {
 });
 elements.createSingleMockups.addEventListener('change', async () => {
   if (elements.createSingleMockups.checked) {
+    if (state.mockupMode === 'group-shirt') {
+      if (state.groupSingleMockupTemplates.length === 0) {
+        const selected = await selectGroupSingleMockupTemplates();
+        if (!selected && state.groupSingleMockupTemplates.length === 0) {
+          elements.createSingleMockups.checked = false;
+          renderInputAssets();
+          updateControls();
+          return;
+        }
+      }
+      const missing = templatesMissingRegions();
+      if (missing.length > 0) elements.advancedSettings.open = true;
+      elements.singleRegionStatus.textContent = missing.length > 0
+        ? `Cần chỉnh và lưu vùng in cho ${missing.length} ảnh trước khi tạo.`
+        : `Sẽ tạo ${state.groupSingleMockupTemplates.length} mockup đơn.`;
+      renderInputAssets();
+      updateControls();
+      return;
+    }
     const refreshed = await refreshInputAssets();
     if (!refreshed) {
       elements.singleMockupSummary.textContent =

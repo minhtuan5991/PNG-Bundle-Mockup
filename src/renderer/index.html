@@ -20,6 +20,16 @@
         </div>
       </div>
       <div class="topbar-actions">
+        <button
+          class="update-button"
+          id="cleanupDataButton"
+          type="button"
+          title="Xóa cache và file tạm do ứng dụng tạo; không xóa Input, Print Area hoặc kết quả Done"
+          data-lock
+        >
+          <span aria-hidden="true">⌫</span>
+          Xóa dữ liệu
+        </button>
         <button class="update-button" id="checkUpdateButton" type="button" title="Kiểm tra bản cập nhật mới">
           <span aria-hidden="true">↻</span>
           Cập nhật
@@ -233,9 +243,18 @@
               <span class="option-checkmark" aria-hidden="true"></span>
               <span class="option-copy">
                 <strong>Tạo mockup đơn</strong>
-                <small>Ghép PNG ngẫu nhiên lên từng ảnh áo, cốc, túi… trong Input.</small>
+                <small id="singleMockupOptionHelp">Ghép PNG ngẫu nhiên lên từng ảnh áo, cốc, túi… trong Input.</small>
               </span>
             </label>
+            <div class="input-assets-bar is-hidden" id="groupSingleMockupPicker">
+              <span class="input-assets-copy">
+                <strong>Nền mockup đơn Group Shirt</strong>
+                <small id="groupSingleMockupTemplateSummary">Chưa chọn ảnh nền mockup đơn.</small>
+              </span>
+              <button class="mini-button" id="chooseGroupSingleTemplatesButton" type="button" data-lock>
+                Chọn ảnh
+              </button>
+            </div>
             <div class="single-mockup-summary" id="singleMockupSummary">
               Chưa có ảnh mockup đơn trong Input.
             </div>

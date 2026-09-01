@@ -4,7 +4,24 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
-Chưa có thay đổi sau v1.4.8.
+Chưa có thay đổi sau v1.4.10.
+
+## [1.4.10] - 2026-09-01
+
+### Added
+
+- Trong luồng Group Shirt, **Tạo mockup đơn** có bộ chọn nhiều ảnh nền riêng, không yêu cầu marker `bundle` hoặc phải đặt file trong `Input`. Vùng in vẫn lưu chung trong `Print Area/single-mockup-regions.json`.
+- Thêm nút **Xóa dữ liệu** có xác nhận để dọn cache, staging và đúng các mẫu file tạm do app tạo. App cũng tự dọn trước khi đóng.
+
+### Changed
+
+- PNG Group Shirt được ưu tiên theo ordinal trong tên `(1)`, `(2)`, ... trên từng track màu/mặt; vùng áo sáng được dùng trước vùng áo tối, còn thứ tự vùng 1, 2, 3 trong mỗi track giữ theo trình chỉnh vùng in.
+- Khi một trang không còn đủ PNG chưa dùng, chỉ các vùng thiếu mới chọn ngẫu nhiên từ đúng pool tương thích. PNG còn thừa tiếp tục tạo trang mới như trước.
+
+### Safety
+
+- Dọn dữ liệu không xóa ảnh trong `Input`, JSON trong `Print Area`, ảnh nền đã chọn, cài đặt đường dẫn hoặc file kết quả trong `Done`.
+- Giữ nguyên các quy tắc `.f/.b/.wh/.bl`, lọc nền có mặt sau, tỷ lệ canvas `4200×4800 → 42×48`, cách đặt tên output, PDF, watermark và metadata.
 
 ## [1.4.8] - 2026-08-28
 

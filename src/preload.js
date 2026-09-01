@@ -18,17 +18,22 @@ contextBridge.exposeInMainWorld('bundleApi', {
   getInputAssets: () => ipcRenderer.invoke('input:get-assets'),
   saveSingleMockupRegions: (entries) =>
     ipcRenderer.invoke('input:save-single-mockup-regions', entries),
+  saveGroupSingleMockupRegions: (entries) =>
+    ipcRenderer.invoke('group-shirt:save-single-mockup-regions', entries),
   saveGroupShirtRegions: (entries) =>
     ipcRenderer.invoke('group-shirt:save-regions', entries),
   setEditorState: (value) => ipcRenderer.send('window:set-editor-state', value),
   selectTemplate: () => ipcRenderer.invoke('dialog:select-template'),
   selectGroupShirtTemplates: () => ipcRenderer.invoke('dialog:select-group-shirt-templates'),
+  selectGroupSingleMockupTemplates: () =>
+    ipcRenderer.invoke('dialog:select-group-single-mockup-templates'),
   selectWatermark: () => ipcRenderer.invoke('dialog:select-watermark'),
   renderPreview: (payload) => ipcRenderer.invoke('preview:render', payload),
   renderGroupShirtPreview: (payload) => ipcRenderer.invoke('group-shirt:preview', payload),
   generateMockups: (payload) => ipcRenderer.invoke('mockup:generate', payload),
   generateGroupShirtMockups: (payload) => ipcRenderer.invoke('group-shirt:generate', payload),
   cancelJob: () => ipcRenderer.invoke('job:cancel'),
+  cleanupAppData: () => ipcRenderer.invoke('maintenance:cleanup'),
   openPath: (targetPath) => ipcRenderer.invoke('shell:open-path', targetPath),
   onProgress: (callback) => {
     const listener = (_event, payload) => callback(payload);

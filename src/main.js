@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, session, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const fsSync = require('node:fs');
 const fs = require('node:fs/promises');
@@ -35,6 +35,7 @@ const {
   createDownloadPdf,
 } = require('./services/pdf-download-service');
 const {
+  SINGLE_MOCKUP_TEMPLATE_EXTENSIONS,
   listSingleMockupTemplates,
   findExistingSingleMockupOutputs,
   resolveTemplateRegions,
@@ -57,16 +58,20 @@ const {
   renderGroupShirtPreview,
   generateGroupShirtMockups,
 } = require('./services/group-shirt-service');
+const { cleanupAppArtifacts } = require('./services/app-cleanup-service');
 
 const activeJobs = new Map();
 const activeMutations = new Map();
 const deferredCloseWindows = new Map();
 const windowsAllowedToClose = new WeakSet();
 const closeConfirmations = new Set();
+const closingCleanupWindows = new Set();
 const editorWindowStates = new Map();
 const allowedShellPaths = new Set();
 const authorizedSourcePaths = new Map();
 const authorizedGroupTemplatePaths = new Map();
+const authorizedSingleTemplatePaths = new Map();
+const SUPPORTED_SINGLE_MOCKUP_FORMATS = new Set(['png', 'jpeg', 'webp', 'tiff']);
 let updateInstallPending = false;
 let pathPreferences = null;
 let inputDirectory = null;
@@ -79,6 +84,7 @@ let updateService = null;
 let mainWindow = null;
 let startupUpdateTimer = null;
 let recurringUpdateTimer = null;
+let cleanupPromise = null;
 const smokeTest = process.argv.includes('--smoke-test') || process.env.PNG_BUNDLE_SMOKE_TEST === '1';
 const captureArgument = process.argv.find((argument) => argument.startsWith('--capture-ui='));
 const capturePathFromEnvironment = process.env.PNG_BUNDLE_CAPTURE_UI;
@@ -353,6 +359,74 @@ async function inspectGroupShirtTemplatePaths(filePaths) {
   return templates;
 }
 
+async function inspectSingleMockupTemplatePath(filePath) {
+  const resolvedPath = path.resolve(String(filePath));
+  const extension = path.extname(resolvedPath).toLocaleLowerCase('en-US');
+  if (!SINGLE_MOCKUP_TEMPLATE_EXTENSIONS.includes(extension)) {
+    const error = new Error(`“${path.basename(resolvedPath)}” không phải định dạng ảnh mockup được hỗ trợ.`);
+    error.code = 'UNSUPPORTED_SINGLE_MOCKUP_TEMPLATE';
+    error.filePath = resolvedPath;
+    throw error;
+  }
+  const [stat, metadata] = await Promise.all([fs.stat(resolvedPath), inspectImage(resolvedPath)]);
+  if (!stat.isFile()) {
+    const error = new Error(`Ảnh nền “${path.basename(resolvedPath)}” không phải file.`);
+    error.code = 'INVALID_SINGLE_MOCKUP_TEMPLATE';
+    error.filePath = resolvedPath;
+    throw error;
+  }
+  if (!SUPPORTED_SINGLE_MOCKUP_FORMATS.has(metadata.format)) {
+    const error = new Error(
+      `Ảnh mockup “${path.basename(resolvedPath)}” không thuộc định dạng PNG, JPG, WEBP hoặc TIFF.`,
+    );
+    error.code = 'UNSUPPORTED_SINGLE_MOCKUP_TEMPLATE';
+    error.filePath = resolvedPath;
+    error.format = metadata.format;
+    throw error;
+  }
+  const template = {
+    path: resolvedPath,
+    url: toFileUrl(resolvedPath),
+    name: path.basename(resolvedPath),
+    size: stat.size,
+    width: metadata.autoOrient?.width || metadata.width,
+    height: metadata.autoOrient?.height || metadata.height,
+    format: metadata.format,
+    density: metadata.density || null,
+  };
+  return {
+    ...template,
+    region: await singleMockupRegionStore.get(template),
+  };
+}
+
+async function inspectSingleMockupTemplatePaths(filePaths) {
+  if (!Array.isArray(filePaths) || filePaths.length === 0) {
+    throw new TypeError('Cần chọn ít nhất một ảnh nền mockup đơn.');
+  }
+  const seenPaths = new Set();
+  const seenTemplateKeys = new Set();
+  const templates = [];
+  for (const filePath of filePaths) {
+    const template = await inspectSingleMockupTemplatePath(filePath);
+    const pathKey = shellPathKey(template.path);
+    if (seenPaths.has(pathKey)) continue;
+    seenPaths.add(pathKey);
+    const templateKey = template.name.toLocaleLowerCase('en-US');
+    if (seenTemplateKeys.has(templateKey)) {
+      const error = new Error(
+        `Có nhiều ảnh mockup đơn trùng tên “${template.name}”. Hãy đổi tên để vùng in được lưu riêng.`,
+      );
+      error.code = 'DUPLICATE_SINGLE_MOCKUP_TEMPLATE_KEY';
+      error.filePath = template.path;
+      throw error;
+    }
+    seenTemplateKeys.add(templateKey);
+    templates.push(template);
+  }
+  return templates;
+}
+
 function validateGroupShirtSourcePayload(payload = {}, senderId = null) {
   if (!Array.isArray(payload.sourcePaths) || payload.sourcePaths.length === 0) {
     throw new TypeError('Cần chọn ít nhất một PNG Group Shirt.');
@@ -420,6 +494,27 @@ function validateAuthorizedGroupTemplatePaths(filePaths, senderId) {
   return resolvedPaths;
 }
 
+function validateAuthorizedSingleTemplatePaths(filePaths, senderId, options = {}) {
+  if (!Array.isArray(filePaths) || (filePaths.length === 0 && options.allowEmpty !== true)) {
+    throw new TypeError('Cần chọn ít nhất một ảnh nền mockup đơn.');
+  }
+  const resolvedPaths = filePaths.map((filePath) => {
+    if (typeof filePath !== 'string' || !path.isAbsolute(filePath)) {
+      const error = new TypeError('Đường dẫn ảnh nền mockup đơn phải là đường dẫn tuyệt đối.');
+      error.code = 'INVALID_SINGLE_MOCKUP_TEMPLATE_PATH';
+      throw error;
+    }
+    return path.resolve(filePath);
+  });
+  assertAuthorizedPaths(
+    authorizedSingleTemplatePaths,
+    senderId,
+    resolvedPaths,
+    'Ảnh nền mockup đơn',
+  );
+  return resolvedPaths;
+}
+
 async function preflightGroupSingleMockupSources(options = {}) {
   const { sourcePaths, sourceDirectory, isCancelled } = options;
   if (typeof isCancelled === 'function' && isCancelled()) {
@@ -445,6 +540,51 @@ async function preflightGroupSingleMockupSources(options = {}) {
   );
   error.code = 'NO_LIGHT_SINGLE_MOCKUP_SOURCES';
   throw error;
+}
+
+function cleanupSourceDirectories(senderId = null) {
+  const authorizedSets = senderId === null
+    ? [...authorizedSourcePaths.values()]
+    : [authorizedSourcePaths.get(senderId)];
+  const directories = new Set();
+  for (const authorized of authorizedSets) {
+    for (const filePath of authorized || []) directories.add(path.dirname(filePath));
+  }
+  return [...directories];
+}
+
+async function runAppCleanup(options = {}) {
+  if (cleanupPromise) return cleanupPromise;
+  cleanupPromise = (async () => {
+    if (inputBackupService) await inputBackupService.synchronize();
+    if (printAreaStorageService) await printAreaStorageService.synchronize();
+    const warnings = [];
+    if (session.defaultSession && !session.defaultSession.isDestroyed?.()) {
+      try {
+        await session.defaultSession.clearCache();
+      } catch (error) {
+        warnings.push({
+          path: app.getPath('userData'),
+          message: error?.message || String(error),
+        });
+      }
+    }
+    const sourceDirectories = cleanupSourceDirectories(options.senderId ?? null);
+    const result = await cleanupAppArtifacts({
+      userDataPath: app.getPath('userData'),
+      inputDirectory,
+      printAreaDirectory,
+      sourceDirectories,
+      outputDirectories: sourceDirectories.map((directoryPath) => path.join(directoryPath, 'Done')),
+    });
+    result.warnings.unshift(...warnings);
+    return result;
+  })();
+  try {
+    return await cleanupPromise;
+  } finally {
+    cleanupPromise = null;
+  }
 }
 
 function createWindow() {
@@ -542,6 +682,8 @@ function createWindow() {
             v121Controls: Boolean(document.querySelector('#createPdfDownload') && document.querySelector('#downloadUrl') && document.querySelector('#createSingleMockups') && document.querySelector('#editSingleMockupRegions')),
             v140Api: typeof window.bundleApi?.selectGroupShirtTemplates === 'function' && typeof window.bundleApi?.renameGroupShirtPngFiles === 'function' && typeof window.bundleApi?.saveGroupShirtRegions === 'function' && typeof window.bundleApi?.renderGroupShirtPreview === 'function' && typeof window.bundleApi?.generateGroupShirtMockups === 'function',
             v140Controls: Boolean(document.querySelector('#mockupModeBundle') && document.querySelector('#mockupModeGroup') && document.querySelector('#chooseGroupTemplatesButton') && document.querySelector('#renamePngButton') && document.querySelector('#addFrontRegionButton') && document.querySelector('#addBackRegionButton') && document.querySelector('#groupRegionColorLight') && document.querySelector('#groupRegionColorDark')),
+            v1410Api: typeof window.bundleApi?.selectGroupSingleMockupTemplates === 'function' && typeof window.bundleApi?.saveGroupSingleMockupRegions === 'function' && typeof window.bundleApi?.cleanupAppData === 'function',
+            v1410Controls: Boolean(document.querySelector('#chooseGroupSingleTemplatesButton') && document.querySelector('#cleanupDataButton')),
             v140SourceDirectory: typeof groupSourceDirectory === 'function' && groupSourceDirectory({ directory: 'C:/Group Source' }) === 'C:/Group Source',
             v142SharedMgs: typeof analyzeGroupShirtSetup === 'function' &&
               !analyzeGroupShirtSetup.toString().includes('templatesByGroup') &&
@@ -630,6 +772,7 @@ function createWindow() {
     editorWindowStates.delete(key);
     authorizedSourcePaths.delete(key);
     authorizedGroupTemplatePaths.delete(key);
+    authorizedSingleTemplatePaths.delete(key);
   });
   window.on('close', (event) => {
     const key = windowWebContentsId;
@@ -638,32 +781,43 @@ function createWindow() {
       deferredCloseWindows.delete(key);
       return;
     }
-    const job = activeJobs.get(key);
-    const editorDirty = editorWindowStates.get(key)?.dirty === true;
-    if (!job && !activeMutations.has(key) && !editorDirty) return;
     event.preventDefault();
+    const job = activeJobs.get(key);
     if (job) job.cancelled = true;
     deferredCloseWindows.set(key, window);
-    if (!job && !activeMutations.has(key)) finishDeferredClose(key);
+    finishDeferredClose(key);
   });
   mainWindow = window;
   window.once('closed', () => {
     const key = windowWebContentsId;
     deferredCloseWindows.delete(key);
     closeConfirmations.delete(key);
+    closingCleanupWindows.delete(key);
     editorWindowStates.delete(key);
     authorizedSourcePaths.delete(key);
     authorizedGroupTemplatePaths.delete(key);
+    authorizedSingleTemplatePaths.delete(key);
     if (mainWindow === window) mainWindow = null;
   });
   return window;
 }
 
 function closeWindowAfterWork(key, window) {
-  if (window.isDestroyed() || !deferredCloseWindows.has(key)) return;
-  windowsAllowedToClose.add(window);
-  setImmediate(() => {
-    if (!window.isDestroyed() && deferredCloseWindows.has(key)) window.close();
+  if (
+    window.isDestroyed() ||
+    !deferredCloseWindows.has(key) ||
+    closingCleanupWindows.has(key)
+  ) return;
+  closingCleanupWindows.add(key);
+  runAppCleanup({ senderId: key }).catch((error) => {
+    console.warn('APP_EXIT_CLEANUP_FAILED', error);
+  }).finally(() => {
+    closingCleanupWindows.delete(key);
+    if (window.isDestroyed() || !deferredCloseWindows.has(key)) return;
+    windowsAllowedToClose.add(window);
+    setImmediate(() => {
+      if (!window.isDestroyed() && deferredCloseWindows.has(key)) window.close();
+    });
   });
 }
 
@@ -973,6 +1127,47 @@ function registerIpc() {
     }),
   );
 
+  ipcMain.handle('group-shirt:save-single-mockup-regions', (event, entries) =>
+    safeCall(async () => {
+      const mutation = beginMutation(event);
+      try {
+        if (!Array.isArray(entries) || entries.length === 0) {
+          throw new TypeError('Danh sách vùng in mockup đơn Group Shirt không hợp lệ.');
+        }
+        const templatePaths = validateAuthorizedSingleTemplatePaths(
+          entries.map((entry) => entry?.templatePath),
+          event.sender.id,
+        );
+        const templates = await inspectSingleMockupTemplatePaths(templatePaths);
+        if (templates.length !== entries.length) {
+          throw new Error('Hãy thiết lập vùng in cho toàn bộ ảnh mockup đơn đã chọn.');
+        }
+        const templatesByPath = new Map(templates.map((template) => [
+          shellPathKey(template.path),
+          template,
+        ]));
+        const safeEntries = entries.map((entry) => {
+          const template = templatesByPath.get(shellPathKey(entry.templatePath));
+          if (!template) {
+            throw new Error(`Không tìm thấy ảnh mockup đơn “${path.basename(entry?.templatePath || '')}”.`);
+          }
+          return { template, region: entry.region };
+        });
+        await singleMockupRegionStore.replaceAll(safeEntries);
+        if (printAreaStorageService) await printAreaStorageService.synchronize();
+        const refreshedTemplates = await Promise.all(templates.map(async (template) => ({
+          ...template,
+          region: await singleMockupRegionStore.get(template),
+        })));
+        const editorState = editorWindowStates.get(event.sender.id);
+        if (editorState) editorWindowStates.set(event.sender.id, { ...editorState, dirty: false });
+        return { templates: refreshedTemplates };
+      } finally {
+        mutation.finish();
+      }
+    }),
+  );
+
   ipcMain.handle('group-shirt:save-regions', (event, entries) =>
     safeCall(async () => {
       const mutation = beginMutation(event);
@@ -1060,6 +1255,31 @@ function registerIpc() {
         templates.map((template) => template.path),
       );
       await rememberPath(PATH_KEYS.GROUP_TEMPLATE_FILE, result.filePaths[0]);
+      return { cancelled: false, templates };
+    }),
+  );
+
+  ipcMain.handle('dialog:select-group-single-mockup-templates', (event) =>
+    safeCall(async () => {
+      const owner = BrowserWindow.fromWebContents(event.sender);
+      const defaultPath = await getRememberedDialogPath(PATH_KEYS.GROUP_SINGLE_TEMPLATE_FILE);
+      const result = await dialog.showOpenDialog(owner, {
+        title: 'Chọn ảnh nền mockup đơn cho Group Shirt',
+        properties: ['openFile', 'multiSelections'],
+        ...(defaultPath ? { defaultPath } : {}),
+        filters: [
+          { name: 'Ảnh mockup đơn', extensions: ['png', 'jpg', 'jpeg', 'webp', 'tif', 'tiff'] },
+          { name: 'Tất cả file', extensions: ['*'] },
+        ],
+      });
+      if (result.canceled || result.filePaths.length === 0) return { cancelled: true };
+      const templates = await inspectSingleMockupTemplatePaths(result.filePaths);
+      replaceAuthorizedPaths(
+        authorizedSingleTemplatePaths,
+        event.sender.id,
+        templates.map((template) => template.path),
+      );
+      await rememberPath(PATH_KEYS.GROUP_SINGLE_TEMPLATE_FILE, result.filePaths[0]);
       return { cancelled: false, templates };
     }),
   );
@@ -1184,6 +1404,13 @@ function registerIpc() {
         );
         const createSingleMockups = payload?.createSingleMockups === true;
         const createPdfDownload = payload?.createPdfDownload === true;
+        const singleTemplatePaths = createSingleMockups
+          ? validateAuthorizedSingleTemplatePaths(
+              payload?.singleTemplatePaths || [],
+              event.sender.id,
+              { allowEmpty: true },
+            )
+          : [];
         const lightSources = createSingleMockups
           ? await preflightGroupSingleMockupSources({
               sourcePaths,
@@ -1192,6 +1419,9 @@ function registerIpc() {
             })
           : null;
         const templates = await inspectGroupShirtTemplatePaths(templatePaths);
+        const singleTemplates = singleTemplatePaths.length > 0
+          ? await inspectSingleMockupTemplatePaths(singleTemplatePaths)
+          : [];
         if ((createSingleMockups || createPdfDownload) && inputBackupService) {
           await inputBackupService.synchronize();
         }
@@ -1217,8 +1447,7 @@ function registerIpc() {
         if (createSingleMockups) {
           singleResult = await generateSingleMockups({
             sourcePaths: lightSources,
-            inputDirectory,
-            templateMarker: 'bundle',
+            templates: singleTemplates,
             outputDirectory: result.outputDir,
             regionStore: singleMockupRegionStore,
             settings: payload.settings,
@@ -1433,6 +1662,33 @@ function registerIpc() {
         throw error;
       } finally {
         jobControl.finish();
+      }
+    }),
+  );
+
+  ipcMain.handle('maintenance:cleanup', (event) =>
+    safeCall(async () => {
+      const mutation = beginMutation(event);
+      try {
+        const owner = BrowserWindow.fromWebContents(event.sender);
+        const confirmation = await dialog.showMessageBox(owner, {
+          type: 'warning',
+          title: 'Xóa dữ liệu rác',
+          message: 'Xóa cache và các file tạm do PNG Bundle Mockup tạo?',
+          detail:
+            'Thao tác này không xóa ảnh trong Input, file JSON trong Print Area, ảnh nền đã chọn, kết quả trong Done hoặc cài đặt đường dẫn.',
+          buttons: ['Hủy', 'Xóa dữ liệu rác'],
+          defaultId: 0,
+          cancelId: 0,
+          noLink: true,
+        });
+        if (confirmation.response !== 1) return { cancelled: true };
+        return {
+          cancelled: false,
+          ...(await runAppCleanup({ senderId: event.sender.id })),
+        };
+      } finally {
+        mutation.finish();
       }
     }),
   );

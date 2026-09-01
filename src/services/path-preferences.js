@@ -11,6 +11,7 @@ const PATH_KEYS = Object.freeze({
   SOURCE_FOLDER: 'sourceFolder',
   TEMPLATE_FILE: 'templateFile',
   GROUP_TEMPLATE_FILE: 'groupTemplateFile',
+  GROUP_SINGLE_TEMPLATE_FILE: 'groupSingleTemplateFile',
   WATERMARK_FILE: 'watermarkFile',
 });
 
@@ -18,6 +19,7 @@ const VALID_KEYS = new Set(Object.values(PATH_KEYS));
 const FILE_EXTENSIONS = Object.freeze({
   [PATH_KEYS.TEMPLATE_FILE]: new Set(['.png', '.jpg', '.jpeg', '.webp', '.tif', '.tiff']),
   [PATH_KEYS.GROUP_TEMPLATE_FILE]: new Set(['.png', '.jpg', '.jpeg', '.webp', '.tif', '.tiff']),
+  [PATH_KEYS.GROUP_SINGLE_TEMPLATE_FILE]: new Set(['.png', '.jpg', '.jpeg', '.webp', '.tif', '.tiff']),
   [PATH_KEYS.WATERMARK_FILE]: new Set(['.png']),
 });
 
@@ -36,6 +38,7 @@ function defaultPreferences() {
     sourceFolder: null,
     templateFile: null,
     groupTemplateFile: null,
+    groupSingleTemplateFile: null,
     watermarkFile: null,
   };
 }

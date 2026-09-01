@@ -293,3 +293,71 @@ test('lọc mockup đơn Group Shirt lấy .wh hoặc mặc định và loại .
   assert.deepEqual(selected.map((item) => item.ordinal), [1, 2]);
   assert.ok(selected.every((item) => item.color === 'wh'));
 });
+
+test('ưu tiên ordinal theo vùng Sáng/Tối dù các vùng được lưu xen kẽ', async () => {
+  const interleavedRegions = [
+    region('dark-front-1', 'front', 'bl', 0.15),
+    region('light-front-1', 'front', 'wh', 0.3),
+    region('light-front-2', 'front', 'wh', 0.45),
+    region('dark-front-2', 'front', 'bl', 0.6),
+    region('light-front-3', 'front', 'wh', 0.75),
+  ];
+  const sources = [
+    ...Array.from({ length: 5 }, (_, index) => source('ordered', index + 1, 'wh', 'f')),
+    ...Array.from({ length: 5 }, (_, index) => source('ordered', index + 6, 'bl', 'f')),
+  ];
+  const plan = await createGroupShirtPlan({
+    sources,
+    templates: [template('ordered mgs.png', interleavedRegions)],
+    random: () => 0,
+  });
+
+  assert.equal(plan.outputs.length, 3);
+  const assignmentMap = (output) => Object.fromEntries(
+    output.assignments.map((assignment) => [assignment.region.id, assignment.source.ordinal]),
+  );
+  assert.deepEqual(assignmentMap(plan.outputs[0]), {
+    'dark-front-1': 6,
+    'light-front-1': 1,
+    'light-front-2': 2,
+    'dark-front-2': 7,
+    'light-front-3': 3,
+  });
+  assert.deepEqual(assignmentMap(plan.outputs[1]), {
+    'dark-front-1': 8,
+    'light-front-1': 4,
+    'light-front-2': 5,
+    'dark-front-2': 9,
+    'light-front-3': 1,
+  });
+  assert.deepEqual(assignmentMap(plan.outputs[2]), {
+    'dark-front-1': 10,
+    'light-front-1': 1,
+    'light-front-2': 1,
+    'dark-front-2': 6,
+    'light-front-3': 1,
+  });
+});
+
+test('ưu tiên ordinal riêng cho mặt trước và mặt sau', async () => {
+  const plan = await createGroupShirtPlan({
+    sources: [
+      source('sides ordered', 3, 'wh', 'f'),
+      source('sides ordered', 1, 'wh', 'f'),
+      source('sides ordered', 4, 'wh', 'b'),
+      source('sides ordered', 2, 'wh', 'b'),
+    ],
+    templates: [template('sides ordered mgs.png', [
+      region('back-1', 'back', 'wh', 0.2),
+      region('front-1', 'front', 'wh', 0.4),
+      region('back-2', 'back', 'wh', 0.6),
+      region('front-2', 'front', 'wh', 0.8),
+    ])],
+    random: () => 0,
+  });
+
+  assert.deepEqual(
+    Object.fromEntries(plan.outputs[0].assignments.map((item) => [item.region.id, item.source.ordinal])),
+    { 'back-1': 2, 'front-1': 1, 'back-2': 4, 'front-2': 3 },
+  );
+});

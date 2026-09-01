@@ -296,13 +296,29 @@ function randomIndex(maxExclusive, random) {
   return Math.floor(value * maxExclusive);
 }
 
+function orderedRegionIndexes(regions) {
+  return regions
+    .map((region, index) => ({ region, index }))
+    .sort((left, right) => {
+      const leftColor = left.region.color === 'bl' ? 1 : 0;
+      const rightColor = right.region.color === 'bl' ? 1 : 0;
+      const leftSide = left.region.side === 'back' ? 1 : 0;
+      const rightSide = right.region.side === 'back' ? 1 : 0;
+      return leftColor - rightColor || leftSide - rightSide || left.index - right.index;
+    })
+    .map((item) => item.index);
+}
+
 function makeAssignments(regions, group, poolIndexes, random) {
   const keysByRegion = regions.map((region) => regionSourcePoolKeys(group.profile, region));
   const selectedSources = new Map();
+  const regionIndexes = orderedRegionIndexes(regions);
   // Reserve color-specific sources first, then consume one shared wildcard queue
-  // across both colors. Cursors persist across pages, but reset for each template.
+  // across both colors. Within each compatible track, PNG ordinal order maps to
+  // region 1, 2, 3...; light tracks are consumed before dark tracks. Cursors
+  // persist across pages, but reset for each template.
   for (const priority of [0, 1]) {
-    for (let index = 0; index < regions.length; index += 1) {
+    for (const index of regionIndexes) {
       if (selectedSources.has(index)) continue;
       const key = keysByRegion[index][priority];
       const sources = group.pools.get(key);

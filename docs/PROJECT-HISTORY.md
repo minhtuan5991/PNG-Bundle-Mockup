@@ -739,3 +739,12 @@ Checksum bên dưới thuộc artifact public do GitHub Actions build lại, kh�
 - Commit `d3318449e5e2f8770723c7c9888b0019fe22522e`, annotated tag `v1.4.9`; Windows CI `33296756640` và Release Windows `33296756940` đều thành công.
 - Release ID `379199422` public/stable/latest, có đúng ba asset đã tải lại và xác minh. Setup public 104373104 byte, SHA-256 `7ea2f924b9acc63045874def1cf5ef1d44c3a0bdf82fa3f4bf86f0f5403c645f`; updater metadata khớp installer.
 - Chưa cài/nâng cấp tương tác trên máy/VM sạch; bộ cài chưa ký số.
+
+## 31. Bản local v1.4.10 — ưu tiên ordinal, nền mockup đơn tự chọn và dọn dữ liệu
+
+- Planner Group Shirt ưu tiên PNG theo ordinal trong từng track màu/mặt; áo sáng được tiêu thụ trước áo tối, còn vùng 1/2/3 giữ đúng thứ tự đã lưu. PNG thừa tiếp tục sang trang kế, chỉ ô thiếu mới lặp ngẫu nhiên từ pool tương thích.
+- Luồng **Tạo mockup đơn** của Group Shirt có bộ chọn nhiều nền riêng, không cần marker `bundle` hoặc đặt trong `Input`. Vùng in tiếp tục lưu tại `Print Area/single-mockup-regions.json`.
+- Thêm **Xóa dữ liệu** có xác nhận và phản hồi kết quả. Allowlist chỉ dọn cache Electron, staging/previous và đúng mẫu file tạm nội bộ; không xóa Input, Print Area JSON, cài đặt đường dẫn hoặc output Done. Cửa sổ chờ dọn xong trước khi đóng.
+- Automated tests **164/164**; source và packaged smoke **25/25**. ASAR version `1.4.10`, 25 file `src/assets` khớp byte, updater metadata đạt, Input/Print Area payload đúng allowlist.
+- NSIS local: Setup 104376337 byte, SHA-256 `4d8e4a7cccc202e0542f3ee7df044da6551389043bc20dc522a769339c91ac84`. Authenticode `NotSigned`.
+- Chưa commit/tag/push GitHub và chưa chạy cài mới/nâng cấp tương tác.
