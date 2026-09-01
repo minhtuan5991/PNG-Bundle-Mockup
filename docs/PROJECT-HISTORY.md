@@ -747,4 +747,6 @@ Checksum bên dưới thuộc artifact public do GitHub Actions build lại, kh�
 - Thêm **Xóa dữ liệu** có xác nhận và phản hồi kết quả. Allowlist chỉ dọn cache Electron, staging/previous và đúng mẫu file tạm nội bộ; không xóa Input, Print Area JSON, cài đặt đường dẫn hoặc output Done. Cửa sổ chờ dọn xong trước khi đóng.
 - Automated tests **164/164**; source và packaged smoke **25/25**. ASAR version `1.4.10`, 25 file `src/assets` khớp byte, updater metadata đạt, Input/Print Area payload đúng allowlist.
 - NSIS local: Setup 104376337 byte, SHA-256 `4d8e4a7cccc202e0542f3ee7df044da6551389043bc20dc522a769339c91ac84`. Authenticode `NotSigned`.
-- Chưa commit/tag/push GitHub và chưa chạy cài mới/nâng cấp tương tác.
+- Commit `6f979d3a88e4909ec62a0a648e5a05e497491bca`, annotated tag `v1.4.10`; Windows CI `33490320726` và Release Windows `33490320665` đều thành công.
+- Release `380352195` public/stable/latest có đúng ba asset. Setup công khai 104376031 byte, SHA-256 `0b7721bff52c8092dc99cf675a1c7e0aa6088fc5076d6aebd5032805ba3c18ef`.
+- Chưa chạy cài mới/nâng cấp tương tác trên máy hoặc VM sạch.

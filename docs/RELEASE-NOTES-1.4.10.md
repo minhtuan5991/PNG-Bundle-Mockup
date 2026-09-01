@@ -40,5 +40,7 @@ Ngày: 2026-09-01
 
 ## Trạng thái
 
-- Đây là build local; chưa commit, chưa tạo tag và chưa push/publish lên GitHub.
+- Commit `6f979d3a88e4909ec62a0a648e5a05e497491bca` và tag `v1.4.10` đã được push lên GitHub.
+- Windows CI `33490320726` và Release Windows `33490320665` đều thành công. Release `380352195` đang public, stable và là bản latest.
+- Installer công khai có kích thước 104376031 byte, SHA-256 `0b7721bff52c8092dc99cf675a1c7e0aa6088fc5076d6aebd5032805ba3c18ef`.
 - Chưa cài mới/nâng cấp tương tác trên máy hoặc VM sạch.

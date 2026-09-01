@@ -6,7 +6,8 @@
 
 - [x] QA local v1.4.10 ngày 2026-09-01: **164/164 test đạt**; ordinal theo track, nền mockup đơn Group Shirt tự chọn và cleanup allowlist đều có regression test.
 - [x] Source/package smoke v1.4.10 đều **25/25**; NSIS x64, ASAR version/25 file src-assets, updater metadata và Input/Print Area allowlist đạt.
-- [ ] v1.4.10 chưa commit/tag/push GitHub và chưa kiểm thử cài mới/nâng cấp tương tác.
+- [x] GitHub v1.4.10 đã xác minh: commit `6f979d3`, tag `v1.4.10`, Windows CI `33490320726` và Release Windows `33490320665` thành công; Release `380352195` public/stable/latest có đúng ba asset.
+- [ ] Chưa kiểm thử cài mới/nâng cấp tương tác v1.4.10 trên máy hoặc VM sạch.
 - [x] QA mã nguồn local v1.4.8 ngày 2026-08-28: snapshot sạch sau `npm ci`, **152/152 test đạt**, audit production 0 lỗ hổng; nhóm trộn tag dùng wildcard màu theo từng PNG và nhóm không có PNG back bỏ toàn bộ nền có back.
 - [x] Kiểm tra dữ liệu người dùng v1.4.8 ở chế độ chỉ-đọc: nhóm 3 dùng đủ sáu `.f` trên `mgs5/mgs7`; nhóm 1 bỏ đúng `mgs4/mgs5`, không xóa nền hoặc output cũ.
 - [x] QA bộ cài local v1.4.8: NSIS x64 thành công, packaged smoke **23/23**; ASAR version/23 file src-assets/updater metadata đạt và `Input` trước smoke chỉ có README/PDF đã track.
