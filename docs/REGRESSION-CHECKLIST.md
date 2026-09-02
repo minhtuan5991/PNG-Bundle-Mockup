@@ -6,6 +6,7 @@
 
 - [x] QA local v1.4.14: **187/187** test; ba luồng render khớp byte với v1.4.13 trên benchmark tổng hợp, hủy song song giữ Done cũ và dọn temp; bốn góc resize neo đối diện, có xoay và nền không vuông.
 - [x] Source/package smoke v1.4.14 **26/26**; NSIS x64, ASAR/27 file src-assets/version, SHA-512 updater và Input/Print Area allowlist đạt; Authenticode `NotSigned`.
+- [x] GitHub v1.4.14 đã xác minh: commit `fd8fdad`, tag `v1.4.14`, Windows CI `33654944031` và Release Windows `33654948774` thành công; Release `381413407` public/stable/latest có đúng ba asset, workflow tải ngược xác minh SHA-512 và latest.yml công khai đúng installer.
 - [ ] Chưa kiểm thử cài mới/nâng cấp tương tác v1.4.14 trên máy hoặc VM sạch.
 - [x] QA mã nguồn local v1.4.13 ngày 2026-09-02: **171/171 test đạt**; PNG không .m/.w dùng vùng Nam/Nữ theo màu/mặt, PNG có tag vẫn khóa giới tính và 12 màu vùng in khớp quy ước.
 - [x] QA bộ cài local v1.4.13: NSIS x64 thành công; ASAR/FileVersion/ProductVersion là 1.4.13, updater metadata khớp installer và Authenticode `NotSigned`.

@@ -3,7 +3,7 @@
 > Cập nhật: 2026-09-02
 > Phiên bản mã nguồn hiện tại: `1.4.14`
 > Kênh stable: GitHub Releases `/releases/latest`
-> Bản stable đã xác minh: `v1.4.13`; v1.4.14 đã hoàn tất QA local, đang chờ phát hành.
+> Bản stable đã xác minh: `v1.4.14`, phát hành ngày 2026-09-02; CI và workflow phát hành thành công.
 > Thay đổi mới nhất: v1.4.14 tăng tốc ba luồng render và scale vùng in từ góc đối diện cố định.
 
 ## 1. Mục đích tài liệu
@@ -793,4 +793,6 @@ Checksum bên dưới thuộc artifact public do GitHub Actions build lại, kh�
 - Benchmark tổng hợp 3 lượt so với mã v1.4.13: Bundle 2283 → 1147 ms; Group Shirt 4636 → 1201 ms; đơn 2509 → 1068 ms (trung vị). Mọi ảnh output khớp từng byte và tên file. Không coi kết quả tổng hợp là cam kết tốc độ trên mọi bộ ảnh.
 - Automated tests **187/187**; source/package smoke **26/26**. ASAR version 1.4.14, 27 file src/assets khớp byte, Input/Print Area đúng allowlist và updater SHA-512 đạt.
 - NSIS local: Setup 104380713 byte, SHA-256 `581052b8b52aeb9f0f7bb57de16c6883d3ec983bdc608a84eb796e087434b83f`; Authenticode `NotSigned`.
+- Commit `fd8fdadecc61a6c15f19e9bccd9137c2cbbe634f`, annotated tag `v1.4.14`; Windows CI `33654944031` và Release Windows `33654948774` đều thành công.
+- Release `381413407` public/stable/latest có đúng ba asset; workflow đã tải ngược xác minh byte và SHA-512. Setup công khai 104380457 byte, SHA-256 `2e78b92a98424e238670687b8f8252e16e27698be355e13ddb1d9bc6320da944`; latest.yml công khai đúng phiên bản/tên/kích thước installer.
 - Chưa kiểm thử cài mới/nâng cấp tương tác trên máy hoặc VM sạch.

@@ -45,3 +45,18 @@ Nền 1000×1000, PNG 840×960; bật xóa metadata. Mọi output so sánh khớ
 | `latest.yml` | 366 | `c6560c79b1b62f5d2c352c14269a136815c139438ba08bf5447c0f186c5b9995` |
 
 Đây là checksum build local; workflow GitHub build lại và xác minh ba artifact công khai trước khi xuất bản stable.
+
+## Trạng thái phát hành
+
+- Commit `fd8fdadecc61a6c15f19e9bccd9137c2cbbe634f` và annotated tag `v1.4.14` đã lên GitHub.
+- Windows CI `33654944031` và Release Windows `33654948774` đều thành công.
+- Release `381413407` public/stable, không phải prerelease và là `/releases/latest`.
+- Có đúng ba asset; workflow tải ngược kiểm tra nội dung, kích thước và SHA-512 trước khi công khai. latest.yml công khai đúng version, tên và kích thước bộ cài.
+
+## Artifact GitHub công khai
+
+| File | Kích thước (byte) | SHA-256 |
+| --- | ---: | --- |
+| `PNG-Bundle-Mockup-Setup-1.4.14.exe` | 104380457 | `2e78b92a98424e238670687b8f8252e16e27698be355e13ddb1d9bc6320da944` |
+| `PNG-Bundle-Mockup-Setup-1.4.14.exe.blockmap` | 109462 | `e6f7c995a51cf757226b44e6b822c828aeec175b8af32c7aa05ab276f5b7f33e` |
+| `latest.yml` | 366 | `18c16c96ef83f4bed3bb3d1b7d04e03f19e6ed73cff8c2551d76395ba5ad80d7` |
