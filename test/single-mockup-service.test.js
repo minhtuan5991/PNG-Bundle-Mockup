@@ -378,6 +378,107 @@ test('Group Shirt tạo mọi tổ hợp nhóm PNG và ảnh nền mockup đơn 
   assert.equal(repeated.existingPaths.length, 9);
 });
 
+test('mockup đơn song song tạo ảnh giống từng byte với chế độ tuần tự', async (t) => {
+  const directory = await createTempDirectory(t, 'single-mockup-concurrency-');
+  const templatePaths = ['shirt-a.png', 'shirt-b.png', 'shirt-c.png']
+    .map((name) => path.join(directory, name));
+  const sourcePaths = ['1 (1).png', '2 (1).png']
+    .map((name) => path.join(directory, name));
+  const watermarkPath = path.join(directory, 'watermark.png');
+  await Promise.all([
+    ...templatePaths.map((filePath, index) => createSolidImage(filePath, 'png', {
+      background: { r: 235 + index * 5, g: 235, b: 235, alpha: 1 },
+    })),
+    ...sourcePaths.map((filePath) => createPaddedDesign(filePath)),
+    createWatermark(watermarkPath),
+  ]);
+  const templates = templatePaths.map((filePath) => ({
+    path: filePath,
+    name: path.basename(filePath),
+    width: 200,
+    height: 200,
+  }));
+  const regions = Object.fromEntries(templates.map((template) => [
+    template.name,
+    { x: 0.1, y: 0.1, width: 0.35, height: 0.4 },
+  ]));
+  const sourceGroups = sourcePaths.map((filePath, index) => ({
+    group: String(index + 1),
+    groupKey: String(index + 1),
+    sourcePaths: [filePath],
+  }));
+  const common = {
+    sourceGroups,
+    templates,
+    regions,
+    random: () => 0,
+    watermarkPath,
+  };
+
+  const serial = await generateSingleMockups({
+    ...common,
+    outputDirectory: path.join(directory, 'Done-serial'),
+    processingConcurrency: 1,
+    transformConcurrency: 1,
+    metadataConcurrency: 1,
+  });
+  const parallel = await generateSingleMockups({
+    ...common,
+    outputDirectory: path.join(directory, 'Done-parallel'),
+  });
+
+  assert.equal(serial.outputPaths.length, parallel.outputPaths.length);
+  const [serialBuffers, parallelBuffers] = await Promise.all([
+    Promise.all(serial.outputPaths.map((filePath) => fs.readFile(filePath))),
+    Promise.all(parallel.outputPaths.map((filePath) => fs.readFile(filePath))),
+  ]);
+  for (let index = 0; index < serialBuffers.length; index += 1) {
+    assert.deepEqual(parallelBuffers[index], serialBuffers[index]);
+  }
+});
+
+test('mockup đơn hủy giữa hàng đợi song song dọn sạch temp và giữ file Done cũ', async (t) => {
+  const directory = await createTempDirectory(t, 'single-mockup-cancel-parallel-');
+  const sourcePath = path.join(directory, 'design.png');
+  await createPaddedDesign(sourcePath);
+  const templates = [];
+  for (let i = 0; i < 5; i += 1) {
+    const filePath = path.join(directory, `shirt-${i}.png`);
+    await createSolidImage(filePath, 'png');
+    templates.push({ path: filePath, name: path.basename(filePath), width: 200, height: 200 });
+  }
+  const outputDirectory = path.join(directory, 'Done');
+  await fs.mkdir(outputDirectory);
+  const existing = path.join(outputDirectory, 'bundle_001.png');
+  await fs.writeFile(existing, 'keep existing');
+  let cancelled = false;
+  await assert.rejects(generateSingleMockups({
+    sourcePaths: [sourcePath], templates, outputDirectory, random: () => 0,
+    regions: Object.fromEntries(templates.map((item) => [item.name, { x: 0.1, y: 0.1, width: 0.35, height: 0.4 }])),
+    isCancelled: () => cancelled,
+    onProgress: (value) => { if (value.stage === 'single-mockup-compose' && value.fraction > 0) cancelled = true; },
+  }), { code: 'CANCELLED' });
+  assert.deepEqual(await fs.readdir(outputDirectory), ['bundle_001.png']);
+  assert.equal(await fs.readFile(existing, 'utf8'), 'keep existing');
+});
+
+test('giới hạn xử lý mockup đơn từ chối giá trị quá cao hoặc không dương', async () => {
+  await assert.rejects(
+    generateSingleMockups({
+      outputDirectory: path.resolve('D:\\Done'),
+      processingConcurrency: 0,
+    }),
+    (error) => error.code === 'INVALID_SINGLE_MOCKUP_CONCURRENCY',
+  );
+  await assert.rejects(
+    generateSingleMockups({
+      outputDirectory: path.resolve('D:\\Done'),
+      transformConcurrency: 9,
+    }),
+    (error) => error.code === 'INVALID_SINGLE_MOCKUP_CONCURRENCY',
+  );
+});
+
 test('mockup đơn giữ kích thước và vị trí thiết kế trên canvas PNG 4200×4800', async (t) => {
   const directory = await createTempDirectory(t, 'single-mockup-full-canvas-');
   const templatePath = path.join(directory, 'shirt bundle.png');

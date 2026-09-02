@@ -1,10 +1,10 @@
 # PNG Bundle Mockup — lịch sử dự án và tài liệu bàn giao
 
-> Cập nhật: 2026-08-28
-> Phiên bản mã nguồn hiện tại: `1.4.9`
+> Cập nhật: 2026-09-02
+> Phiên bản mã nguồn hiện tại: `1.4.14`
 > Kênh stable: GitHub Releases `/releases/latest`
-> Bản stable đã xác minh: `v1.4.9`, phát hành ngày 2026-08-30; CI và workflow phát hành thành công.
-> Thay đổi mới nhất: v1.4.9 chuyển hai JSON vùng in sang `Print Area` cạnh EXE, tự di trú dữ liệu cũ và bảo vệ qua update.
+> Bản stable đã xác minh: `v1.4.13`; v1.4.14 đã hoàn tất QA local, đang chờ phát hành.
+> Thay đổi mới nhất: v1.4.14 tăng tốc ba luồng render và scale vùng in từ góc đối diện cố định.
 
 ## 1. Mục đích tài liệu
 
@@ -784,3 +784,13 @@ Checksum bên dưới thuộc artifact public do GitHub Actions build lại, kh�
 - NSIS local: Setup 104378654 byte, SHA-256 `4c8725775bd1a8efa910dd31c5fb10215bf4745c92a5ea23e52baa65e2d4b262`; ASAR/updater metadata đạt, Authenticode `NotSigned`.
 - Commit `5d06d79c2338e64282b76eb4db27c1e0848b0620`, annotated tag `v1.4.13`; Windows CI `33646310521` và Release Windows `33646402971` đều thành công.
 - Release `381360219` public/stable/latest có đúng ba asset. Setup công khai 104378171 byte, SHA-256 `765f99c7846f2f23f16bba3b2f1464f0530cc44197f6f23fe4df6c0ece00ce4d`; updater metadata công khai đúng version và kích thước installer.
+
+## 35. Bản v1.4.14 — tăng tốc render và scale từ góc
+
+- Bundle dùng hàng đợi đọc PNG, resize, render output và xóa metadata có giới hạn. Group Shirt/mockup đơn tái sử dụng bitmap trong cùng tác vụ, cache tối đa 64 mục; xử lý output mặc định 2 ảnh đồng thời.
+- Không thay đổi planner, crop Bundle, toàn canvas Group Shirt/đơn, quality/nén, thứ tự lớp, watermark, metadata, đặt tên hay các cài đặt người dùng.
+- Resize dùng chung helper hình học trong pixel ảnh: kéo một góc, giữ góc đối diện; giới hạn biên sau xoay và tỷ lệ 42×48. Giữ ô nhập thông số, màu/nhãn, di chuyển và xoay.
+- Benchmark tổng hợp 3 lượt so với mã v1.4.13: Bundle 2283 → 1147 ms; Group Shirt 4636 → 1201 ms; đơn 2509 → 1068 ms (trung vị). Mọi ảnh output khớp từng byte và tên file. Không coi kết quả tổng hợp là cam kết tốc độ trên mọi bộ ảnh.
+- Automated tests **187/187**; source/package smoke **26/26**. ASAR version 1.4.14, 27 file src/assets khớp byte, Input/Print Area đúng allowlist và updater SHA-512 đạt.
+- NSIS local: Setup 104380713 byte, SHA-256 `581052b8b52aeb9f0f7bb57de16c6883d3ec983bdc608a84eb796e087434b83f`; Authenticode `NotSigned`.
+- Chưa kiểm thử cài mới/nâng cấp tương tác trên máy hoặc VM sạch.

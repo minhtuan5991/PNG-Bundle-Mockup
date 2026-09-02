@@ -675,6 +675,16 @@ function createWindow() {
             controls: Boolean(document.querySelector('#chooseFolderButton') && document.querySelector('#generateButton')),
             preview: Boolean(document.querySelector('#previewStage') && document.querySelector('#safeZone')),
             initialized: document.querySelector('#selectionCount')?.textContent === 'Đã chọn 0/0 PNG',
+            printRegionCornerScale: (() => {
+              if (typeof printRegionResize?.resizeFromCorner !== 'function') return false;
+              const resized = printRegionResize.resizeFromCorner(
+                { centerX: 300, centerY: 300, width: 140, height: 160, rotation: 0 },
+                'se', { x: 70, y: 80 }, { width: 1000, height: 1000 },
+              );
+              return resized.width === 210 && resized.height === 240 &&
+                resized.centerX - resized.width / 2 === 230 &&
+                resized.centerY - resized.height / 2 === 220;
+            })(),
             metadataDefault: document.querySelector('#removeMetadata')?.checked === true,
             watermarkApi: typeof window.bundleApi?.selectWatermark === 'function',
             dropApi: typeof window.bundleApi?.inspectDroppedPngFiles === 'function' && typeof window.bundleApi?.getDroppedFilePath === 'function',

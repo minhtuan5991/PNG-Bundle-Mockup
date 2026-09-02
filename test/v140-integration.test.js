@@ -222,15 +222,17 @@ test('vùng Group Shirt scale khóa đúng tỷ lệ pixel 42×48 và tối thi�
   assert.match(constrain, /aspectRatio\s*=\s*42\s*\/\s*48/);
   assert.match(constrain, /pixelWidth\s*=\s*Math\.max\(7,/);
   assert.match(constrain, /pixelHeight\s*=\s*pixelWidth\s*\/\s*aspectRatio/);
-  assert.match(drag, /aspectRatio\s*=\s*42\s*\/\s*48/);
-  assert.match(drag, /pixelHeight\s*=\s*Math\.max\(8,/);
-  assert.match(drag, /pixelWidth\s*=\s*pixelHeight\s*\*\s*aspectRatio/);
+  assert.match(drag, /printRegionResize\.resizeFromCorner/);
+  const resize = read('src/shared/print-region-resize.js');
+  assert.match(resize, /ratio\s*=\s*42\s*\/\s*48/);
+  assert.match(resize, /minimumHeight = 8/);
+  assert.match(resize, /width = height \* ratio/);
 });
 
-test('package và lockfile cùng mang version 1.4.13', () => {
+test('package và lockfile cùng mang version 1.4.14', () => {
   const manifest = JSON.parse(read('package.json'));
   const lockfile = JSON.parse(read('package-lock.json'));
-  assert.equal(manifest.version, '1.4.13');
-  assert.equal(lockfile.version, '1.4.13');
-  assert.equal(lockfile.packages[''].version, '1.4.13');
+  assert.equal(manifest.version, '1.4.14');
+  assert.equal(lockfile.version, '1.4.14');
+  assert.equal(lockfile.packages[''].version, '1.4.14');
 });

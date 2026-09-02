@@ -4,6 +4,9 @@
 
 ## Trạng thái mốc
 
+- [x] QA local v1.4.14: **187/187** test; ba luồng render khớp byte với v1.4.13 trên benchmark tổng hợp, hủy song song giữ Done cũ và dọn temp; bốn góc resize neo đối diện, có xoay và nền không vuông.
+- [x] Source/package smoke v1.4.14 **26/26**; NSIS x64, ASAR/27 file src-assets/version, SHA-512 updater và Input/Print Area allowlist đạt; Authenticode `NotSigned`.
+- [ ] Chưa kiểm thử cài mới/nâng cấp tương tác v1.4.14 trên máy hoặc VM sạch.
 - [x] QA mã nguồn local v1.4.13 ngày 2026-09-02: **171/171 test đạt**; PNG không .m/.w dùng vùng Nam/Nữ theo màu/mặt, PNG có tag vẫn khóa giới tính và 12 màu vùng in khớp quy ước.
 - [x] QA bộ cài local v1.4.13: NSIS x64 thành công; ASAR/FileVersion/ProductVersion là 1.4.13, updater metadata khớp installer và Authenticode `NotSigned`.
 - [x] GitHub v1.4.13 đã xác minh: commit `5d06d79`, tag `v1.4.13`, Windows CI `33646310521` và Release Windows `33646402971` thành công; Release `381360219` public/stable/latest có đúng ba asset và updater metadata đúng installer.

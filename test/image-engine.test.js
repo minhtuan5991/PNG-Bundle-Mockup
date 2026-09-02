@@ -95,6 +95,66 @@ function pngChunkTypes(buffer) {
   return types;
 }
 
+test('Bundle song song giữ nguyên byte PNG, bố cục, thứ tự, watermark và metadata', async (t) => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'png-bundle-parallel-'));
+  t.after(() => fs.rm(directory, { recursive: true, force: true }));
+  const templatePath = path.join(directory, 'template.png');
+  await sharp({ create: { width: 360, height: 500, channels: 3, background: '#eeeeee' } })
+    .withMetadata({ density: 300 }).png().toFile(templatePath);
+  const watermarkPath = path.join(directory, 'watermark.png');
+  await createTransparentAsset(watermarkPath, { r: 12, g: 34, b: 200, alpha: 0.4 });
+  const sourcePaths = [];
+  for (let i = 0; i < 11; i += 1) {
+    const sourcePath = path.join(directory, `design-${i}.png`);
+    await createTransparentAsset(sourcePath, { r: 20 + i * 20, g: 80, b: 210 - i * 10, alpha: 0.8 }, { contentWidth: 35 + i, contentHeight: 30 + i });
+    sourcePaths.push(sourcePath);
+  }
+  for (const removeMetadata of [true, false]) {
+    const options = {
+      sourcePaths, templatePath, watermarkPath, mockupCount: 4, removeMetadata,
+      settings: { topMargin: 30, bottomMargin: 30, sideMargin: 20, gap: 12, alphaThreshold: 0 },
+    };
+    const serial = await generateMockups({ ...options, sourceDirectory: path.join(directory, `serial-${removeMetadata}`), processingConcurrency: 1, sourceConcurrency: 1, transformConcurrency: 1, metadataConcurrency: 1 });
+    const progress = [];
+    const parallel = await generateMockups({ ...options, sourceDirectory: path.join(directory, `parallel-${removeMetadata}`), onProgress: (value) => progress.push(value.fraction) });
+    assert.deepEqual(parallel.groupSizes, [3, 3, 3, 2]);
+    assert.deepEqual(parallel.layouts, serial.layouts);
+    for (let i = 0; i < serial.outputPaths.length; i += 1) {
+      assert.equal(path.basename(serial.outputPaths[i]), path.basename(parallel.outputPaths[i]));
+      assert.deepEqual(await fs.readFile(serial.outputPaths[i]), await fs.readFile(parallel.outputPaths[i]));
+    }
+    assert.ok(progress.every((value, i) => i === 0 || value >= progress[i - 1]));
+    assert.equal(progress.at(-1), 1);
+  }
+});
+
+test('Bundle hủy khi đang ghép song song chờ worker dừng trước khi dọn file tạm', async (t) => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'png-bundle-cancel-'));
+  t.after(() => fs.rm(directory, { recursive: true, force: true }));
+  const templatePath = path.join(directory, 'template.png');
+  await sharp({ create: { width: 360, height: 500, channels: 3, background: '#eeeeee' } }).png().toFile(templatePath);
+  const sourcePaths = [];
+  for (let i = 0; i < 8; i += 1) {
+    const sourcePath = path.join(directory, `design-${i}.png`);
+    await createTransparentAsset(sourcePath, { r: 200, g: 30, b: 50, alpha: 1 });
+    sourcePaths.push(sourcePath);
+  }
+  let cancelled = false;
+  await assert.rejects(generateMockups({
+    sourcePaths, templatePath, sourceDirectory: directory, mockupCount: 4,
+    settings: { topMargin: 30, bottomMargin: 30, sideMargin: 20, gap: 12, alphaThreshold: 0 },
+    isCancelled: () => cancelled,
+    onProgress: (value) => { if (value.stage === 'compose' && value.fraction > 0.32) cancelled = true; },
+  }), { code: 'CANCELLED' });
+  assert.deepEqual(await fs.readdir(path.join(directory, 'Done')), []);
+});
+
+test('Bundle từ chối giới hạn song song không hợp lệ', async () => {
+  for (const name of ['processingConcurrency', 'sourceConcurrency', 'transformConcurrency', 'metadataConcurrency']) {
+    await assert.rejects(generateMockups({ [name]: 0 }), { code: 'INVALID_BUNDLE_CONCURRENCY' });
+  }
+});
+
 test('findAlphaBounds bỏ chính xác canvas trong suốt quanh thiết kế', async (t) => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'png-bundle-bounds-'));
   t.after(() => fs.rm(directory, { recursive: true, force: true }));

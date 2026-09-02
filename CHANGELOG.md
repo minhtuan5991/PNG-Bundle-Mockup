@@ -4,7 +4,20 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
-Chưa có thay đổi sau v1.4.13.
+Chưa có thay đổi sau v1.4.14.
+
+## [1.4.14] - 2026-09-02
+
+### Performance
+
+- Bundle PNG, Group Shirt và mockup đơn xử lý ảnh theo hàng đợi song song có giới hạn; giữ nguyên thứ tự output/lớp ảnh và chờ worker kết thúc trước khi rollback.
+- Group Shirt và mockup đơn tái sử dụng bitmap đã resize/xoay trong cùng tác vụ bằng cache giới hạn; không giảm độ phân giải, chất lượng, Lanczos hay mức nén PNG.
+- Benchmark tổng hợp so với v1.4.13 giảm thời gian lần lượt khoảng 50%, 74%, 57%; ảnh xuất khớp từng byte. Kết quả thực tế phụ thuộc ảnh và phần cứng.
+
+### Fixed
+
+- Kéo góc vùng in giữ cố định góc đối diện thay vì scale quanh tâm, kể cả vùng Group Shirt đã xoay.
+- Dùng chung phép resize cho trình chỉnh vùng Group Shirt và mockup đơn của cả hai luồng; giữ tỷ lệ 42×48, giới hạn mép ảnh, màu/nhãn và JSON cũ.
 
 ## [1.4.13] - 2026-09-02
 

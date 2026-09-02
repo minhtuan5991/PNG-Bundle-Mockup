@@ -5,6 +5,7 @@ const fsConstants = require('node:fs').constants;
 const path = require('node:path');
 const { randomUUID } = require('node:crypto');
 const sharp = require('sharp');
+const { mapWithConcurrency, createConcurrencyLimiter } = require('../services/bounded-work');
 const {
   LayoutError,
   splitBalanced,
@@ -216,12 +217,13 @@ async function prepareWatermark(filePath, template) {
 }
 
 async function makeCompositeInputs(assets, layout, options = {}) {
-  const composites = [];
   const { isCancelled, onItem } = options;
+  const concurrency = options.transformConcurrency ?? 4;
+  const runTransform = options.runTransform || createConcurrencyLimiter(concurrency);
+  let completed = 0;
 
-  for (let index = 0; index < layout.placements.length; index += 1) {
+  return mapWithConcurrency(layout.placements, concurrency, (placement) => runTransform(async () => {
     throwIfCancelled(isCancelled);
-    const placement = layout.placements[index];
     const asset = assets[placement.assetIndex];
     let input;
     try {
@@ -249,16 +251,15 @@ async function makeCompositeInputs(assets, layout, options = {}) {
       );
     }
 
-    composites.push({
+    completed += 1;
+    if (typeof onItem === 'function') onItem(completed, assets.length, asset);
+    return {
       input,
       left: placement.left,
       top: placement.top,
       blend: 'over',
-    });
-    if (typeof onItem === 'function') onItem(index + 1, assets.length, asset);
-  }
-
-  return composites;
+    };
+  }));
 }
 
 async function createCompositePipeline(templatePath, template, assets, settings, options = {}) {
@@ -424,6 +425,18 @@ async function generateMockups(options) {
     onProgress,
     isCancelled,
   } = options;
+  const concurrencyOption = (name, fallback, maximum) => {
+    const value = options[name] ?? fallback;
+    if (!Number.isInteger(value) || value < 1 || value > maximum) {
+      throw new LayoutError('Giới hạn xử lý song song không hợp lệ.', 'INVALID_BUNDLE_CONCURRENCY');
+    }
+    return value;
+  };
+  const processingConcurrency = concurrencyOption('processingConcurrency', 2, 4);
+  const sourceConcurrency = concurrencyOption('sourceConcurrency', 4, 8);
+  const transformConcurrency = concurrencyOption('transformConcurrency', 4, 8);
+  const metadataConcurrency = concurrencyOption('metadataConcurrency', 2, 4);
+  const runTransform = createConcurrencyLimiter(transformConcurrency);
 
   const paths = validateSourcePaths(sourcePaths);
   const groups = splitBalanced(paths, Number(mockupCount));
@@ -434,10 +447,12 @@ async function generateMockups(options) {
   const outputDir = path.join(resolvedSourceDirectory, 'Done');
   const tempPaths = [];
   const committedPaths = [];
+  let reportedFraction = 0;
 
   const progress = (fraction, message, stage) => {
     if (typeof onProgress === 'function') {
-      onProgress({ fraction: Math.max(0, Math.min(1, fraction)), message, stage });
+      reportedFraction = Math.max(reportedFraction, Math.min(1, fraction));
+      onProgress({ fraction: reportedFraction, message, stage });
     }
   };
 
@@ -452,30 +467,31 @@ async function generateMockups(options) {
     const finalPaths = await chooseBatchOutputPaths(outputDir, groups.length, prefix);
 
     progress(0.01, 'Đang kiểm tra vùng pixel của các PNG…', 'prepare');
-    const prepared = [];
-    for (let index = 0; index < paths.length; index += 1) {
+    let preparedCount = 0;
+    const prepared = await mapWithConcurrency(paths, sourceConcurrency, async (filePath) => {
       throwIfCancelled(isCancelled);
-      prepared.push(await prepareAsset(paths[index], alphaThreshold));
+      const asset = await prepareAsset(filePath, alphaThreshold);
+      preparedCount += 1;
       progress(
-        0.32 * ((index + 1) / paths.length),
-        `Đang đọc PNG ${index + 1}/${paths.length}: ${path.basename(paths[index])}`,
+        0.32 * (preparedCount / paths.length),
+        `Đang đọc PNG ${preparedCount}/${paths.length}: ${path.basename(filePath)}`,
         'prepare',
       );
-    }
+      return asset;
+    });
 
     const preparedGroups = splitBalanced(prepared, groups.length);
-    const layouts = [];
     const jobId = randomUUID();
     let renderedAssets = 0;
 
     for (let pageIndex = 0; pageIndex < preparedGroups.length; pageIndex += 1) {
-      throwIfCancelled(isCancelled);
-      const tempPath = path.join(
+      tempPaths.push(path.join(
         outputDir,
         `.${prefix}-${jobId}-${String(pageIndex + 1).padStart(3, '0')}.tmp`,
-      );
-      tempPaths.push(tempPath);
-      const group = preparedGroups[pageIndex];
+      ));
+    }
+    const layouts = await mapWithConcurrency(preparedGroups, processingConcurrency, async (group, pageIndex) => {
+      throwIfCancelled(isCancelled);
       progress(
         0.32 + 0.54 * (renderedAssets / prepared.length),
         `Đang tạo mockup ${pageIndex + 1}/${preparedGroups.length}…`,
@@ -486,9 +502,11 @@ async function generateMockups(options) {
         template,
         group,
         settings,
-        tempPath,
+        tempPaths[pageIndex],
         {
           isCancelled,
+          transformConcurrency,
+          runTransform,
           watermarkComposite: watermark,
           preserveMetadata: true,
           onItem: () => {
@@ -501,19 +519,21 @@ async function generateMockups(options) {
           },
         },
       );
-      layouts.push(layout);
-    }
+      return layout;
+    });
 
     if (shouldRemoveMetadata) {
-      for (let index = 0; index < tempPaths.length; index += 1) {
+      let metadataCount = 0;
+      await mapWithConcurrency(tempPaths, metadataConcurrency, async (tempPath) => {
         throwIfCancelled(isCancelled);
         progress(
-          0.86 + 0.1 * (index / tempPaths.length),
-          `Đang xóa 6 nhóm Metadata ở bước cuối ${index + 1}/${tempPaths.length}…`,
+          0.86 + 0.1 * (metadataCount / tempPaths.length),
+          `Đang xóa 6 nhóm Metadata ở bước cuối ${metadataCount + 1}/${tempPaths.length}…`,
           'metadata',
         );
-        await stripMetadataFromFile(tempPaths[index], { isCancelled });
-      }
+        await stripMetadataFromFile(tempPath, { isCancelled });
+        metadataCount += 1;
+      });
     }
 
     throwIfCancelled(isCancelled);
@@ -581,19 +601,21 @@ async function renderPreview(options) {
     ? await prepareWatermark(watermarkPath, template)
     : null;
   const group = groups[pageIndex];
-  const prepared = [];
+  let preparedCount = 0;
 
-  for (let index = 0; index < group.length; index += 1) {
+  const prepared = await mapWithConcurrency(group, 4, async (filePath) => {
     throwIfCancelled(isCancelled);
-    prepared.push(await prepareAsset(group[index], alphaThreshold));
+    const asset = await prepareAsset(filePath, alphaThreshold);
+    preparedCount += 1;
     if (typeof onProgress === 'function') {
       onProgress({
-        fraction: 0.45 * ((index + 1) / group.length),
-        message: `Đang chuẩn bị preview ${index + 1}/${group.length}…`,
+        fraction: 0.45 * (preparedCount / group.length),
+        message: `Đang chuẩn bị preview ${preparedCount}/${group.length}…`,
         stage: 'preview',
       });
     }
-  }
+    return asset;
+  });
 
   const rendered = await renderCompositeToBuffer(
     templatePath,

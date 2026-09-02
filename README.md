@@ -28,6 +28,8 @@
 - Preview đúng bố cục và watermark trước khi xuất.
 - Lưu mockup Bundle, Group Shirt, mockup đơn và PDF Download vào cùng thư mục `Done`, không ghi đè kết quả cũ.
 - Xử lý nền, hiển thị tiến trình và có thể huỷ an toàn.
+- Từ v1.4.14, Bundle PNG, Group Shirt và mockup đơn xử lý song song có giới hạn; Group Shirt/mockup đơn tái sử dụng bitmap trong cùng tác vụ. Chất lượng PNG, watermark, metadata và quy tắc ghép giữ nguyên.
+- Khi chỉnh vùng in, kéo một trong bốn góc để đổi kích thước và giữ cố định góc đối diện, kể cả vùng đã xoay; tỷ lệ 42×48 không đổi.
 - Nút **Xóa dữ liệu** dọn cache/file tạm theo allowlist có xác nhận; khi thoát app cũng tự dọn trước rồi mới đóng. Ảnh Input, JSON Print Area và kết quả Done không bị xóa.
 - Hiển thị phiên bản ngay trên tên app và kiểm tra cập nhật từ GitHub Releases.
 - Bộ cài Windows tạo icon ngoài Desktop và Start Menu; máy người dùng không cần Node.js hay `start-app.bat`.

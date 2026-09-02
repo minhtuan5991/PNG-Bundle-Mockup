@@ -19,6 +19,11 @@ const {
   templateDescriptor,
   validateNormalizedPrintRegion,
 } = require('./single-mockup-regions');
+const {
+  mapWithConcurrency,
+  createConcurrencyLimiter,
+  memoizeBounded,
+} = require('./bounded-work');
 
 const SINGLE_MOCKUP_TEMPLATE_EXTENSIONS = Object.freeze([
   '.png',
@@ -32,6 +37,10 @@ const TEMPLATE_EXTENSION_SET = new Set(SINGLE_MOCKUP_TEMPLATE_EXTENSIONS);
 const SUPPORTED_SHARP_FORMATS = new Set(['png', 'jpeg', 'webp', 'tiff']);
 const MAX_OUTPUT_REVISIONS = 10000;
 const DEFAULT_SINGLE_MOCKUP_PREFIX = 'single';
+const DEFAULT_OUTPUT_CONCURRENCY = 2;
+const DEFAULT_TRANSFORM_CONCURRENCY = 4;
+const DEFAULT_METADATA_CONCURRENCY = 2;
+const MAX_DESIGN_CACHE_ENTRIES = 64;
 const REMOVED_METADATA_GROUPS = Object.freeze([
   'Comment',
   'EXIF',
@@ -61,6 +70,34 @@ function throwIfCancelled(isCancelled) {
   if (typeof isCancelled === 'function' && isCancelled()) {
     throw new SingleMockupCancelledError();
   }
+}
+
+function normalizeConcurrency(value, fallback, optionName, maximum = 8) {
+  const number = value === undefined ? fallback : Number(value);
+  if (!Number.isInteger(number) || number <= 0 || number > maximum) {
+    throw new SingleMockupError(
+      `${optionName} phải là số nguyên từ 1 đến ${maximum}.`,
+      'INVALID_SINGLE_MOCKUP_CONCURRENCY',
+      { optionName },
+    );
+  }
+  return number;
+}
+
+function fileSystemKey(filePath) {
+  const resolved = path.resolve(String(filePath));
+  return process.platform === 'win32'
+    ? resolved.toLocaleLowerCase('en-US')
+    : resolved;
+}
+
+function createRenderingCaches(transformConcurrency = DEFAULT_TRANSFORM_CONCURRENCY) {
+  return {
+    visibility: new Map(),
+    designs: new Map(),
+    watermarks: new Map(),
+    runTransform: createConcurrencyLimiter(transformConcurrency),
+  };
 }
 
 function normalizeDirectory(directoryPath, optionName) {
@@ -376,24 +413,35 @@ async function renderSingleMockupToFile(options) {
     preserveMetadata = false,
     isCancelled,
   } = options;
+  const caches = options.caches || createRenderingCaches();
   throwIfCancelled(isCancelled);
   const pixelRegion = calculatePixelPrintRegion(region, template);
   // Keep the existing visibility validation, but never crop the PNG canvas
   // when mapping it into a fixed 42×48 print region.
-  await findAlphaBounds(sourcePath, alphaThreshold);
+  const sourceKey = fileSystemKey(sourcePath);
+  await memoizeBounded(
+    caches.visibility,
+    `${sourceKey}|${alphaThreshold}`,
+    () => findAlphaBounds(sourcePath, alphaThreshold),
+    MAX_DESIGN_CACHE_ENTRIES,
+  );
   throwIfCancelled(isCancelled);
 
   let designBuffer;
   try {
-    designBuffer = await sharp(sourcePath, { failOn: 'error', limitInputPixels: false })
-      .resize(pixelRegion.width, pixelRegion.height, {
-        fit: 'contain',
-        position: 'centre',
-        background: { r: 0, g: 0, b: 0, alpha: 0 },
-        kernel: sharp.kernel.lanczos3,
-      })
-      .png()
-      .toBuffer();
+    const designKey = `${sourceKey}|${pixelRegion.width}x${pixelRegion.height}`;
+    designBuffer = await memoizeBounded(caches.designs, designKey, () =>
+      caches.runTransform(() =>
+        sharp(sourcePath, { failOn: 'error', limitInputPixels: false })
+          .resize(pixelRegion.width, pixelRegion.height, {
+            fit: 'contain',
+            position: 'centre',
+            background: { r: 0, g: 0, b: 0, alpha: 0 },
+            kernel: sharp.kernel.lanczos3,
+          })
+          .png()
+          .toBuffer()),
+      MAX_DESIGN_CACHE_ENTRIES);
   } catch (error) {
     throw new SingleMockupError(
       `Không thể xử lý PNG “${path.basename(sourcePath)}”: ${error.message}`,
@@ -404,7 +452,12 @@ async function renderSingleMockupToFile(options) {
 
   throwIfCancelled(isCancelled);
   const watermark = watermarkPath
-    ? await prepareWatermark(watermarkPath, template)
+    ? await memoizeBounded(
+        caches.watermarks,
+        `${fileSystemKey(watermarkPath)}|${template.width}x${template.height}`,
+        () => prepareWatermark(watermarkPath, template),
+        MAX_DESIGN_CACHE_ENTRIES,
+      )
     : null;
   throwIfCancelled(isCancelled);
   try {
@@ -533,6 +586,24 @@ async function generateSingleMockups(options = {}) {
   } = options;
   const alphaThreshold = options.alphaThreshold ?? options.settings?.alphaThreshold ?? 0;
   const shouldRemoveMetadata = removeMetadata !== false;
+  const outputConcurrency = normalizeConcurrency(
+    options.processingConcurrency,
+    DEFAULT_OUTPUT_CONCURRENCY,
+    'processingConcurrency',
+    4,
+  );
+  const transformConcurrency = normalizeConcurrency(
+    options.transformConcurrency,
+    DEFAULT_TRANSFORM_CONCURRENCY,
+    'transformConcurrency',
+    8,
+  );
+  const metadataConcurrency = normalizeConcurrency(
+    options.metadataConcurrency,
+    DEFAULT_METADATA_CONCURRENCY,
+    'metadataConcurrency',
+    4,
+  );
   const resolvedOutputDirectory = outputDirectory
     ? normalizeDirectory(outputDirectory, 'outputDirectory')
     : path.join(normalizeDirectory(sourceDirectory, 'sourceDirectory'), 'Done');
@@ -664,8 +735,9 @@ async function generateSingleMockups(options = {}) {
 
   const tempPaths = [];
   const committedPaths = [];
-  const rendered = [];
+  const rendered = new Array(renderPlan.length);
   const jobId = randomUUID();
+  const caches = createRenderingCaches(transformConcurrency);
   const progress = (fraction, message, stage) => {
     if (typeof onProgress === 'function') {
       onProgress({ fraction: Math.max(0, Math.min(1, fraction)), message, stage });
@@ -673,42 +745,59 @@ async function generateSingleMockups(options = {}) {
   };
 
   try {
-    for (let index = 0; index < renderPlan.length; index += 1) {
+    const outputTempPaths = renderPlan.map((item, index) => path.join(
+      resolvedOutputDirectory,
+      `.${safePrefix}-${jobId}-${String(index + 1).padStart(3, '0')}.tmp`,
+    ));
+    tempPaths.push(...outputTempPaths);
+    let startedOutputs = 0;
+    let completedOutputs = 0;
+    await mapWithConcurrency(renderPlan, outputConcurrency, async (item, index) => {
       throwIfCancelled(isCancelled);
-      const { template, sourcePath, region, group, groupKey } = renderPlan[index];
-      const tempPath = path.join(
-        resolvedOutputDirectory,
-        `.${safePrefix}-${jobId}-${String(index + 1).padStart(3, '0')}.tmp`,
-      );
-      tempPaths.push(tempPath);
+      const { template, sourcePath, region, group, groupKey } = item;
+      startedOutputs += 1;
       progress(
-        0.85 * (index / renderPlan.length),
-        `Đang tạo mockup đơn ${index + 1}/${renderPlan.length}…`,
+        0.85 * (completedOutputs / renderPlan.length),
+        `Đang tạo mockup đơn ${startedOutputs}/${renderPlan.length}…`,
         'single-mockup-compose',
       );
       const pixelRegion = await renderSingleMockupToFile({
         template,
         sourcePath,
         region,
-        outputPath: tempPath,
+        outputPath: outputTempPaths[index],
         alphaThreshold,
         watermarkPath,
         preserveMetadata: !shouldRemoveMetadata,
         isCancelled,
+        caches,
       });
-      rendered.push({ template, sourcePath, region, pixelRegion, tempPath, group, groupKey });
-    }
+      rendered[index] = {
+        template,
+        sourcePath,
+        region,
+        pixelRegion,
+        tempPath: outputTempPaths[index],
+        group,
+        groupKey,
+      };
+      completedOutputs += 1;
+    });
 
     if (shouldRemoveMetadata) {
-      for (let index = 0; index < rendered.length; index += 1) {
+      let startedMetadata = 0;
+      let cleanedOutputs = 0;
+      await mapWithConcurrency(rendered, metadataConcurrency, async (item) => {
         throwIfCancelled(isCancelled);
+        startedMetadata += 1;
         progress(
-          0.85 + 0.1 * (index / rendered.length),
-          `Đang xóa 6 nhóm Metadata ở mockup đơn ${index + 1}/${rendered.length}…`,
+          0.85 + 0.1 * (cleanedOutputs / rendered.length),
+          `Đang xóa 6 nhóm Metadata ở mockup đơn ${startedMetadata}/${rendered.length}…`,
           'single-mockup-metadata',
         );
-        await stripMetadataFromFile(rendered[index].tempPath, { isCancelled });
-      }
+        await stripMetadataFromFile(item.tempPath, { isCancelled });
+        cleanedOutputs += 1;
+      });
     }
 
     for (let index = 0; index < rendered.length; index += 1) {

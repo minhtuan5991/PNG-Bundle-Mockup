@@ -2134,26 +2134,22 @@ function movePrintRegionDrag(event) {
     left = Math.max(0, Math.min(frame.width - width, start.left + event.clientX - drag.startX));
     top = Math.max(0, Math.min(frame.height - height, start.top + event.clientY - drag.startY));
   } else {
-    const east = drag.handle.includes('e');
-    const south = drag.handle.includes('s');
-    const anchorX = east ? start.left : start.left + start.width;
-    const anchorY = south ? start.top : start.top + start.height;
-    const pointerX = Math.max(0, Math.min(frame.width, event.clientX - frame.left));
-    const pointerY = Math.max(0, Math.min(frame.height, event.clientY - frame.top));
-    const candidateWidth = Math.max(0, (pointerX - anchorX) * (east ? 1 : -1));
-    const candidateHeight = Math.max(0, (pointerY - anchorY) * (south ? 1 : -1));
-    const maxWidth = east ? frame.width - anchorX : anchorX;
-    const maxHeight = south ? frame.height - anchorY : anchorY;
-    const displayRatio = (7 / 8) *
-      (frame.width * entry.template.height) / (frame.height * entry.template.width);
-    const maximumHeight = Math.max(1, Math.min(maxHeight, maxWidth / displayRatio));
-    const minimumHeight = Math.min(32, maximumHeight);
-    const preferredHeight =
-      (displayRatio * candidateWidth + candidateHeight) / (displayRatio ** 2 + 1);
-    height = Math.max(minimumHeight, Math.min(maximumHeight, preferredHeight));
-    width = height * displayRatio;
-    left = east ? anchorX : anchorX - width;
-    top = south ? anchorY : anchorY - height;
+    const scaleX = entry.template.width / frame.width;
+    const scaleY = entry.template.height / frame.height;
+    const resized = printRegionResize.resizeFromCorner({
+      centerX: (start.left + start.width / 2) * scaleX,
+      centerY: (start.top + start.height / 2) * scaleY,
+      width: start.width * scaleX,
+      height: start.height * scaleY,
+      rotation: 0,
+    }, drag.handle, {
+      x: (event.clientX - drag.startX) * scaleX,
+      y: (event.clientY - drag.startY) * scaleY,
+    }, entry.template, 32 * scaleY);
+    width = resized.width / scaleX;
+    height = resized.height / scaleY;
+    left = resized.centerX / scaleX - width / 2;
+    top = resized.centerY / scaleY - height / 2;
   }
 
   left = Math.max(0, Math.min(frame.width - width, left));
@@ -2521,6 +2517,7 @@ function beginGroupRegionDrag(event) {
   state.regionEditor.drag = {
     pointerId: event.pointerId,
     mode,
+    handle: event.target.dataset.groupHandle || null,
     frame,
     startX: event.clientX,
     startY: event.clientY,
@@ -2548,19 +2545,23 @@ function moveGroupRegionDrag(event) {
     const centerY = frame.top + start.centerY * frame.height;
     next.rotation = Math.atan2(event.clientY - centerY, event.clientX - centerX) * 180 / Math.PI + 90;
   } else {
-    const centerX = frame.left + start.centerX * frame.width;
-    const centerY = frame.top + start.centerY * frame.height;
-    const candidateWidth = Math.max(0, Math.abs(event.clientX - centerX) * 2 * entry.template.width / frame.width);
-    const candidateHeight = Math.max(0, Math.abs(event.clientY - centerY) * 2 * entry.template.height / frame.height);
-    const aspectRatio = 42 / 48;
-    const preferredHeight =
-      (aspectRatio * candidateWidth + candidateHeight) / (aspectRatio ** 2 + 1);
-    const pixelHeight = Math.max(8, preferredHeight);
-    const pixelWidth = pixelHeight * aspectRatio;
-    next.width = pixelWidth / entry.template.width;
-    next.height = pixelHeight / entry.template.height;
+    const resized = printRegionResize.resizeFromCorner({
+      centerX: start.centerX * entry.template.width,
+      centerY: start.centerY * entry.template.height,
+      width: start.width * entry.template.width,
+      height: start.height * entry.template.height,
+      rotation: start.rotation,
+    }, drag.handle, {
+      x: (event.clientX - drag.startX) * entry.template.width / frame.width,
+      y: (event.clientY - drag.startY) * entry.template.height / frame.height,
+    }, entry.template);
+    next.centerX = resized.centerX / entry.template.width;
+    next.centerY = resized.centerY / entry.template.height;
+    next.width = resized.width / entry.template.width;
+    next.height = resized.height / entry.template.height;
   }
-  Object.assign(region, constrainGroupRegion(next, entry.template));
+  // Resize already clamps all rotated corners; re-centering here would move the anchor.
+  Object.assign(region, drag.mode === 'resize' ? next : constrainGroupRegion(next, entry.template));
   markGroupEditorDirty();
   updateGroupRegionElement(region);
   event.preventDefault();

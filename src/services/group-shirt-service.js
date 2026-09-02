@@ -12,9 +12,19 @@ const {
   stripMetadataFromFile,
 } = require('../engine/image-engine');
 const { validateGroupShirtRegion } = require('./group-shirt-regions');
+const {
+  mapWithConcurrency,
+  createConcurrencyLimiter,
+  memoizeBounded,
+} = require('./bounded-work');
 
 const GROUP_SHIRT_OUTPUT_PREFIX = 'group-shirt';
 const MAX_OUTPUT_REVISIONS = 10000;
+const DEFAULT_OUTPUT_CONCURRENCY = 2;
+const DEFAULT_SOURCE_CONCURRENCY = 4;
+const DEFAULT_TRANSFORM_CONCURRENCY = 4;
+const DEFAULT_METADATA_CONCURRENCY = 2;
+const MAX_DESIGN_CACHE_ENTRIES = 64;
 const SUPPORTED_TEMPLATE_FORMATS = new Set(['png', 'jpeg', 'webp', 'tiff']);
 const REMOVED_METADATA_GROUPS = Object.freeze([
   'Comment',
@@ -78,6 +88,30 @@ function normalizePositiveInteger(value, fallback, optionName) {
     );
   }
   return number;
+}
+
+function normalizeConcurrency(value, fallback, optionName, maximum = 8) {
+  const number = value === undefined ? fallback : Number(value);
+  if (!Number.isInteger(number) || number <= 0 || number > maximum) {
+    throw new GroupShirtError(
+      `${optionName} phải là số nguyên từ 1 đến ${maximum}.`,
+      'INVALID_GROUP_SHIRT_CONCURRENCY',
+      { optionName },
+    );
+  }
+  return number;
+}
+
+function createRenderingCaches(caches = {}, transformConcurrency = DEFAULT_TRANSFORM_CONCURRENCY) {
+  const output = caches && typeof caches === 'object' ? caches : {};
+  if (!(output.templates instanceof Map)) output.templates = new Map();
+  if (!(output.sources instanceof Map)) output.sources = new Map();
+  if (!(output.watermarks instanceof Map)) output.watermarks = new Map();
+  if (!(output.designs instanceof Map)) output.designs = new Map();
+  if (typeof output.runTransform !== 'function') {
+    output.runTransform = createConcurrencyLimiter(transformConcurrency);
+  }
+  return output;
 }
 
 function resolvedFilePath(value, optionName) {
@@ -349,16 +383,21 @@ async function normalizePlannedOutput(rawOutput, outputIndex, caches, options = 
 
 async function normalizePlanForRendering(plan, options = {}) {
   const outputs = planOutputs(plan);
-  const caches = options.caches || { templates: new Map(), sources: new Map(), watermarks: new Map() };
-  const normalized = [];
-  for (let index = 0; index < outputs.length; index += 1) {
-    normalized.push(await normalizePlannedOutput(outputs[index], index, caches, options));
-  }
+  const caches = createRenderingCaches(options.caches);
+  const normalized = await mapWithConcurrency(outputs, 4, (output, index) =>
+    normalizePlannedOutput(output, index, caches, options));
   return { outputs: normalized, caches };
 }
 
 async function createDesignComposite(assignment, options) {
-  const { alphaThreshold, sourceCache, template, isCancelled } = options;
+  const {
+    alphaThreshold,
+    sourceCache,
+    designCache,
+    runTransform = (task) => task(),
+    template,
+    isCancelled,
+  } = options;
   const source = await inspectSourceDescriptor(
     assignment.source,
     alphaThreshold,
@@ -368,30 +407,40 @@ async function createDesignComposite(assignment, options) {
   const { region } = assignment;
   throwIfCancelled(isCancelled);
 
+  const designKey = [
+    fileSystemKey(source.path),
+    `${region.pixelWidth}x${region.pixelHeight}`,
+    Number(region.rotation),
+  ].join('|');
   let result;
   try {
-    // Resize the entire PNG canvas, including transparent margins, so the
-    // design keeps its original size and position relative to the print area.
-    result = await sharp(source.path, { failOn: 'error', limitInputPixels: false })
-      .resize(region.pixelWidth, region.pixelHeight, {
-        fit: 'contain',
-        position: 'centre',
-        background: { r: 0, g: 0, b: 0, alpha: 0 },
-        kernel: sharp.kernel.lanczos3,
-      })
-      .png({ compressionLevel: 9, adaptiveFiltering: true })
-      .toBuffer({ resolveWithObject: true });
-    if (Math.abs(region.rotation) > 1e-9) {
+    result = await memoizeBounded(designCache, designKey, () => runTransform(async () => {
       throwIfCancelled(isCancelled);
-      // Materialize the resized canvas before rotation: Sharp can otherwise
-      // apply 90° rotations before contain-padding and change the frame size.
-      result = await sharp(result.data, { failOn: 'error', limitInputPixels: false })
-        .rotate(region.rotation, {
+      // Resize the entire PNG canvas, including transparent margins, so the
+      // design keeps its original size and position relative to the print area.
+      let transformed = await sharp(source.path, { failOn: 'error', limitInputPixels: false })
+        .resize(region.pixelWidth, region.pixelHeight, {
+          fit: 'contain',
+          position: 'centre',
           background: { r: 0, g: 0, b: 0, alpha: 0 },
+          kernel: sharp.kernel.lanczos3,
         })
         .png({ compressionLevel: 9, adaptiveFiltering: true })
         .toBuffer({ resolveWithObject: true });
-    }
+      if (Math.abs(region.rotation) > 1e-9) {
+        throwIfCancelled(isCancelled);
+        // Materialize the resized canvas before rotation: Sharp can otherwise
+        // apply 90° rotations before contain-padding and change the frame size.
+        transformed = await sharp(transformed.data, { failOn: 'error', limitInputPixels: false })
+          .rotate(region.rotation, {
+            background: { r: 0, g: 0, b: 0, alpha: 0 },
+          })
+          .png({ compressionLevel: 9, adaptiveFiltering: true })
+          .toBuffer({ resolveWithObject: true });
+      }
+      throwIfCancelled(isCancelled);
+      return transformed;
+    }), MAX_DESIGN_CACHE_ENTRIES);
   } catch (error) {
     if (error instanceof GroupShirtCancelledError) throw error;
     throw new GroupShirtError(
@@ -452,29 +501,33 @@ async function renderGroupShirtOutputToBuffer(options = {}) {
     onItem,
   } = options;
   const threshold = normalizeAlphaThreshold(alphaThreshold);
-  const caches = options.caches || { templates: new Map(), sources: new Map(), watermarks: new Map() };
+  const caches = createRenderingCaches(options.caches);
   const normalizedOutput = output?.template?.width && output?.assignments?.every((item) => item?.region?.pixelWidth)
     ? output
     : await normalizePlannedOutput(output, Number(output?.outputIndex) || 0, caches, { isCancelled });
   const { template, assignments } = normalizedOutput;
-  const composites = [];
-
-  for (let index = 0; index < assignments.length; index += 1) {
+  let completedAssignments = 0;
+  const composites = await mapWithConcurrency(assignments, 8, async (assignment) => {
     throwIfCancelled(isCancelled);
-    const composite = await createDesignComposite(assignments[index], {
+    const composite = await createDesignComposite(assignment, {
       alphaThreshold: threshold,
       sourceCache: caches.sources,
+      designCache: caches.designs,
+      runTransform: caches.runTransform,
       template,
       isCancelled,
     });
-    composites.push({
+    completedAssignments += 1;
+    if (typeof onItem === 'function') {
+      onItem(completedAssignments, assignments.length, composite);
+    }
+    return {
       input: composite.input,
       left: composite.left,
       top: composite.top,
       blend: 'over',
-    });
-    if (typeof onItem === 'function') onItem(index + 1, assignments.length, composite);
-  }
+    };
+  });
 
   const watermark = await watermarkForTemplate(
     watermarkPath,
@@ -579,7 +632,7 @@ async function renderGroupShirtPreview(options = {}) {
   }
   const maxWidth = normalizePositiveInteger(options.maxWidth, 1400, 'maxWidth');
   const maxHeight = normalizePositiveInteger(options.maxHeight, 1000, 'maxHeight');
-  const caches = { templates: new Map(), sources: new Map(), watermarks: new Map() };
+  const caches = createRenderingCaches();
   throwIfCancelled(options.isCancelled);
   progressCallback(options.onProgress, 0, 'Đang chuẩn bị preview Group Shirt…', 'group-shirt-preview');
   const output = await normalizePlannedOutput(outputs[pageIndex], pageIndex, caches, options);
@@ -637,7 +690,31 @@ async function generateGroupShirtMockups(options = {}) {
   const rawOutputs = planOutputs(plan);
   const threshold = normalizeAlphaThreshold(options.alphaThreshold ?? options.settings?.alphaThreshold ?? 0);
   const shouldRemoveMetadata = options.removeMetadata !== false;
-  const caches = { templates: new Map(), sources: new Map(), watermarks: new Map() };
+  const outputConcurrency = normalizeConcurrency(
+    options.processingConcurrency,
+    DEFAULT_OUTPUT_CONCURRENCY,
+    'processingConcurrency',
+    4,
+  );
+  const sourceConcurrency = normalizeConcurrency(
+    options.sourceConcurrency,
+    DEFAULT_SOURCE_CONCURRENCY,
+    'sourceConcurrency',
+    8,
+  );
+  const transformConcurrency = normalizeConcurrency(
+    options.transformConcurrency,
+    DEFAULT_TRANSFORM_CONCURRENCY,
+    'transformConcurrency',
+    8,
+  );
+  const metadataConcurrency = normalizeConcurrency(
+    options.metadataConcurrency,
+    DEFAULT_METADATA_CONCURRENCY,
+    'metadataConcurrency',
+    4,
+  );
+  const caches = createRenderingCaches({}, transformConcurrency);
   const normalized = await normalizePlanForRendering(plan, {
     caches,
     isCancelled: options.isCancelled,
@@ -680,39 +757,43 @@ async function generateGroupShirtMockups(options = {}) {
         }
       }
     }
-    for (let index = 0; index < uniqueSources.length; index += 1) {
+    let preparedSources = 0;
+    await mapWithConcurrency(uniqueSources, sourceConcurrency, async (source) => {
       throwIfCancelled(options.isCancelled);
       await inspectSourceDescriptor(
-        uniqueSources[index],
+        source,
         threshold,
         caches.sources,
         options.isCancelled,
       );
+      preparedSources += 1;
       progressCallback(
         options.onProgress,
-        0.2 * ((index + 1) / uniqueSources.length),
-        `Đang kiểm tra PNG ${index + 1}/${uniqueSources.length}…`,
+        0.2 * (preparedSources / uniqueSources.length),
+        `Đang kiểm tra PNG ${preparedSources}/${uniqueSources.length}…`,
         'group-shirt-prepare',
       );
-    }
+    });
 
     let renderedAssignments = 0;
     const totalAssignments = outputs.reduce((sum, output) => sum + output.assignments.length, 0);
-    for (let index = 0; index < outputs.length; index += 1) {
+    const outputTempPaths = outputs.map((output, index) => path.join(
+      outputDir,
+      `.${GROUP_SHIRT_OUTPUT_PREFIX}-${jobId}-${String(index + 1).padStart(3, '0')}.tmp`,
+    ));
+    tempPaths.push(...outputTempPaths);
+    let startedOutputs = 0;
+    await mapWithConcurrency(outputs, outputConcurrency, async (output, index) => {
       throwIfCancelled(options.isCancelled);
-      const tempPath = path.join(
-        outputDir,
-        `.${GROUP_SHIRT_OUTPUT_PREFIX}-${jobId}-${String(index + 1).padStart(3, '0')}.tmp`,
-      );
-      tempPaths.push(tempPath);
+      startedOutputs += 1;
       progressCallback(
         options.onProgress,
         0.2 + 0.62 * (renderedAssignments / totalAssignments),
-        `Đang tạo Group Shirt ${index + 1}/${outputs.length}…`,
+        `Đang tạo Group Shirt ${startedOutputs}/${outputs.length}…`,
         'group-shirt-compose',
       );
       const rendered = await renderGroupShirtOutputToBuffer({
-        output: outputs[index],
+        output,
         alphaThreshold: threshold,
         watermarkPath: options.watermarkPath || null,
         preserveMetadata: true,
@@ -728,20 +809,24 @@ async function generateGroupShirtMockups(options = {}) {
           );
         },
       });
-      await fs.writeFile(tempPath, rendered.buffer, { flag: 'wx' });
-    }
+      await fs.writeFile(outputTempPaths[index], rendered.buffer, { flag: 'wx' });
+    });
 
     if (shouldRemoveMetadata) {
-      for (let index = 0; index < tempPaths.length; index += 1) {
+      let cleanedOutputs = 0;
+      let startedMetadata = 0;
+      await mapWithConcurrency(tempPaths, metadataConcurrency, async (tempPath) => {
         throwIfCancelled(options.isCancelled);
+        startedMetadata += 1;
         progressCallback(
           options.onProgress,
-          0.82 + 0.12 * (index / tempPaths.length),
-          `Đang xóa 6 nhóm Metadata ${index + 1}/${tempPaths.length}…`,
+          0.82 + 0.12 * (cleanedOutputs / tempPaths.length),
+          `Đang xóa 6 nhóm Metadata ${startedMetadata}/${tempPaths.length}…`,
           'group-shirt-metadata',
         );
-        await stripMetadataFromFile(tempPaths[index], { isCancelled: options.isCancelled });
-      }
+        await stripMetadataFromFile(tempPath, { isCancelled: options.isCancelled });
+        cleanedOutputs += 1;
+      });
     }
 
     for (let index = 0; index < tempPaths.length; index += 1) {

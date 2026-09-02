@@ -510,6 +510,86 @@ test('generate hỗ trợ nhiều variant, xóa metadata cuối, giữ metadata 
   }
 });
 
+test('xử lý song song có giới hạn tạo ảnh giống từng byte với chế độ tuần tự', async (t) => {
+  const directory = await createTempDirectory(t, 'group-shirt-concurrency-');
+  const templatePath = path.join(directory, 'speed mgs.png');
+  const firstSource = path.join(directory, 'speed (1).wh.f.png');
+  const secondSource = path.join(directory, 'speed (2).wh.f.png');
+  await Promise.all([
+    createTemplate(templatePath, { width: 360, height: 300 }),
+    createPaddedDesign(firstSource, { color: { r: 225, g: 35, b: 40, alpha: 1 } }),
+    createPaddedDesign(secondSource, { color: { r: 20, g: 105, b: 225, alpha: 1 } }),
+  ]);
+  const output = plannedOutput(templatePath, [
+    assignment(firstSource, {
+      id: 'front-left',
+      centerX: 0.3,
+      centerY: 0.5,
+      width: 0.175,
+      height: 0.24,
+      rotation: 0,
+    }),
+    assignment(secondSource, {
+      id: 'front-right',
+      centerX: 0.7,
+      centerY: 0.5,
+      width: 0.175,
+      height: 0.24,
+      rotation: 12,
+    }),
+  ]);
+  const plan = {
+    outputs: Array.from({ length: 4 }, (_, index) => ({
+      ...output,
+      assignments: output.assignments.map((item) => ({
+        ...item,
+        region: { ...item.region, id: `${item.region.id}-${index}` },
+      })),
+    })),
+  };
+
+  const serial = await generateGroupShirtMockups({
+    plan,
+    outputDirectory: path.join(directory, 'Done-serial'),
+    processingConcurrency: 1,
+    sourceConcurrency: 1,
+    transformConcurrency: 1,
+    metadataConcurrency: 1,
+  });
+  const parallel = await generateGroupShirtMockups({
+    plan,
+    outputDirectory: path.join(directory, 'Done-parallel'),
+  });
+
+  assert.equal(serial.outputCount, parallel.outputCount);
+  const [serialBuffers, parallelBuffers] = await Promise.all([
+    Promise.all(serial.outputPaths.map((filePath) => fs.readFile(filePath))),
+    Promise.all(parallel.outputPaths.map((filePath) => fs.readFile(filePath))),
+  ]);
+  for (let index = 0; index < serialBuffers.length; index += 1) {
+    assert.deepEqual(parallelBuffers[index], serialBuffers[index]);
+  }
+});
+
+test('giới hạn xử lý Group Shirt từ chối giá trị quá cao hoặc không dương', async () => {
+  await assert.rejects(
+    generateGroupShirtMockups({
+      plan: { outputs: [{}] },
+      outputDirectory: path.resolve('D:\\Done'),
+      processingConcurrency: 0,
+    }),
+    (error) => error.code === 'INVALID_GROUP_SHIRT_CONCURRENCY',
+  );
+  await assert.rejects(
+    generateGroupShirtMockups({
+      plan: { outputs: [{}] },
+      outputDirectory: path.resolve('D:\\Done'),
+      transformConcurrency: 9,
+    }),
+    (error) => error.code === 'INVALID_GROUP_SHIRT_CONCURRENCY',
+  );
+});
+
 test('service tích hợp planner: 6 mặt trước + 6 mặt sau trên 3+3 vùng tạo đúng 2 ảnh', async (t) => {
   const directory = await createTempDirectory(t);
   const outputDirectory = path.join(directory, 'Done');
