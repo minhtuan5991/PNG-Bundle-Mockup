@@ -782,3 +782,5 @@ Checksum bên dưới thuộc artifact public do GitHub Actions build lại, kh�
 - Trình chỉnh vùng in dùng đúng 12 màu theo tổ hợp trước/sau, sáng/tối và Nam/Nữ; tên vùng, nhãn chữ và kiểu viền giữ nguyên.
 - Automated tests **171/171** đạt. Chưa chạy cài mới/nâng cấp tương tác trên máy hoặc VM sạch.
 - NSIS local: Setup 104378654 byte, SHA-256 `4c8725775bd1a8efa910dd31c5fb10215bf4745c92a5ea23e52baa65e2d4b262`; ASAR/updater metadata đạt, Authenticode `NotSigned`.
+- Commit `5d06d79c2338e64282b76eb4db27c1e0848b0620`, annotated tag `v1.4.13`; Windows CI `33646310521` và Release Windows `33646402971` đều thành công.
+- Release `381360219` public/stable/latest có đúng ba asset. Setup công khai 104378171 byte, SHA-256 `765f99c7846f2f23f16bba3b2f1464f0530cc44197f6f23fe4df6c0ece00ce4d`; updater metadata công khai đúng version và kích thước installer.

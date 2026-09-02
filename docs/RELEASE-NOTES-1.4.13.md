@@ -40,5 +40,15 @@ Checksum trên thuộc build local. GitHub Actions sẽ build lại và xác min
 
 ## Trạng thái phát hành
 
-- Bản phát hành dùng commit và annotated tag mới v1.4.13; không di chuyển hoặc ghi đè tag/asset v1.4.12.
-- GitHub Actions sẽ build lại và chỉ công bố Release stable sau khi xác minh installer, blockmap và latest.yml.
+- Commit phát hành `5d06d79c2338e64282b76eb4db27c1e0848b0620` và annotated tag `v1.4.13` đã được đẩy lên GitHub.
+- Windows CI `33646310521` và Release Windows `33646402971` đều thành công.
+- Release `381360219` đang public, stable, không phải prerelease và là bản `/releases/latest`.
+- Release có đúng ba asset updater; `latest.yml` công khai mang version 1.4.13, đúng tên và kích thước installer.
+
+## Artifact GitHub công khai
+
+| File | Kích thước (byte) | SHA-256 |
+| --- | ---: | --- |
+| `PNG-Bundle-Mockup-Setup-1.4.13.exe` | 104378171 | `765f99c7846f2f23f16bba3b2f1464f0530cc44197f6f23fe4df6c0ece00ce4d` |
+| `PNG-Bundle-Mockup-Setup-1.4.13.exe.blockmap` | 109372 | `9c8f9693e5ebee706a98f12b800d5bef0b16061b2e0a6801b9f3cdcde8690411` |
+| `latest.yml` | 366 | `51275a74a4aab7f1e4be2241ec72b532e13c7f3607a8abe77755fd65bd355a24` |
