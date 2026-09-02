@@ -347,17 +347,52 @@ test('đuôi giới tính lọc vùng trước rồi vẫn ghép đúng màu và
     warning.template.name === 'unisex mgs.png' && /giới tính/u.test(warning.message)));
 });
 
-test('PNG không có đuôi giới tính không dùng vùng dành riêng Nam/Nữ', async () => {
+test('PNG không có đuôi giới tính vẫn dùng vùng Nam/Nữ và chỉ xét màu áo, mặt áo', async () => {
   const plan = await createGroupShirtPlan({
-    sources: [source('regular', 1)],
+    sources: [
+      source('regular', 1, 'wh', 'f'),
+      source('regular', 2, 'bl', 'f'),
+    ],
     templates: [
-      template('regular mgs.png', [region('regular-front')]),
       template('couple-only mgs.png', [
         region('male-front', 'front', 'wh', 0.35, 0.5, 'm'),
-        region('female-front', 'front', 'wh', 0.65, 0.5, 'w'),
+        region('female-front', 'front', 'bl', 0.65, 0.5, 'w'),
       ]),
     ],
     random: () => 0,
   });
-  assert.deepEqual(templateNames(plan), ['regular mgs.png']);
+
+  assert.deepEqual(templateNames(plan), ['couple-only mgs.png']);
+  assert.deepEqual(
+    plan.outputs[0].assignments.map((assignment) => ({
+      color: assignment.source.color,
+      explicitGender: assignment.source.explicitGender,
+      regionGender: assignment.region.gender,
+    })),
+    [
+      { color: 'wh', explicitGender: false, regionGender: 'm' },
+      { color: 'bl', explicitGender: false, regionGender: 'w' },
+    ],
+  );
+});
+
+test('PNG không có đuôi giới tính vẫn loại nền có vùng mặt sau khi nhóm chỉ có mặt trước', async () => {
+  const plan = await createGroupShirtPlan({
+    sources: [source('regular front', 1, null, 'f')],
+    templates: [
+      template('front couple mgs.png', [
+        region('male-front', 'front', 'wh', 0.35, 0.5, 'm'),
+        region('female-front', 'front', 'bl', 0.65, 0.5, 'w'),
+      ]),
+      template('with back couple mgs.png', [
+        region('male-front', 'front', 'wh', 0.35, 0.5, 'm'),
+        region('female-back', 'back', 'bl', 0.65, 0.5, 'w'),
+      ]),
+    ],
+    random: () => 0,
+  });
+
+  assert.deepEqual(templateNames(plan), ['front couple mgs.png']);
+  assert.ok(plan.warnings.some((warning) =>
+    warning.template.name === 'with back couple mgs.png' && /mặt sau/u.test(warning.message)));
 });

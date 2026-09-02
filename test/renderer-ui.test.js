@@ -137,3 +137,47 @@ test('thumbnail đổi tên Group Shirt đủ lớn để nhận diện ảnh r�
   assert.match(imageRule, /height\s*:\s*76px\s*;/);
   assert.match(imageRule, /object-fit\s*:\s*contain\s*;/);
 });
+
+test('vùng in Group Shirt dùng đúng 12 màu tổ hợp và vẫn giữ nhãn chữ', () => {
+  const css = fs.readFileSync(path.join(rendererDirectory, 'styles.css'), 'utf8');
+  const script = fs.readFileSync(path.join(rendererDirectory, 'app.js'), 'utf8');
+  const rootRule = cssRuleBody(css, ':root');
+  const tokens = {
+    '--group-region-front-light': '#f2cf66',
+    '--group-region-front-dark': '#d8b1ff',
+    '--group-region-back-light': '#fab264',
+    '--group-region-back-dark': '#9a57dc',
+    '--group-region-front-light-male': '#88e2f9',
+    '--group-region-front-light-female': '#ffa2ef',
+    '--group-region-front-dark-male': '#5951ff',
+    '--group-region-front-dark-female': '#bc75ff',
+    '--group-region-back-light-male': '#3506e1',
+    '--group-region-back-light-female': '#7719cf',
+    '--group-region-back-dark-male': '#231094',
+    '--group-region-back-dark-female': '#420a77',
+  };
+  for (const [token, color] of Object.entries(tokens)) {
+    assert.match(rootRule, new RegExp(`${token}\\s*:\\s*${color}\\s*;`, 'i'));
+  }
+
+  const selectors = {
+    '.group-print-region[data-color="wh"][data-side="front"]': '--group-region-front-light',
+    '.group-print-region[data-color="bl"][data-side="front"]': '--group-region-front-dark',
+    '.group-print-region[data-color="wh"][data-side="back"]': '--group-region-back-light',
+    '.group-print-region[data-color="bl"][data-side="back"]': '--group-region-back-dark',
+    '.group-print-region[data-color="wh"][data-side="front"][data-gender="m"]': '--group-region-front-light-male',
+    '.group-print-region[data-color="wh"][data-side="front"][data-gender="w"]': '--group-region-front-light-female',
+    '.group-print-region[data-color="bl"][data-side="front"][data-gender="m"]': '--group-region-front-dark-male',
+    '.group-print-region[data-color="bl"][data-side="front"][data-gender="w"]': '--group-region-front-dark-female',
+    '.group-print-region[data-color="wh"][data-side="back"][data-gender="m"]': '--group-region-back-light-male',
+    '.group-print-region[data-color="wh"][data-side="back"][data-gender="w"]': '--group-region-back-light-female',
+    '.group-print-region[data-color="bl"][data-side="back"][data-gender="m"]': '--group-region-back-dark-male',
+    '.group-print-region[data-color="bl"][data-side="back"][data-gender="w"]': '--group-region-back-dark-female',
+  };
+  for (const [selector, token] of Object.entries(selectors)) {
+    assert.match(cssRuleBody(css, selector), new RegExp(`--region-color\\s*:\\s*var\\(${token}\\)\\s*;`));
+  }
+
+  assert.match(script, /genderLabel = region\.gender === 'm' \? 'Nam · ' : \(region\.gender === 'w' \? 'Nữ · ' : ''\)/);
+  assert.match(script, /label\.textContent = `\$\{genderLabel\}\$\{colorLabel\} · \$\{sideLabel\} \$\{trackIndex\}`/);
+});

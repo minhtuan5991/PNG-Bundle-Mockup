@@ -14,6 +14,18 @@
   --success: #20c997;
   --warning: #fbbf24;
   --danger: #fb7185;
+  --group-region-front-light: #f2cf66;
+  --group-region-front-dark: #d8b1ff;
+  --group-region-back-light: #fab264;
+  --group-region-back-dark: #9a57dc;
+  --group-region-front-light-male: #88e2f9;
+  --group-region-front-light-female: #ffa2ef;
+  --group-region-front-dark-male: #5951ff;
+  --group-region-front-dark-female: #bc75ff;
+  --group-region-back-light-male: #3506e1;
+  --group-region-back-light-female: #7719cf;
+  --group-region-back-dark-male: #231094;
+  --group-region-back-dark-female: #420a77;
   --radius: 16px;
   --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
   font-family: "Segoe UI", Inter, system-ui, -apple-system, sans-serif;
@@ -1666,8 +1678,8 @@ input:disabled {
 }
 
 .group-print-region {
-  --region-color: #fbbf24;
-  --region-dark: rgba(69, 38, 3, 0.9);
+  --region-color: var(--group-region-front-light);
+  --region-dark: color-mix(in srgb, var(--region-color) 32%, #020617);
   position: absolute;
   min-width: 18px;
   min-height: 18px;
@@ -1682,32 +1694,55 @@ input:disabled {
   box-shadow: 0 0 0 1px rgba(3, 7, 18, 0.72), inset 0 0 28px color-mix(in srgb, var(--region-color) 8%, transparent);
 }
 
+.group-print-region[data-color="wh"][data-side="front"] {
+  --region-color: var(--group-region-front-light);
+}
+
 .group-print-region[data-color="wh"][data-side="back"] {
-  --region-color: #22d3ee;
-  --region-dark: rgba(8, 51, 68, 0.92);
+  --region-color: var(--group-region-back-light);
   border-style: dashed;
 }
 
 .group-print-region[data-color="bl"][data-side="front"] {
-  --region-color: #a78bfa;
-  --region-dark: rgba(76, 29, 149, 0.94);
+  --region-color: var(--group-region-front-dark);
   border-style: double;
 }
 
 .group-print-region[data-color="bl"][data-side="back"] {
-  --region-color: #fb7185;
-  --region-dark: rgba(136, 19, 55, 0.94);
+  --region-color: var(--group-region-back-dark);
   border-style: dashed;
 }
 
-.group-print-region[data-gender="m"] {
-  --region-color: #34d399;
-  --region-dark: rgba(6, 78, 59, 0.94);
+.group-print-region[data-color="wh"][data-side="front"][data-gender="m"] {
+  --region-color: var(--group-region-front-light-male);
 }
 
-.group-print-region[data-gender="w"] {
-  --region-color: #f9a8d4;
-  --region-dark: rgba(131, 24, 67, 0.94);
+.group-print-region[data-color="wh"][data-side="front"][data-gender="w"] {
+  --region-color: var(--group-region-front-light-female);
+}
+
+.group-print-region[data-color="bl"][data-side="front"][data-gender="m"] {
+  --region-color: var(--group-region-front-dark-male);
+}
+
+.group-print-region[data-color="bl"][data-side="front"][data-gender="w"] {
+  --region-color: var(--group-region-front-dark-female);
+}
+
+.group-print-region[data-color="wh"][data-side="back"][data-gender="m"] {
+  --region-color: var(--group-region-back-light-male);
+}
+
+.group-print-region[data-color="wh"][data-side="back"][data-gender="w"] {
+  --region-color: var(--group-region-back-light-female);
+}
+
+.group-print-region[data-color="bl"][data-side="back"][data-gender="m"] {
+  --region-color: var(--group-region-back-dark-male);
+}
+
+.group-print-region[data-color="bl"][data-side="back"][data-gender="w"] {
+  --region-color: var(--group-region-back-dark-female);
 }
 
 .group-print-region.is-active,

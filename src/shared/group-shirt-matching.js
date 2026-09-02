@@ -82,11 +82,24 @@
     const exact = regionPoolKey(profile, region);
     if (!exact) return [];
     const gender = normalizeGender(region?.gender);
-    if (profile === PROFILES.COLOR_ONLY) return [exact, genderPoolKey(gender, 'color:*')];
+    const keys = [exact];
+    if (profile === PROFILES.COLOR_ONLY) keys.push(genderPoolKey(gender, 'color:*'));
     if (profile === PROFILES.COLOR_SIDE) {
-      return [exact, genderPoolKey(gender, `track:*.${normalizeSide(region?.side)}`)];
+      keys.push(genderPoolKey(gender, `track:*.${normalizeSide(region?.side)}`));
     }
-    return [exact];
+
+    // A PNG without .m/.w is gender-neutral: it can fill a male or female
+    // region while color/side matching continues to apply. Explicit .m/.w
+    // sources remain in gender-prefixed pools and therefore cannot cross over.
+    if (gender) {
+      const genericExact = regionPoolKey(profile, { ...region, gender: null });
+      if (genericExact) keys.push(genericExact);
+      if (profile === PROFILES.COLOR_ONLY) keys.push('color:*');
+      if (profile === PROFILES.COLOR_SIDE) {
+        keys.push(`track:*.${normalizeSide(region?.side)}`);
+      }
+    }
+    return [...new Set(keys)];
   }
 
   function poolLabel(key) {
@@ -133,10 +146,16 @@
     const sourceKeySet = new Set(sourceKeys);
     if (regions.length === 0) return incompatible('không có vùng in', sourceKeys);
 
-    const requiredGenders = new Set(sources.map((source) => (
-      source?.explicitGender ? normalizeGender(source.gender) : null
-    )));
-    const genderRegions = regions.filter((region) => requiredGenders.has(normalizeGender(region?.gender)));
+    const hasGenderNeutralSource = sources.some((source) => (
+      !source?.explicitGender || !normalizeGender(source.gender)
+    ));
+    const requiredGenders = new Set(sources
+      .filter((source) => source?.explicitGender)
+      .map((source) => normalizeGender(source.gender))
+      .filter(Boolean));
+    const genderRegions = hasGenderNeutralSource
+      ? regions
+      : regions.filter((region) => requiredGenders.has(normalizeGender(region?.gender)));
     if (genderRegions.length === 0) {
       return incompatible('không có vùng đúng giới tính PNG', sourceKeys, {
         regionCount: regions.length,

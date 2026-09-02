@@ -318,11 +318,12 @@ function makeAssignments(regions, group, poolIndexes, random) {
   const keysByRegion = regions.map((region) => regionSourcePoolKeys(group.profile, region));
   const selectedSources = new Map();
   const regionIndexes = orderedRegionIndexes(regions);
-  // Reserve color-specific sources first, then consume one shared wildcard queue
-  // across both colors. Within each compatible track, PNG ordinal order maps to
-  // region 1, 2, 3...; light tracks are consumed before dark tracks. Cursors
-  // persist across pages, but reset for each template.
-  for (const priority of [0, 1]) {
+  // Reserve exact gender/color sources first, then their wildcard-color pool,
+  // followed by gender-neutral equivalents. Within each compatible track, PNG
+  // ordinal order maps to region 1, 2, 3...; light tracks are consumed before
+  // dark tracks. Cursors persist across pages, but reset for each template.
+  const priorityCount = keysByRegion.reduce((count, keys) => Math.max(count, keys.length), 0);
+  for (let priority = 0; priority < priorityCount; priority += 1) {
     for (const index of regionIndexes) {
       if (selectedSources.has(index)) continue;
       const key = keysByRegion[index][priority];
