@@ -4,7 +4,18 @@ Các thay đổi đáng chú ý của PNG Bundle Mockup được lưu tại đâ
 
 ## [Unreleased]
 
-Chưa có thay đổi sau v1.4.12.
+Chưa có thay đổi sau v1.4.13.
+
+## [1.4.13] - 2026-09-02
+
+### Fixed
+
+- PNG Group Shirt không có tag giới tính giờ dùng được cả vùng Nam/Nữ; khi đó app bỏ qua giới tính nhưng vẫn giữ nguyên quy tắc màu áo, mặt trước/sau và thứ tự PNG.
+- PNG có .m/.w tiếp tục bắt buộc ghép đúng vùng Áo nam/Áo nữ.
+
+### Changed
+
+- Đổi màu 12 tổ hợp vùng in Group Shirt theo màu áo, mặt áo và giới tính; giữ nguyên toàn bộ tên vùng, nhãn chữ và kiểu viền.
 
 ## [1.4.12] - 2026-09-01
 

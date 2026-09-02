@@ -227,10 +227,10 @@ test('vùng Group Shirt scale khóa đúng tỷ lệ pixel 42×48 và tối thi�
   assert.match(drag, /pixelWidth\s*=\s*pixelHeight\s*\*\s*aspectRatio/);
 });
 
-test('package và lockfile cùng mang version 1.4.12', () => {
+test('package và lockfile cùng mang version 1.4.13', () => {
   const manifest = JSON.parse(read('package.json'));
   const lockfile = JSON.parse(read('package-lock.json'));
-  assert.equal(manifest.version, '1.4.12');
-  assert.equal(lockfile.version, '1.4.12');
-  assert.equal(lockfile.packages[''].version, '1.4.12');
+  assert.equal(manifest.version, '1.4.13');
+  assert.equal(lockfile.version, '1.4.13');
+  assert.equal(lockfile.packages[''].version, '1.4.13');
 });

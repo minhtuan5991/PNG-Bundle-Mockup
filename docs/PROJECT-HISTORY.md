@@ -774,3 +774,11 @@ Checksum bên dưới thuộc artifact public do GitHub Actions build lại, kh�
 - Commit `2d5cbb4e4999bd18c265d8610756d2c5ced56f46`, annotated tag `v1.4.12`; Windows CI `33532442802` và Release Windows `33532699965` đều thành công.
 - Release `380666786` public/stable/latest có đúng ba asset. Setup công khai 104377879 byte, SHA-256 `6cf214cdeea4e01dbdaf64c7ca5903184b200e078dac67d3af8370de136eb5b6`.
 - Chưa chạy cài mới/nâng cấp tương tác trên máy hoặc VM sạch.
+
+## 34. Bản local v1.4.13 — vùng giới tính tùy chọn và bảng màu mới
+
+- PNG Group Shirt không có .m/.w trở thành nguồn trung tính giới tính: dùng được vùng Nam/Nữ nhưng vẫn phải đúng màu áo và mặt áo. PNG có .m/.w tiếp tục khóa đúng giới tính.
+- Planner ưu tiên pool giới tính cụ thể trước, sau đó mới dùng pool trung tính; quy tắc ordinal, phân trang và lặp ngẫu nhiên khi thiếu không đổi.
+- Trình chỉnh vùng in dùng đúng 12 màu theo tổ hợp trước/sau, sáng/tối và Nam/Nữ; tên vùng, nhãn chữ và kiểu viền giữ nguyên.
+- Automated tests **171/171** đạt. Chưa chạy cài mới/nâng cấp tương tác trên máy hoặc VM sạch.
+- NSIS local: Setup 104378654 byte, SHA-256 `4c8725775bd1a8efa910dd31c5fb10215bf4745c92a5ea23e52baa65e2d4b262`; ASAR/updater metadata đạt, Authenticode `NotSigned`.

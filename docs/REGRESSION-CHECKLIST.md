@@ -4,6 +4,9 @@
 
 ## Trạng thái mốc
 
+- [x] QA mã nguồn local v1.4.13 ngày 2026-09-02: **171/171 test đạt**; PNG không .m/.w dùng vùng Nam/Nữ theo màu/mặt, PNG có tag vẫn khóa giới tính và 12 màu vùng in khớp quy ước.
+- [x] QA bộ cài local v1.4.13: NSIS x64 thành công; ASAR/FileVersion/ProductVersion là 1.4.13, updater metadata khớp installer và Authenticode `NotSigned`.
+- [ ] Chưa kiểm thử cài mới/nâng cấp tương tác v1.4.13 trên máy hoặc VM sạch.
 - [x] QA local v1.4.11: **166/166 test đạt**; regression 3 nhóm × 3 nền = 9 mockup đơn, tên output theo nhóm và không trộn PNG giữa nhóm.
 - [x] Source/package smoke v1.4.11 đều **25/25**; NSIS x64, ASAR version/25 file src-assets, updater metadata và Input/Print Area allowlist đạt.
 - [x] GitHub v1.4.11 đã xác minh: commit `f0bdcd8`, tag `v1.4.11`, Windows CI `33497184683` và Release Windows `33497184747` thành công; Release `380402056` public/stable/latest có đúng ba asset.
